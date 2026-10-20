@@ -18,6 +18,12 @@ OpenHydroNet is an offline, open-source hydraulic network workbench with a Chine
 
 没有遥测、强制账号、许可证服务器、付费解锁或联网计算要求。启动后不需要外部互联网；进程通信仅使用会话认证的本机回环地址。
 
+## 真实运行截图
+
+![Linux/Electron 开发预览：公开示例的实际计算结果](docs/images/workbench-preview.png)
+
+这是真实 Linux/Electron 运行截图，不是设计稿，也不代表已经在 Windows 实机验收。
+
 ## 开发启动（已在 Linux 实际验证）
 
 需要 Python 3.12、Node.js 22 和 npm。已验证 NumPy 2.4.3、SciPy 1.17.1；Node 依赖由 `package-lock.json` 锁定。默认优先国内镜像，保持 TLS 验证。
@@ -69,7 +75,7 @@ print(result['residuals'], result['input_hash'])
 
 - [中文用户手册](docs/USER_MANUAL.md) · [公式与模型](docs/MODELS.md)
 - [验证记录](docs/VALIDATION.md) · [功能覆盖矩阵](docs/HACNET_PARITY_MATRIX.md)
-- [项目状态与续作入口](docs/PROJECT_STATUS.md) · [架构决策](docs/DECISIONS.md)
+- [项目状态与续作入口](docs/PROJECT_STATUS.md) · [本次实际交付审计](docs/DELIVERY_AUDIT.md) · [架构决策](docs/DECISIONS.md)
 - [构建说明](docs/BUILD.md) · [已知限制](docs/KNOWN_LIMITATIONS.md)
 - [路线图](docs/ROADMAP.md) · [发布检查](docs/RELEASE_CHECKLIST.md)
 - [依赖许可](docs/DEPENDENCIES.md) · [贡献指南](CONTRIBUTING.md)

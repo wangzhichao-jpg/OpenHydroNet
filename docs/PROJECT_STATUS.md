@@ -14,7 +14,7 @@
 
 ## 实际验证
 
-- `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`：**40 passed，4.66 s**。
+- `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`：**42 passed，4.69 s**（软件基线 40 项，另加 2 项字幕回归）。
 - `npm run test:commands`：**7 passed**；`npm run format:check` 全部匹配。
 - `npm run build`：TypeScript + Vite 6.4.4 成功。
 - **Electron 44.9.1** 下 `tests/ui.e2e.cjs`：模板→计算→水压图→改管径/泵速→过期保护→工况对比→实际保存重开→CSV/PDF→拆分撤销通过。
@@ -25,9 +25,11 @@
 
 ## 当前在推进的实际产物
 
-Windows 运行时已从国内镜像下载并校验：Electron 44.9.1、CPython 3.12.10、NumPy 2.4.3、SciPy 1.17.1。下一步按干净提交组装实际 zip；**本环境没有 Windows/Wine，尚未原生运行验收**。
+实际 Windows 便携候选已生成：`artifacts/OpenHydroNet-0.1.0-preview.1-win-x64.zip`，219,000,809 字节，SHA-256 `c6bb6f010c9fa27a60b2df7b069090c5d3221f026b7bf378c31bff0f0f042ad7`。含 Electron 44.9.1、CPython 3.12.10、NumPy 2.4.3、SciPy 1.17.1、界面/文档/示例；ZIP CRC、PE 头和必要许可检查通过。**本环境无 Windows/Wine，未原生运行，仍只是候选包**。
 
-两条视频已有中文分镜/旁白和可复跑本地流程：`media/storyboards.json`、`media/*-narration.md`、`tools/record_video.cjs`、`tools/render_videos.py`。旧录制因安全升级已暂停隔离，下一步从新基线重新录制。仅脚本不算最终 MP4 已交付，实际状态见 `media/README.md` 和构建后的审计补充。
+两条实际 MP4 已生成，软件/录制基线均为提交 `003b2446ae1b4efe26de0cea680fe80d7ed69ef5`：5 分钟介绍 300 s、快速上手 120 s，均 1920×1080、H.264/AAC、中文合成旁白及独立 SRT。全帧解码、FFplay 短样播放、流时长/字幕时间检查通过，实际抽帧已检查。尚未真人试听或完整逐句校审，不算视频正式人工验收通过。见 `media/README.md`、`artifacts/media/MEDIA_QA.json`。
+
+软件包与录制基线提交均为 003b244；最新交付源码提交另补充文档、媒体后期/QA 脚本和字幕测试，不改变内核/桌面界面。`tools/prepare_delivery.py` 比较 src/、desktop/ 和 web/dist/ 与候选包逐文件字节一致，且在 DELIVERY_INDEX.json 同时记录软件与交付提交，不冒称两个提交相同。最终清单见 `docs/DELIVERY_AUDIT.md`。
 
 ## 精确执行入口
 
@@ -46,6 +48,13 @@ python3 tools/release_audit.py
 依赖：当前系统 Python 已有锁定科学计算包；其他环境按 README 建虚拟环境。Electron 44 采用懒安装，首次测试前应明确执行 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run setup:desktop`，避免多个任务各自触发下载。
 
 长任务都使用 `systemd-run --user` 与 `.local/*.lock`。日志 `.local/logs/`。重试前检查 `systemctl --user show UNIT -p ActiveState -p ExecMainStatus`，中止必须 `systemctl --user stop UNIT` 并确认退出。不要以工具超时判断进程已停止。
+
+## 下一步优先级
+
+1. 修复/验证跨温度质量流量属性显示及工况对比，补齐数值整数/交叉字段即时校验、退出未保存提示和高倍标签策略，再形成下一个可运行预览。
+2. 继续 B：泵阀库/曲线编辑、单线映射 UI、Excel 映射导入、桌面可及性约束与公开复杂网络。
+3. 使用真实 Windows 环境完成候选包验收；人工试听视频。此两项未满足前不得升级为正式发行。
+4. 仓库目标确认后再安全推送，保持 GitHub/Gitee 同提交同标签；其他本地开发不因缺认证停止。
 
 ## 不可隐瞒的缺口
 

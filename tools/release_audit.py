@@ -18,9 +18,13 @@ def main():
         if file.suffix in ('.md','.ts','.tsx','.py','.cjs','.json','.yml','.txt'):
             text=file.read_text(errors='replace')
             # Split patterns so the audit's own source is not a false positive.
-            for needle in ('/home/'+'zhichaowang','C:\\Users\\'+'zhichaowang','-----BEGIN '+'PRIVATE KEY-----'):
+            for needle in (str(Path.home())+'/',str(Path.home())+'\\','-----BEGIN '+'PRIVATE KEY-----'):
                 if needle in text:issues.append('私人路径/密钥迹象：'+name)
             if re.search(r'(?:ghp_|github_pat_|AKIA)[A-Za-z0-9_]{20,}',text):issues.append('访问凭据迹象：'+name)
+    for file in (ROOT/'artifacts').rglob('*.json'):
+        text=file.read_text(encoding='utf-8',errors='replace')
+        if str(Path.home()) in text:
+            issues.append('公开产物 JSON 含私人绝对路径：'+str(file.relative_to(ROOT)))
     archives=[]
     for archive in (ROOT/'artifacts').glob('*win-x64.zip'):
         with ZipFile(archive) as z:
