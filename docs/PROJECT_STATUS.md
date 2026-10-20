@@ -27,8 +27,8 @@
 ## 产物与版本归属
 
 - preview.1 原 Windows 候选、源码/文档/示例包、300 s/120 s 视频全部保留原样。其软件/录制基线 `003b2446ae1b4efe26de0cea680fe80d7ed69ef5`，不能说包含本轮改动。
-- preview.2 的 Windows 组装输入已从国内镜像准备并校验，包含 5 个 Python 依赖 wheel；新增 openpyxl/et-xmlfile/defusedxml 为离线免费依赖。
-- 新候选命名 `artifacts/OpenHydroNet-0.1.0-preview.2-win-x64.zip`；源码/文档/示例包和校验使用同版本名字，**实际生成状态以 `DELIVERY_INDEX-0.1.0-preview.2.json`、`RELEASE_AUDIT-0.1.0-preview.2.json` 为准**，没有清单则不得仅凭脚本称已交付。
+- preview.2 Windows 便携候选已从干净软件提交 `09739362c27b9ac87a4c40e3808ad3b0caf3a0f3` 实际组装，220,320,845 字节，SHA-256 `cb01685e7d13678e97649ae34091a1c43315bb636533d5689ff9f1c09199128f`。输入优先国内镜像、逐项校验，包含 5 个 Python wheel；新增 openpyxl/et-xmlfile/defusedxml 均离线免费。不是 Windows 原生运行结果。
+- 新候选命名 `artifacts/OpenHydroNet-0.1.0-preview.2-win-x64.zip`；源码/文档/示例包和校验使用同版本名字，**实际生成状态以 `DELIVERY_INDEX-0.1.0-preview.2.json`、`RELEASE_AUDIT-0.1.0-preview.2.json` 为准**，没有清单则不得仅凭脚本称该集合已核验。软件候选已生成，源码/文档/示例组合交付在本轮文档提交后由交付工具实际核对；以最后的索引为准。
 - 构建与交付源码提交分开记录，交付工具检查 src/、desktop/、web/dist/ 与候选逐文件相同，不假装文档补充提交与软件构建提交相同。
 - 本机无 Windows/Wine，所有本地 Windows 候选均未原生运行。新版本视频尚未录制；旧视频也未完成人工试听。没有公开仓库、标签、下载/观看链接或二维码。
 

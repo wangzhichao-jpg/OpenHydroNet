@@ -58,6 +58,11 @@ def main():
                 if z.read(app+relative)!=file.read_bytes():raise RuntimeError('运行时代码不一致，必须重建 Windows 候选：'+relative)
                 runtime.append(relative)
         if z.read(app+'package.json')!=(ROOT/'package.json').read_bytes():raise RuntimeError('包版本/桌面入口配置不一致')
+    evidence=json.loads((A/f'VALIDATION-{VERSION}.json').read_text())
+    if evidence['version']!=VERSION or evidence['commit']!=build['commit']:raise RuntimeError('验证来源与实际软件构建提交不一致')
+    for relative,digest in evidence['runtime_sha256'].items():
+        if not (ROOT/relative).is_file() or sha((ROOT/relative).read_bytes())!=digest:raise RuntimeError('验证后运行时代码已变化，必须重新测试：'+relative)
+    if set(runtime)!=set(evidence['runtime_sha256']):raise RuntimeError('验证后的运行时文件集合已经改变')
     tracked=[s.decode() for s in git('ls-files','-z').split(b'\x00') if s]
     products=[archive]
     source=A/f'OpenHydroNet-{VERSION}-source.zip'
@@ -76,7 +81,7 @@ def main():
             if z.testzip() is not None:raise RuntimeError('分发 ZIP CRC 失败：'+path.name)
     audit=A/f'RELEASE_AUDIT-{VERSION}.json'
     audit.write_text(json.dumps({'version':VERSION,'software_commit':build['commit'],'delivery_commit':commit,'runtime_files_byte_identical':runtime,'zip_crc':'passed','windows_pe':'passed','windows_executed':False,'git_history':privacy},ensure_ascii=False,indent=2)+'\n')
-    products.extend([audit,A/f'WINDOWS_BUILD_MANIFEST-{VERSION}.json',A/f'VALIDATION-{VERSION}.json'])
+    products.extend([audit,A/f'WINDOWS_BUILD_MANIFEST-{VERSION}.json',A/f'VALIDATION-{VERSION}.json',A/f'npm-audit-{VERSION}.json'])
     index=A/f'DELIVERY_INDEX-{VERSION}.json'
     index.write_text(json.dumps({'version':VERSION,'software_commit':build['commit'],'delivery_commit':commit,'published':False,'windows_executed':False,'media_version':'0.1.0-preview.1','media_updated_for_this_version':False,'pending':['Windows native acceptance','new-version video and human audio review','full B/C parity','confirmed GitHub/Gitee/video destinations'],'files':[{'path':str(p.relative_to(ROOT)),'bytes':p.stat().st_size,'sha256':sha(p.read_bytes())} for p in products]},ensure_ascii=False,indent=2)+'\n')
     products.append(index)
