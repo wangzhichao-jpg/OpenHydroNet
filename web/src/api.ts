@@ -23,10 +23,15 @@ declare global {
   interface Window {
     desktop?: {
       open: () => Promise<any>;
+      openLibrary: () => Promise<any>;
+      importTable: () => Promise<{ name: string; format: string; content_base64: string } | null>;
       save: (data: any) => Promise<any>;
       draft: (data?: any) => Promise<any>;
       export: (data: { name: string; content: string; kind: string }) => Promise<any>;
       version: () => Promise<any>;
+      documentState: (data: any) => Promise<any>;
+      confirmUnsaved: (reason: string) => Promise<'save' | 'discard' | 'cancel'>;
+      onFlushEditor: (callback: () => Promise<any>) => () => void;
     };
   }
 }
@@ -34,13 +39,15 @@ export async function download(name: string, content: string, kind = 'json') {
   if (window.desktop) return window.desktop.export({ name, content, kind });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(
-    new Blob([content], {
+    new Blob([kind === 'xlsx' ? Uint8Array.from(atob(content), (c) => c.charCodeAt(0)) : content], {
       type:
-        kind === 'csv'
-          ? 'text/csv;charset=utf-8'
-          : kind === 'svg'
-            ? 'image/svg+xml'
-            : 'application/json;charset=utf-8',
+        kind === 'xlsx'
+          ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          : kind === 'csv'
+            ? 'text/csv;charset=utf-8'
+            : kind === 'svg'
+              ? 'image/svg+xml'
+              : 'application/json;charset=utf-8',
     }),
   );
   a.download = name;

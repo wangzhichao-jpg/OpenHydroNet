@@ -1,0 +1,27 @@
+{
+  "format": "openhydronet-library",
+  "schema_version": 1,
+  "entries": [
+    {
+      "id": "LIB-teaching-pump",
+      "kind": "pump",
+      "name": "教学泵 · 人工多项式",
+      "source_kind": "synthetic",
+      "data_source": "人工构造 H=32-180000Q²，仅用于软件验证，非厂家资料",
+      "parameters": {"curve": [32, 0, -180000], "valid_flow": [0, 0.012], "nominal_rpm": 1450},
+      "points_text": "0,32\n14.4,29.12\n28.8,20.48\n43.2,6.08",
+      "point_unit": "m3/h",
+      "point_temperature": 20,
+      "fit_degree": 2,
+      "fit_pending": false
+    },
+    {
+      "id": "LIB-teaching-valve",
+      "kind": "valve",
+      "name": "教学阀 · 线性 Kv85",
+      "source_kind": "synthetic",
+      "data_source": "人工构造，仅演示 Kv 定义和库副本，非厂家资料",
+      "parameters": {"kv": 85, "characteristic": "linear", "rangeability": 50}
+    }
+  ]
+}

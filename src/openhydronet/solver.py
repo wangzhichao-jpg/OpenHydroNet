@@ -12,7 +12,7 @@ from .physics import G, water, loss, pump_head
 from .validation import validate, ModelError, active_edge
 
 ALGORITHM = "sparse-head-flow-trf-v1"
-VERSION = "0.1.0-preview.1"
+from .version import VERSION
 MASS_TOL = 1e-8
 HEAD_TOL = 1e-5
 

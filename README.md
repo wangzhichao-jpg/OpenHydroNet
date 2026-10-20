@@ -2,7 +2,7 @@
 
 **离线、中文、可解释的供热与空调水系统稳态分析工作台。**
 
-> 当前版本：`0.1.0-preview.1`。这是正在开发的开源预览版，**尚未全面覆盖或超过 HACNet**，不应未经独立复核直接用于安全关键设计。OpenHydroNet 是工作名称，尚未完成商标和仓库名称可用性核查。
+> 当前源码版本：`0.1.0-preview.2`。这是正在开发的开源预览版，**尚未全面覆盖或超过 HACNet**，不应未经独立复核直接用于安全关键设计。OpenHydroNet 是工作名称，尚未完成商标和仓库名称可用性核查。
 
 OpenHydroNet is an offline, open-source hydraulic network workbench with a Chinese desktop interface and an independent Python solver. This is a development preview, not a certified engineering product.
 
@@ -13,20 +13,22 @@ OpenHydroNet is an offline, open-source hydraulic network workbench with a Chine
 - 在非模态属性面板编辑管道、泵、Kv 阀和末端，检查连通分量及输入。
 - 用独立进程进行等温稳态计算；查看流量、流速、节点表压、水压图和带定位的问题列表。
 - 调整泵速/阀位、保存工况快照、比较绝对值/差值/百分比；旧结果自动标记过期。
-- 原子保存公开 JSON 工程，恢复草稿，导出 CSV、SVG/PNG；桌面版可输出实际 PDF 计算报告。
+- 原子保存公开 JSON 工程，退出保存/放弃/取消和恢复字节备份；导出 CSV、SVG/PNG、真实 XLSX，桌面可输出 PDF。
+- 管理工程自带泵阀库，拟合二/三次 Q-H 曲线、记录来源/RMSE/区间；应用数据副本而不破坏设备 ID、连接和运行设置。
+- 对已有节点/设备进行 CSV/XLSX 列/单位映射、变化与错误预览、整体应用/撤销；不猜测拓扑。跨温度质量流量比较使用各工况各自密度。
 - 在 Python API/CLI 中进行单线对称展开、独立稳态扫描、有界局部可行性搜索和有限差分敏感性。上述 API 不代表相应桌面工作流已全部实现。
 
 没有遥测、强制账号、许可证服务器、付费解锁或联网计算要求。启动后不需要外部互联网；进程通信仅使用会话认证的本机回环地址。
 
 ## 真实运行截图
 
-![Linux/Electron 开发预览：公开示例的实际计算结果](docs/images/workbench-preview.png)
+![Linux/Electron 开发预览：公开示例的实际计算结果](docs/images/workbench-preview-2.png)
 
-这是真实 Linux/Electron 运行截图，不是设计稿，也不代表已经在 Windows 实机验收。
+这是真实 preview.2 Linux/Electron 运行截图，不是设计稿，也不代表 Windows 实机验收。另见 [设备库曲线实录](docs/images/library-preview-2.png) 和 [映射导入预览实录](docs/images/import-preview-2.png)。
 
 ## 开发启动（已在 Linux 实际验证）
 
-需要 Python 3.12、Node.js 22 和 npm。已验证 NumPy 2.4.3、SciPy 1.17.1；Node 依赖由 `package-lock.json` 锁定。默认优先国内镜像，保持 TLS 验证。
+需要 Python 3.12、Node.js 22 和 npm。已验证 NumPy 2.4.3、SciPy 1.17.1、openpyxl 3.1.5；Node 依赖由 `package-lock.json` 锁定。默认优先国内镜像，保持 TLS 验证。
 
 ```bash
 python3 -m venv .venv
@@ -49,6 +51,9 @@ PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q
 npm run test:commands
 # 有图形桌面时直接运行；Linux 无显示器可使用已安装的 Xvfb
 xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:features
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:lifecycle
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:jobs
 PYTHONPATH=src python3 tools/benchmark.py
 ```
 
@@ -73,7 +78,8 @@ print(result['residuals'], result['input_hash'])
 
 ## 文档
 
-- [中文用户手册](docs/USER_MANUAL.md) · [公式与模型](docs/MODELS.md)
+- [中文用户手册](docs/USER_MANUAL.md) · [设备库/曲线/表格导入](docs/LIBRARY_TABLES.md) · [公式与模型](docs/MODELS.md)
+- [可直接委派的 CNKI 检索任务](docs/RESEARCH_TASKS_CNKI.md)：优先找可重建的完整水力网络算例，不编造缺失参数。
 - [验证记录](docs/VALIDATION.md) · [功能覆盖矩阵](docs/HACNET_PARITY_MATRIX.md)
 - [项目状态与续作入口](docs/PROJECT_STATUS.md) · [本次实际交付审计](docs/DELIVERY_AUDIT.md) · [架构决策](docs/DECISIONS.md)
 - [构建说明](docs/BUILD.md) · [已知限制](docs/KNOWN_LIMITATIONS.md)

@@ -1,6 +1,6 @@
 {
   "name": "openhydronet",
-  "version": "0.1.0-preview.1",
+  "version": "0.1.0-preview.2",
   "private": true,
   "description": "离线中文供热与空调水系统分析",
   "license": "Apache-2.0",
@@ -11,8 +11,11 @@
     "desktop": "electron .",
     "setup:desktop": "node node_modules/electron/install.js",
     "test:ui": "node tests/ui.e2e.cjs",
-    "test:commands": "tsx --test web/src/commands.test.ts",
+    "test:commands": "tsx --test web/src/*.test.ts && node --test tests/*.test.cjs",
     "test:graph": "node tests/ui.graph.cjs",
+    "test:lifecycle": "node tests/ui.lifecycle.cjs",
+    "test:features": "node tests/ui.features.cjs",
+    "test:jobs": "node tests/ui.jobs.cjs",
     "format:check": "prettier --check web/src desktop tests/*.cjs tools/*.cjs"
   },
   "dependencies": {

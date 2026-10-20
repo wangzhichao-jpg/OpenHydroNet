@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..'),
-  out = path.join(root, 'artifacts', 'ui');
+  out = path.join(root, 'artifacts', 'ui', require('../package.json').version);
 (async () => {
   await fs.mkdir(out, { recursive: true });
   const errors = [];
@@ -13,6 +13,9 @@ const root = path.resolve(__dirname, '..'),
     timeout: 30000,
   });
   try {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 });
+    });
     const page = await app.firstWindow();
     page.on('pageerror', (e) => {
       errors.push(e.message);
@@ -95,7 +98,7 @@ const root = path.resolve(__dirname, '..'),
       JSON.stringify(
         {
           status: 'passed',
-          version: '0.1.0-preview.1',
+          version: require('../package.json').version,
           runtime: process.platform,
           checks: [
             'real Electron launch',

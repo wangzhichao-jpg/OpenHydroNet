@@ -1,68 +1,65 @@
 # 项目状态与无损续作入口
 
-版本：`0.1.0-preview.1`。这是可运行开发预览，不是既定 A/B/C 全部完成，也不是已全面超过 HACNet 的正式版。
+当前源码：`0.1.0-preview.2`。**仍不是 A/B/C 总完成、正式发行或全面超过 HACNet。** 原说明书 109 个结构块/10 张图已完整读取；私有资料仍隔离在 `.local/reference/`，公开功能矩阵逐项维护，不复制原软件代码/资源。
 
-## 已落实的可运行基线
+## 本轮已经实做
 
-- 全文读取说明书 109 个结构块及 10 张嵌入截图；Word 原生表格 0。来源证据在 `.local/reference/` 私有隔离，公开索引 `docs/REFERENCE_AUDIT.md`。
-- H01–H31、X01–X05 覆盖矩阵已按真实完成度审计；歧义与未明确算法没有伪称还原。
-- 独立 Python/SciPy 内核和 CLI：守恒、Darcy、层流/过渡/湍流、局阻/直接阻力、变速/并联泵、Kv 阀、定阻末端/理想流控、止回/关闭、定压/漏补水、稀疏/阻尼/残差。
-- React Flow + Electron 中文离线工作台：欢迎/示例/向导、拖放/端口连接、上下文属性、检查/计算/取消/结果过期、着色/表/问题定位/水压图、工况快照/差值/比例、撤销/复制/拆分/插阀/布局。
-- 公开工程 v1、JSON Schema、原子保存/草稿、桌面保存重开、CSV/PDF/SVG/PNG 实际导出。
-- API：对称单线展开映射、独立稳态扫描、有界局部可及性搜索、中心差分敏感性。专用桌面分析工作流仍不完整。
-- 中文 README/手册/模型说明/构建文档、Apache-2.0、依赖清单、贡献/问题模板、CI 配置；CI 尚未在远端执行。
+1. 修复 0 ℃、改温后的质量单位参数、过期图标签和跨温度工况比较；每份结果使用自己的密度，缺数据不显示 NaN 或猜测密度。
+2. 独立数值编辑器：整数/可选效率/范围校验、无效值阻止操作、Esc 放弃；基准额定转速与实际 rpm 换算。
+3. 原生退出文档事务：刷新焦点输入，保存/放弃/取消，取消保存不退出也不停止后端；正式保存/退出/草稿共用结果归属规则，移除旧结果元数据。
+4. 原子存储故障注入、严格 UTF-8、启动草稿字节备份、同配置单实例、退出时拒绝晚到草稿/任务。不是断电或 Windows 文件系统总认证。
+5. 计算 owner/运行意图隔离：相同输入的旧请求不会附着或取消新工程，取消检查进程退出，服务关闭后不接收新任务。
+6. 非模态泵阀库、增改复制删除、来源/基准数据、Q-H 点/系数编辑、拟合图/RMSE/范围/点温度、库 JSON 副本往返。应用复制参数且保留稳定 ID、端点、泵速/台数/阀开度；库删除不破坏网络。
+7. CSV/XLSX 现有 ID 参数列/单位映射、原始/变化/错误预览、整体应用和撤销，真实参数/结果 XLSX；不猜拓扑、不执行公式。
+8. 高倍标签字级限幅、中文画布辅助标签、移除默认菜单、限制界面 HTTP(S) 到本机。仍无全图智能避让/拖动结果面板。
+9. CNKI 并行协作提示词在 `docs/RESEARCH_TASKS_CNKI.md`，A 组完整可重建算例最高优先；新教学库/参数 CSV 在 `examples/`。
 
 ## 实际验证
 
-- `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`：**42 passed，4.69 s**（软件基线 40 项，另加 2 项字幕回归）。
-- `npm run test:commands`：**7 passed**；`npm run format:check` 全部匹配。
-- `npm run build`：TypeScript + Vite 6.4.4 成功。
-- **Electron 44.9.1** 下 `tests/ui.e2e.cjs`：模板→计算→水压图→改管径/泵速→过期保护→工况对比→实际保存重开→CSV/PDF→拆分撤销通过。
-- 同版本 `tests/ui.graph.cjs`：真实鼠标设备拖放、端口连接、反向流动、质量流量单位、复制粘贴/撤销、PNG/SVG 实际文件通过。
-- 公开基准 25/100/400 节点：约 0.038/0.295/1.110 s；残差和独立线性水头解析误差通过。机器/内存/误差见 `docs/VALIDATION.md`。
-- 完整 `npm audit`（含实际分发的 Electron）：**0 已知通告**。初版 38.2.0 的 7 项告警触发升级；旧包已移入 `.local/superseded-e0a9313/`，不得推荐分发。零通告不等于完整安全保证。
-- 静态隐私/包结构审计工具 `tools/release_audit.py` 已建立；最终产物完成后重跑。
+- Python 最近 **72 passed**，含 2 项既有字幕测试；约 5.3 s。核心方程/独立解析门槛未放宽。
+- TypeScript 命令/单位/库/文档 **18 passed**，Node 文档/存储 **11 passed**；TypeScript/Vite 构建、Prettier 通过。
+- Electron 44.9.1 的五套真实流程：基础闭环、鼠标图编辑/图像、跨温度与原生退出、库/CSV/XLSX、迟到任务/损坏草稿，均通过。截图实际检查；修复过导入层级问题后重新跑通，不用强制点击绕过。
+- 新版 npm 审计 **0 已知通告**；国内镜像 audit 返回 404 未实现后才使用官方审计 API，失败尝试保留私有日志。新增 Python 依赖的完整漏洞数据库覆盖未宣称完成。
+- 原 25/100/400 节点基准为 preview.1 历史单次数据，数值方法未改变但不把旧时间改称新版性能测量。没有外部求解器交叉验证、现场标定或真实新手测试。
 
-## 当前在推进的实际产物
+最终实际记录：`artifacts/VALIDATION-0.1.0-preview.2.json`；五套截图/JSON 在 `artifacts/{ui,graph,lifecycle,features,jobs}/0.1.0-preview.2/`。私人原始日志不直接公开。
 
-实际 Windows 便携候选已生成：`artifacts/OpenHydroNet-0.1.0-preview.1-win-x64.zip`，219,000,809 字节，SHA-256 `c6bb6f010c9fa27a60b2df7b069090c5d3221f026b7bf378c31bff0f0f042ad7`。含 Electron 44.9.1、CPython 3.12.10、NumPy 2.4.3、SciPy 1.17.1、界面/文档/示例；ZIP CRC、PE 头和必要许可检查通过。**本环境无 Windows/Wine，未原生运行，仍只是候选包**。
+## 产物与版本归属
 
-两条实际 MP4 已生成，软件/录制基线均为提交 `003b2446ae1b4efe26de0cea680fe80d7ed69ef5`：5 分钟介绍 300 s、快速上手 120 s，均 1920×1080、H.264/AAC、中文合成旁白及独立 SRT。全帧解码、FFplay 短样播放、流时长/字幕时间检查通过，实际抽帧已检查。尚未真人试听或完整逐句校审，不算视频正式人工验收通过。见 `media/README.md`、`artifacts/media/MEDIA_QA.json`。
+- preview.1 原 Windows 候选、源码/文档/示例包、300 s/120 s 视频全部保留原样。其软件/录制基线 `003b2446ae1b4efe26de0cea680fe80d7ed69ef5`，不能说包含本轮改动。
+- preview.2 的 Windows 组装输入已从国内镜像准备并校验，包含 5 个 Python 依赖 wheel；新增 openpyxl/et-xmlfile/defusedxml 为离线免费依赖。
+- 新候选命名 `artifacts/OpenHydroNet-0.1.0-preview.2-win-x64.zip`；源码/文档/示例包和校验使用同版本名字，**实际生成状态以 `DELIVERY_INDEX-0.1.0-preview.2.json`、`RELEASE_AUDIT-0.1.0-preview.2.json` 为准**，没有清单则不得仅凭脚本称已交付。
+- 构建与交付源码提交分开记录，交付工具检查 src/、desktop/、web/dist/ 与候选逐文件相同，不假装文档补充提交与软件构建提交相同。
+- 本机无 Windows/Wine，所有本地 Windows 候选均未原生运行。新版本视频尚未录制；旧视频也未完成人工试听。没有公开仓库、标签、下载/观看链接或二维码。
 
-软件包与录制基线提交均为 003b244；最新交付源码提交另补充文档、媒体后期/QA 脚本和字幕测试，不改变内核/桌面界面。`tools/prepare_delivery.py` 比较 src/、desktop/ 和 web/dist/ 与候选包逐文件字节一致，且在 DELIVERY_INDEX.json 同时记录软件与交付提交，不冒称两个提交相同。最终清单见 `docs/DELIVERY_AUDIT.md`。
+## 执行入口
 
-## 精确执行入口
-
-在仓库根目录：
 ```bash
 npm run build
 npm run desktop
-PYTHONPATH=src python3 -m openhydronet.cli solve examples/closed-loop.ohn.json
 PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q
 npm run test:commands
+npm run format:check
 xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
 xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:graph
-python3 tools/release_audit.py
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:lifecycle
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:features
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:jobs
+# 干净提交/已有对应候选后：
+python3 tools/deliver_preview.py
 ```
 
-依赖：当前系统 Python 已有锁定科学计算包；其他环境按 README 建虚拟环境。Electron 44 采用懒安装，首次测试前应明确执行 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run setup:desktop`，避免多个任务各自触发下载。
+新环境按 README 建 venv。Electron 懒下载须先显式 `npm run setup:desktop`，使用 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/`。长任务用 systemd 用户任务和锁，日志 `.local/logs/`；重试先确认状态，停止用 `systemctl --user stop UNIT` 并核对进程，不把工具超时当停止。
 
-长任务都使用 `systemd-run --user` 与 `.local/*.lock`。日志 `.local/logs/`。重试前检查 `systemctl --user show UNIT -p ActiveState -p ExecMainStatus`，中止必须 `systemctl --user stop UNIT` 并确认退出。不要以工具超时判断进程已停止。
+## 下一步仍要实现
 
-## 下一步优先级
+1. B：桌面可及性约束与分析结果、单线映射/供回筛选、子网/注释、完整参数/打印、整网创建式表格导入、独立多泵多源算例。
+2. C：有界平衡/能耗优化、扫描/敏感性界面、稳态热输送/混合、明确定义真实状态的控制/热动态；绝不把稳态扫描说成动态或局部失败说成全局不可行。
+3. A 质量：更多参数交叉校验/画布组合、密集标签、可调面板、真实崩溃/长稳、高 DPI/Windows 原生验收。详见 KNOWN_LIMITATIONS，不能因新流程通过就全勾完成。
+4. 更新/试听视频；用户确认 GitHub/Gitee 和视频位置后才安全发布同版本同标签，并实际验链接/下载。
 
-1. 修复/验证跨温度质量流量属性显示及工况对比，补齐数值整数/交叉字段即时校验、退出未保存提示和高倍标签策略，再形成下一个可运行预览。
-2. 继续 B：泵阀库/曲线编辑、单线映射 UI、Excel 映射导入、桌面可及性约束与公开复杂网络。
-3. 使用真实 Windows 环境完成候选包验收；人工试听视频。此两项未满足前不得升级为正式发行。
-4. 仓库目标确认后再安全推送，保持 GitHub/Gitee 同提交同标签；其他本地开发不因缺认证停止。
+## 需要用户并行配合，不阻塞其余本地开发
 
-## 不可隐瞒的缺口
-
-1. Windows 原生运行、中文路径/高 DPI、退出未保存确认、崩溃注入和长期稳定性未完成。
-2. 完整泵阀库/曲线 UI、桌面单线映射/供回筛选、子网/注释、Excel 映射导入/XLSX、完整桌面可及性未完成。
-3. 平衡/能耗优化、稳态热输送混合、带状态控制/热动态未完成。扫描不是动态；水锤/CFD 未实现且非默认范围。
-4. 密集/近距离节点在高倍缩放时可能标签重叠；已有缩小时隐藏边标签策略，但没有智能全图避让。底部面板暂不能拖动调整高度。
-5. GitHub/Gitee **未发布**；用户最小待确认是两边账号/组织及仓库位置，并在本机完成安全认证，不在对话提供密码/令牌。视频平台/账号也待确认。
-6. 当前是自动化流程验收，没有真实新手用户测试，不编造客户、评价或第三方认证。
-
-整个项目仍应持续推进，后续不能因本预览基线可运行而把所有阶段标为完成。
+- 有 Windows 10/11 x64 电脑时，按 ACCEPTANCE.md 验证候选的启动、中文路径/高 DPI、计算/导出/取消退出、进程清理，给实际结果。
+- 另一个对话可直接执行 RESEARCH_TASKS_CNKI 的 A 组，给全文/页码/参数缺口/许可；资料只放私有 incoming，不改核心代码。
+- 公开发布前确认 GitHub/Gitee 账号/组织/仓库及视频目标；用本机安全认证，不在对话发密码/令牌。

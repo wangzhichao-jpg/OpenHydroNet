@@ -15,7 +15,7 @@ def active_edge(e):
 def validate(model):
     issues = []
     def add(code, obj, message, fix):
-        issues.append(dict(code=code, object_id=obj, message=message, fix=fix, severity="error"))
+        issues.append(dict(code=code, object_id=obj if isinstance(obj,str) else None, message=message, fix=fix, severity="error"))
     def number(obj, key, default, lo=-math.inf, hi=math.inf, strict=False):
         v = obj.get(key, default)
         if not isinstance(v, (float, int)) or isinstance(v, bool) or not math.isfinite(v) or (v <= lo if strict else v < lo) or v > hi:
@@ -35,6 +35,11 @@ def validate(model):
         if not isinstance(key, str) or not key or key in ids:
             add("ID", key, "对象 ID 缺失或重复", "为每个对象设置唯一稳定 ID")
         if isinstance(key,str): ids.add(key)
+        if 'name' in obj and not isinstance(obj['name'],str):
+            add('NAME',key,'设备名称必须是文本','检查导入列的数据类型')
+        for state in ('closed','check_valve'):
+            if state in obj and type(obj[state]) is not bool:
+                add('STATE',key,'关闭/止回状态必须是布尔值','使用 true/false，不把文本当作开关')
     if issues:
         return issues
     node_ids = {n.get("id") for n in nodes}
@@ -69,6 +74,7 @@ def validate(model):
         if kind == "terminal":
             number(e, "design_head", 10, 0, strict=True)
             number(e, "design_flow", .01, 0, strict=True)
+            number(e, 'demand_tolerance', .05, 0, 1)
         if kind == "valve":
             number(e, "opening", 1, 0, 1)
             number(e, "kv", 100, 0, strict=True)
@@ -82,8 +88,13 @@ def validate(model):
             if isinstance(count,(int,float)) and math.isfinite(count) and count != int(count):
                 add("PUMP_COUNT", eid, "并联台数必须为整数", "输入实际相同泵台数")
             curve = e.get("curve", [25, 0, -50000])
-            if not isinstance(curve, list) or not 1 <= len(curve) <= 4 or not all(isinstance(v, (int,float)) and math.isfinite(v) for v in curve):
+            if not isinstance(curve, list) or not 1 <= len(curve) <= 4 or not all(type(v) in (int,float) and math.isfinite(v) for v in curve):
                 add("CURVE", eid, "泵曲线需为 1–4 个有限升幂系数", "检查泵曲线编辑器")
+            if 'valid_flow' in e:
+                interval=e['valid_flow']
+                if not isinstance(interval,list) or len(interval)!=2 or not all(type(v) in (int,float) and math.isfinite(v) for v in interval) or not 0<=interval[0]<interval[1]:
+                    add('CURVE_RANGE',eid,'泵有效流量范围必须为 [非负下限, 更大的上限]，单位 m³/s','使用真实数据范围，不自动扩大范围')
+            if e.get('nominal_rpm') is not None:number(e,'nominal_rpm',None,0,strict=True)
             if e.get("efficiency") is not None:
                 number(e, "efficiency", .7, 0, 1, strict=True)
         if kind == "flow_control":

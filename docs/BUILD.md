@@ -2,7 +2,7 @@
 
 ## 环境与锁定
 
-已验证：Linux x86_64，Python 3.12.3、NumPy 2.4.3、SciPy 1.17.1、pytest 9.0.2、Node 22.22.2、npm 10.9.7。前端依赖 `package-lock.json` 含来源和 SRI。Python 运行时只需 NumPy/SciPy，设备库和项目不依赖在线服务。
+已验证：Linux x86_64，Python 3.12.3、NumPy 2.4.3、SciPy 1.17.1、pytest 9.0.2、Node 22.22.2、npm 10.9.7。前端依赖 `package-lock.json` 含来源和 SRI。Python 运行时包含 NumPy/SciPy 与 openpyxl 3.1.5、et-xmlfile 2.0.0、defusedxml 0.7.1；设备库和表格不依赖在线服务。完整 wheel 哈希在 requirements.lock。
 
 Windows 候选包：Electron 44.9.1 win32-x64、CPython 3.12.10 embeddable amd64、NumPy 2.4.3 cp312 win_amd64、SciPy 1.17.1 cp312 win_amd64。不通过 Linux 的 PyInstaller 冒充 Windows 可执行文件，而是组装上游实际 Windows 二进制。
 
@@ -48,7 +48,7 @@ python3 tools/build_windows.py
 
 输入校验：CPython 内容摘要与 python.org HTTPS 发布的 Sigstore 文件中的摘要核对（未宣称完整验证证书链/透明日志）；Electron zip 与其 SHASUMS256 清单核对；pip 校验清华索引 SHA-256 fragment，另记录 wheel SHA-256。所有输入及源地址在 `.local/downloads/manifest.json`，实际发行包复制为构建清单。
 
-输出：`artifacts/OpenHydroNet-0.1.0-preview.1-win-x64.zip`、同名 `.sha256` 及 `WINDOWS_BUILD_MANIFEST.json`。包包含真实 `OpenHydroNet.exe`、独立 Python、科学计算 Windows 原生库、已构建界面、示例、文档和第三方声明。没有运行时在线下载脚本。
+版本由 package.json 读取。当前输出为 `artifacts/OpenHydroNet-0.1.0-preview.2-win-x64.zip`、同名 `.sha256` 与 `WINDOWS_BUILD_MANIFEST-0.1.0-preview.2.json`；历史 preview.1 文件不覆盖。包包含真实 `OpenHydroNet.exe`、独立 Python、科学计算 Windows 原生库、已构建界面、示例、文档和第三方声明。没有运行时在线下载脚本。
 
 ZIP 内统一固定时间戳和排序以减少非源码差异；源码提交、已验证输入和构建脚本可追溯，但当前不承诺在不同 npm/压缩库/构建时刻下逐字节一致。`BUILD_MANIFEST.json` 明确记录 `windows_executed=false`，只有真实 Windows 测试后才能更改。
 
@@ -72,5 +72,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
 PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 tools/benchmark.py
 python3 tools/license_inventory.py
 ```
+
+当前版本的源码/文档/示例/候选包核对使用 `python3 tools/deliver_preview.py`，要求干净提交和已有对应版本候选，检查完整可达 Git 历史启发式隐私、ZIP CRC、PE/必要依赖与许可、运行时代码逐字节一致，再生成版本化索引/校验；视频尚未更新会明确记为未完成。`tools/prepare_delivery.py`、`release_audit.py` 和现有视频脚本保留用于 preview.1 历史基线，不要将它们对旧文件的检查称为新版验收。
 
 实际视频制作入口与素材许可见 `media/README.md`。公开前另执行隐私检查和双平台链接核验；没有认证和目标仓库时仅本地准备，不伪造发布成功。

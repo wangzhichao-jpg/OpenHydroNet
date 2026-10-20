@@ -8,14 +8,22 @@ import {
   useViewport,
 } from '@xyflow/react';
 export function Junction({ data, selected }: any) {
+  const zoom = useViewport().zoom,
+    showLabel = data.labels !== false && (zoom > 0.48 || selected);
   return (
     <div
       className={'junction ' + (data.fixed ? 'fixed ' : '') + (selected ? 'selected' : '')}
       title={data.name}
     >
       <span className="node-dot">{data.fixed ? '⊙' : '●'}</span>
-      <span className="node-caption">{data.name}</span>
-      {data.showValue && <small>{data.value}</small>}
+      {showLabel && (
+        <span className="node-caption" style={{ fontSize: 11 / Math.max(1, zoom) }}>
+          {data.name}
+        </span>
+      )}
+      {showLabel && data.showValue && (
+        <small style={{ fontSize: 10 / Math.max(1, zoom) }}>{data.value}</small>
+      )}
       {[Position.Left, Position.Top, Position.Right, Position.Bottom].map((p, i) => (
         <Handle type="source" key={p} position={p} id={String(i)} className="port" />
       ))}
@@ -37,7 +45,7 @@ export function HydraulicEdge(props: any) {
         interactionWidth={24}
       />
       <EdgeLabelRenderer>
-        {zoom > 0.48 && d.labels && (
+        {(zoom > 0.48 || props.selected) && d.labels && (
           <button
             data-testid={'edge-' + props.id}
             className={
@@ -46,7 +54,7 @@ export function HydraulicEdge(props: any) {
               (d.kind === 'pipe' ? 'pipe' : 'device')
             }
             style={{
-              transform: `translate(-50%,-50%) translate(${x}px,${y}px)`,
+              transform: `translate(-50%,-50%) translate(${x}px,${y}px) scale(${1 / Math.max(1, zoom)})`,
               borderColor: props.style?.stroke,
             }}
             onClick={() => d.select(props.id)}
@@ -103,6 +111,8 @@ export function PressureChart({ project, result, onSelect, terminal }: any) {
     h: result.nodes[id]?.head_m,
     z: project.model.nodes.find((n: any) => n.id === id)?.elevation || 0,
   }));
+  if (values.some((v) => !Number.isFinite(v.h) || !Number.isFinite(v.z)))
+    return <div className="empty-state">路径缺少有效结果，请重新计算；不把缺失值画成零。</div>;
   const max = Math.max(10, ...values.map((v) => v.h), ...values.map((v) => v.z)),
     min = Math.min(0, ...values.map((v) => v.h), ...values.map((v) => v.z)),
     range = max - min || 1;

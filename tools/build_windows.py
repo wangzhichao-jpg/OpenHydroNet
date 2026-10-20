@@ -13,10 +13,10 @@ import subprocess
 import sys
 from zipfile import ZipFile,ZIP_DEFLATED,ZipInfo
 
-ROOT=Path(__file__).resolve().parents[1];D=ROOT/'.local/downloads';VERSION='0.1.0-preview.1'
+ROOT=Path(__file__).resolve().parents[1];D=ROOT/'.local/downloads';VERSION=json.loads((ROOT/'package.json').read_text())['version']
 
 def main():
-    subprocess.run(['git','diff','--exit-code'],cwd=ROOT,check=True)
+    if subprocess.check_output(['git','status','--porcelain'],cwd=ROOT,text=True).strip():raise RuntimeError('请先提交所有源码/文档并确认工作区干净，禁止把未提交代码打入候选包')
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
     manifest=json.loads((D/'manifest.json').read_text())
     for entry in manifest:
@@ -28,15 +28,15 @@ def main():
     (destination/'electron.exe').rename(destination/'OpenHydroNet.exe')
     application=destination/'resources/app';application.mkdir(parents=True)
     for directory in ('src','desktop','examples','docs','third_party','schemas'):
-        shutil.copytree(ROOT/directory,application/directory,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+        shutil.copytree(ROOT/directory,application/directory,ignore=shutil.ignore_patterns('__pycache__','*.pyc','*.egg-info'))
     for name in ('package.json','LICENSE','README.md','CHANGELOG.md','SECURITY.md'):
         shutil.copy2(ROOT/name,application/name)
     shutil.copytree(ROOT/'web/dist',application/'web/dist')
     runtime=application/'runtime';runtime.mkdir()
     with ZipFile(D/'python-3.12.10-embed-amd64.zip') as z:z.extractall(runtime)
     site=runtime/'Lib/site-packages';site.mkdir(parents=True)
-    for package in ('numpy','scipy'):
-        wheels=list(D.glob(f'{package}-*-cp312-cp312-win_amd64.whl'))
+    for package in ('numpy','scipy','openpyxl','et_xmlfile','defusedxml'):
+        wheels=list(D.glob(f'{package}-*.whl'))
         if len(wheels)!=1:raise ValueError('需要唯一锁定 Windows wheel：'+package)
         with ZipFile(wheels[0]) as z:z.extractall(site)
     (runtime/'python312._pth').write_text('python312.zip\n.\nLib/site-packages\n../src\nimport site\n',encoding='utf-8')
@@ -53,7 +53,7 @@ def main():
             z.writestr(info,file.read_bytes())
     digest=hashlib.sha256(archive.read_bytes()).hexdigest()
     (artifacts/(archive.name+'.sha256')).write_text(digest+'  '+archive.name+'\n')
-    shutil.copy2(destination/'BUILD_MANIFEST.json',artifacts/'WINDOWS_BUILD_MANIFEST.json')
+    shutil.copy2(destination/'BUILD_MANIFEST.json',artifacts/f'WINDOWS_BUILD_MANIFEST-{VERSION}.json')
     print(json.dumps(dict(archive=str(archive.relative_to(ROOT)),bytes=archive.stat().st_size,sha256=digest,commit=commit,windows_executed=False),indent=2))
 
 if __name__=='__main__':main()

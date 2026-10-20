@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..'),
-  out = path.join(root, 'artifacts', 'graph');
+  out = path.join(root, 'artifacts', 'graph', require('../package.json').version);
 (async () => {
   await fs.mkdir(out, { recursive: true });
   const app = await _electron.launch({
@@ -12,6 +12,9 @@ const root = path.resolve(__dirname, '..'),
   });
   const errors = [];
   try {
+    await app.evaluate(({ dialog }) => {
+      dialog.showMessageBox = async () => ({ response: 1 });
+    });
     const page = await app.firstWindow();
     page.on('pageerror', (e) => errors.push(e.message));
     await page.getByRole('button', { name: '空白工程', exact: false }).click();
@@ -48,6 +51,10 @@ const root = path.resolve(__dirname, '..'),
     await page.getByRole('button', { name: '计算', exact: true }).click();
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
     assert.ok((await page.locator('tbody').innerText()).includes('反向'));
+    assert.equal(await page.locator('.react-flow__minimap-node').count(), 2);
+    assert.ok(
+      Number(await page.locator('.react-flow__minimap-node').first().getAttribute('width')) > 0,
+    );
     await page.getByLabel('流量单位').selectOption('kg/h');
     assert.ok((await page.locator('thead').innerText()).includes('kg/h'));
     await page.screenshot({ path: path.join(out, '01-port-connected-reverse.png') });

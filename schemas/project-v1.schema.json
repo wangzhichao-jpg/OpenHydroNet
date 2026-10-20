@@ -19,7 +19,7 @@
     },
     "layout": {"type": "object", "additionalProperties": {"type": "object", "required": ["x", "y"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}}}},
     "scenarios": {"type": "array", "items": {"type": "object", "required": ["id", "name", "model", "result"]}},
-    "library": {"type": "array"},
+    "library": {"type": "array", "maxItems": 500, "items": {"type": "object", "required": ["id", "name", "kind", "parameters"], "properties": {"id": {"type": "string", "minLength": 1}, "name": {"type": "string"}, "kind": {"enum": ["pump", "valve"]}, "data_source": {"type": "string"}, "source_kind": {"enum": ["synthetic", "user", "manufacturer"]}, "parameters": {"type": "object"}}}},
     "preferences": {"type": "object"},
     "result_metadata": {"type": "object"}
   },

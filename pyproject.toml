@@ -4,11 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openhydronet"
-version = "0.1.0.dev1"
+version = "0.1.0.dev2"
 description = "Offline heating and cooling hydraulic network solver"
 requires-python = ">=3.12"
 license = {text = "Apache-2.0"}
-dependencies = ["numpy==2.4.3", "scipy==1.17.1"]
+dependencies = ["numpy==2.4.3", "scipy==1.17.1", "openpyxl==3.1.5", "et-xmlfile==2.0.0", "defusedxml==0.7.1"]
 
 [project.scripts]
 openhydronet = "openhydronet.cli:main"

@@ -1,4 +1,7 @@
-const { app, BrowserWindow, dialog, ipcMain } = require('electron');
+const { app, BrowserWindow, dialog, ipcMain, Menu, session } = require('electron');
+const { createDocumentController } = require('./document-controller.cjs');
+const { atomic, parseUtf8Json } = require('./storage.cjs');
+const { version: APP_VERSION } = require('../package.json');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -6,78 +9,151 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 app.setName('OpenHydroNet');
 if (process.env.OHN_PROFILE) app.setPath('userData', path.resolve(process.env.OHN_PROFILE));
+app.commandLine.appendSwitch('disable-background-networking');
+const primaryInstance = app.requestSingleInstanceLock();
 let backend,
   mainWindow,
   quitting = false,
+  quitApproved = false,
+  finalizing = false,
   connection;
-const safeName = (name) => path.basename(name).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
-async function atomic(file, content) {
-  const tmp = file + '.' + crypto.randomBytes(6).toString('hex') + '.tmp';
-  await fs.mkdir(path.dirname(file), { recursive: true });
-  try {
-    const handle = await fs.open(tmp, 'w');
-    try {
-      await handle.writeFile(content);
-      await handle.sync();
-    } finally {
-      await handle.close();
-    }
-    await fs.rename(tmp, file);
-  } finally {
-    await fs.rm(tmp, { force: true });
-  }
+let draftQueue = Promise.resolve(),
+  draftProtected = false;
+const flushRequests = new Map();
+function flushRenderer() {
+  if (!mainWindow || mainWindow.isDestroyed() || mainWindow.webContents.isLoadingMainFrame())
+    return Promise.resolve();
+  const id = crypto.randomUUID();
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      flushRequests.delete(id);
+      reject(Error('界面未响应保存请求；工程未退出，请先保存或检查界面状态'));
+    }, 3000);
+    flushRequests.set(id, () => {
+      clearTimeout(timer);
+      resolve();
+    });
+    mainWindow.webContents.send('ohn:flush-editor', id);
+  });
 }
+ipcMain.on('ohn:flushed', (event, id) => {
+  if (event.sender === mainWindow?.webContents) {
+    flushRequests.get(id)?.();
+    flushRequests.delete(id);
+  }
+});
+const documents = createDocumentController({
+  dialog,
+  getWindow: () => mainWindow,
+  atomic,
+  flushRenderer,
+});
+function requestExit() {
+  return documents
+    .requestQuit(async () => {
+      finalizing = true;
+      mainWindow?.setEnabled(false);
+      try {
+        await draftQueue.catch(() => {});
+        if (!draftProtected)
+          await fs.rm(path.join(app.getPath('userData'), 'recovery.ohn.json'), { force: true });
+        quitApproved = true;
+        quitting = true;
+        mainWindow?.destroy();
+        await stopBackend();
+        app.quit();
+      } catch (error) {
+        if (!quitApproved) {
+          finalizing = false;
+          mainWindow?.setEnabled(true);
+        }
+        throw error;
+      }
+    })
+    .catch((error) => dialog.showErrorBox('退出已取消', error.message));
+}
+const safeName = (name) => path.basename(name).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
 function setupIPC() {
   const guard = (event) => {
     if (!mainWindow || event.sender !== mainWindow.webContents) throw Error('拒绝未知窗口请求');
   };
-  ipcMain.handle('ohn:open', async (event) => {
+  ipcMain.handle('ohn:open', async (event, kind) => {
     guard(event);
     const { canceled, filePaths } = await dialog.showOpenDialog(mainWindow, {
-      title: '打开 OpenHydroNet 工程',
+      title: kind === 'library' ? '导入设备库 JSON（作为副本）' : '打开 OpenHydroNet 工程',
       filters: [{ name: 'OpenHydroNet 工程', extensions: ['json'] }],
       properties: ['openFile'],
     });
     if (canceled) return null;
     const stat = await fs.stat(filePaths[0]);
     if (stat.size > 5_000_000) throw Error('工程文件超过 5 MB');
-    return JSON.parse(await fs.readFile(filePaths[0], 'utf-8'));
+    return parseUtf8Json(await fs.readFile(filePaths[0]));
+  });
+  ipcMain.handle('ohn:import-table', async (event) => {
+    guard(event);
+    const r = await dialog.showOpenDialog(mainWindow, {
+      title: '选择 CSV / Excel 参数表',
+      filters: [{ name: 'CSV / Excel 参数表', extensions: ['csv', 'xlsx'] }],
+      properties: ['openFile'],
+    });
+    if (r.canceled || !r.filePaths.length) return null;
+    const file = r.filePaths[0],
+      format = path.extname(file).slice(1).toLowerCase();
+    if (!['csv', 'xlsx'].includes(format)) throw Error('仅支持 CSV/XLSX，不支持旧 XLS 或宏工作簿');
+    if ((await fs.stat(file)).size > 3_000_000) throw Error('参数表文件超过 3 MB，请拆分导入');
+    return {
+      name: path.basename(file),
+      format,
+      content_base64: (await fs.readFile(file)).toString('base64'),
+    };
   });
   ipcMain.handle('ohn:save', async (event, data) => {
     guard(event);
-    if (data?.format !== 'openhydronet' || data.schema_version !== 1) throw Error('工程版本无效');
-    const { canceled, filePath } = await dialog.showSaveDialog(mainWindow, {
-      title: '保存工程',
-      defaultPath: safeName(data.name || '工程') + '.ohn.json',
-      filters: [{ name: 'OpenHydroNet 工程', extensions: ['json'] }],
-    });
-    if (canceled) return false;
-    await atomic(filePath, JSON.stringify(data, null, 2) + '\n');
+    return documents.save(data);
+  });
+  ipcMain.handle('ohn:document-state', (event, data) => {
+    guard(event);
+    documents.update(data);
     return true;
+  });
+  ipcMain.handle('ohn:confirm-unsaved', (event, reason) => {
+    guard(event);
+    return documents.decision(String(reason || ''));
   });
   ipcMain.handle('ohn:draft', async (event, data) => {
     guard(event);
     const file = path.join(app.getPath('userData'), 'recovery.ohn.json');
     if (data === undefined) {
       try {
-        return JSON.parse(await fs.readFile(file, 'utf-8'));
+        if ((await fs.stat(file)).size > 5_000_000)
+          throw Error('恢复草稿超过 5 MB，请先手动备份并拆分');
+        const bytes = await fs.readFile(file);
+        await atomic(path.join(app.getPath('userData'), 'recovery.previous.ohn.json'), bytes);
+        return parseUtf8Json(bytes);
       } catch (e) {
         if (e.code === 'ENOENT') return null;
+        draftProtected = true;
         throw e;
       }
     }
+    if (finalizing) throw Error('正在退出，不再写入恢复草稿');
+    if (draftProtected)
+      throw Error('旧草稿读取/备份失败，暂不覆盖；请正式保存新工程并手动处理恢复文件');
     if (data?.format !== 'openhydronet') throw Error('草稿无效');
-    await atomic(file, JSON.stringify(data));
+    if (Buffer.byteLength(JSON.stringify(data), 'utf8') > 5_000_000)
+      throw Error('草稿超过 5 MB，请删除不需要的工况或拆分工程');
+    draftQueue = draftQueue.catch(() => {}).then(() => atomic(file, JSON.stringify(data)));
+    await draftQueue;
     return true;
   });
   ipcMain.handle('ohn:version', (event) => {
     guard(event);
-    return { version: '0.1.0-preview.1', protocol: 1 };
+    return { version: APP_VERSION, protocol: 1 };
   });
   ipcMain.handle('ohn:export', async (event, data) => {
     guard(event);
     if (
-      !['json', 'csv', 'html', 'pdf', 'svg', 'png'].includes(data.kind) ||
+      !['json', 'csv', 'html', 'pdf', 'svg', 'png', 'xlsx'].includes(data.kind) ||
       typeof data.content !== 'string' ||
       data.content.length > 20_000_000
     )
@@ -114,7 +190,11 @@ function setupIPC() {
     } else if (data.kind === 'png') {
       if (!data.content.startsWith('data:image/png;base64,')) throw Error('PNG 内容无效');
       await atomic(filePath, Buffer.from(data.content.split(',')[1], 'base64'));
-    } else await atomic(filePath, data.content);
+    } else
+      await atomic(
+        filePath,
+        data.kind === 'xlsx' ? Buffer.from(data.content, 'base64') : data.content,
+      );
     return true;
   });
 }
@@ -193,10 +273,28 @@ async function stopBackend() {
     if (backend.exitCode === null) backend.kill('SIGKILL');
   }
 }
+if (!primaryInstance) {
+  quitApproved = true;
+  quitting = true;
+  app.quit();
+}
+app.on('second-instance', () => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  }
+});
 app.whenReady().then(async () => {
+  if (!primaryInstance) return;
   try {
     setupIPC();
+    Menu.setApplicationMenu(null);
     const info = await startBackend();
+    const localOrigin = `http://127.0.0.1:${info.port}`;
+    session.defaultSession.webRequest.onBeforeRequest(
+      { urls: ['http://*/*', 'https://*/*'] },
+      (details, callback) => callback({ cancel: new URL(details.url).origin !== localOrigin }),
+    );
     mainWindow = new BrowserWindow({
       width: 1600,
       height: 1000,
@@ -211,7 +309,14 @@ app.whenReady().then(async () => {
         nodeIntegration: false,
         sandbox: true,
         webSecurity: true,
+        spellcheck: false,
       },
+    });
+    mainWindow.on('close', (event) => {
+      if (!quitApproved) {
+        event.preventDefault();
+        requestExit();
+      }
     });
     mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
     mainWindow.webContents.on('will-navigate', (event, url) => {
@@ -221,13 +326,17 @@ app.whenReady().then(async () => {
     await mainWindow.loadURL(`http://127.0.0.1:${info.port}/#token=${info.token}`);
   } catch (e) {
     dialog.showErrorBox('启动失败', e.message + '\n请检查随附 Python 运行时及构建说明。');
+    quitApproved = true;
+    quitting = true;
+    await stopBackend();
     app.quit();
   }
 });
-app.on('window-all-closed', () => app.quit());
+app.on('window-all-closed', () => {
+  if (!quitting) requestExit();
+});
 app.on('before-quit', (event) => {
-  if (quitting) return;
+  if (quitApproved) return;
   event.preventDefault();
-  quitting = true;
-  stopBackend().finally(() => app.quit());
+  requestExit();
 });

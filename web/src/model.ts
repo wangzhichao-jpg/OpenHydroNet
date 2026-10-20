@@ -10,7 +10,7 @@ export type Project = {
   library: any[];
   [key: string]: any;
 };
-export const uid = (prefix = 'N') => `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
+export const uid = (prefix = 'N') => `${prefix}-${crypto.randomUUID()}`;
 export const clone = <T>(v: T): T => structuredClone(v);
 export const emptyProject = (): Project => ({
   format: 'openhydronet',
@@ -107,6 +107,9 @@ export function splitEdge(p: Project, id: string, ratio = 0.5): Project {
   const n = clone(p),
     e = n.model.edges.find((e) => e.id === id);
   if (!e || !['pipe', 'resistance'].includes(e.kind)) throw Error('仅可拆分普通管道或等效阻力');
+  const quantity = e.kind === 'pipe' ? (e.length ?? 100) : e.resistance;
+  if (!Number.isFinite(quantity) || quantity <= 0)
+    throw Error('原管长或阻力无效，拒绝拆分；先修正参数，不自动改成默认值');
   const middle = uid(),
     tail = uid('E');
   const a = n.layout[e.source] || { x: 0, y: 0 },
@@ -129,8 +132,8 @@ export function splitEdge(p: Project, id: string, ratio = 0.5): Project {
     original_id: e.original_id || e.id,
   };
   if (e.kind === 'pipe') {
-    second.length = (e.length || 100) * (1 - ratio);
-    e.length = (e.length || 100) * ratio;
+    second.length = quantity * (1 - ratio);
+    e.length = quantity * ratio;
     if (e.local_mode !== 'ratio') {
       second.zeta = (e.zeta || 0) * (1 - ratio);
       e.zeta = (e.zeta || 0) * ratio;

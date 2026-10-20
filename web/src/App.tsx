@@ -11,6 +11,22 @@ import {
   applyNodeChanges,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { flushSync } from 'react-dom';
+import NumberField from './NumberField';
+import DeviceLibrary from './DeviceLibrary';
+import './workspaces.css';
+import TableImport from './TableImport';
+import { applyLibrary } from './library';
+import { persistable } from './document';
+import {
+  waterDensity,
+  flowFactor as getFlowFactor,
+  flowUnits,
+  unitLabel,
+  resultFlow,
+  compareFlows,
+} from './units';
+import { APP_VERSION } from './version';
 import { api, download } from './api';
 import {
   Project,
@@ -44,7 +60,7 @@ const symbols: Record<string, string> = {
   node: '●',
 };
 const fmt = (v: any, d = 3) =>
-  typeof v === 'number'
+  typeof v === 'number' && Number.isFinite(v)
     ? Number(v.toPrecision(d)).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
     : '—';
 const statusText: Record<string, string> = {
@@ -56,52 +72,6 @@ const statusText: Record<string, string> = {
   timeout: '计算超时',
 };
 
-function NumberField({
-  label,
-  unit,
-  value,
-  min = -Infinity,
-  max = Infinity,
-  strict = false,
-  onApply,
-  hint,
-}: any) {
-  const [text, setText] = useState(String(value ?? ''));
-  useEffect(() => setText(String(value ?? '')), [value]);
-  const n = Number(text);
-  const invalid = text === '' || !Number.isFinite(n) || (strict ? n <= min : n < min) || n > max;
-  return (
-    <label className="field">
-      <span>
-        {label}
-        <em>{unit}</em>
-      </span>
-      <input
-        type="text"
-        inputMode="decimal"
-        aria-label={label}
-        aria-invalid={invalid}
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onBlur={() => {
-          if (!invalid && n !== value) onApply(n);
-        }}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') e.currentTarget.blur();
-        }}
-      />
-      {invalid ? (
-        <small className="field-error">
-          请输入{Number.isFinite(min) ? (strict ? '大于 ' : '不小于 ') + min : ''}
-          {Number.isFinite(max) ? '，且不大于 ' + max : ''}的有限数
-        </small>
-      ) : (
-        hint && <small>{hint}</small>
-      )}
-    </label>
-  );
-}
-
 function Workbench() {
   const [history, setHistory] = useState<History>({
     past: [],
@@ -111,19 +81,24 @@ function Workbench() {
   const p = history.present;
   const pRef = useRef(p);
   pRef.current = p;
+  const [savedSignature, setSavedSignature] = useState(() => JSON.stringify(emptyProject()));
+  const savedRef = useRef(savedSignature);
+  savedRef.current = savedSignature;
+  const dirty = JSON.stringify(p) !== savedSignature;
   const [welcome, setWelcome] = useState(true),
     [examples, setExamples] = useState<Project[]>([]),
     [recovery, setRecovery] = useState<Project | null>(null),
     [wizard, setWizard] = useState(false);
-  const [selected, setSelected] = useState<string[]>([]),
+  const [selected, setSelection] = useState<string[]>([]),
     [result, setResult] = useState<any>(null),
     [resultSig, setResultSig] = useState(''),
     [issues, setIssues] = useState<any[]>([]),
-    [tab, setTab] = useState('results'),
+    [tab, setView] = useState('results'),
     [message, setMessage] = useState('从示例或向导开始，沿主路径完成第一次计算'),
     [busy, setBusy] = useState(false),
     [help, setHelp] = useState(false),
-    [advanced, setAdvanced] = useState(false);
+    [advanced, setAdvanced] = useState(false),
+    [importing, setImporting] = useState(false);
   const [tool, setTool] = useState('pipe'),
     [search, setSearch] = useState(''),
     [metric, setMetric] = useState('flow_m3_h'),
@@ -133,6 +108,15 @@ function Workbench() {
     [terminal, setTerminal] = useState(''),
     [fontScale, setFontScale] = useState(100);
   const [dragNodes, setDragNodes] = useState<any[] | null>(null);
+  const resultRef = useRef(result),
+    resultSigRef = useRef(resultSig);
+  resultRef.current = result;
+  resultSigRef.current = resultSig;
+  const documentEpoch = useRef(0),
+    epoch = documentEpoch.current;
+  const runRef = useRef(0);
+  const selectedRef = useRef(selected);
+  selectedRef.current = selected;
   const jobRef = useRef<any>(null),
     clipboard = useRef<any>(null),
     fileRef = useRef<HTMLInputElement>(null);
@@ -140,15 +124,25 @@ function Workbench() {
   const edit = useCallback((next: Project) => {
     setHistory((h) => commit(h, next));
   }, []);
-  const replace = useCallback(
-    (next: Project) => {
+  const loadDocument = useCallback(
+    (next: Project, saved = false) => {
+      ++runRef.current;
+      ++documentEpoch.current;
+      setImporting(false);
+      setBusy(false);
+      if (jobRef.current) {
+        api('jobs/' + jobRef.current.id, undefined, 'DELETE').catch(() => {});
+        jobRef.current = null;
+        setBusy(false);
+      }
+      setSavedSignature(saved ? JSON.stringify(next) : JSON.stringify(emptyProject()));
       setHistory({ past: [], present: next, future: [] });
-      setSelected([]);
+      setSelection([]);
       setResult(null);
       setResultSig('');
       setIssues([]);
       setWelcome(false);
-      setTimeout(() => rf.fitView({ padding: 0.18 }), 150);
+      setTimeout(() => rf.fitView({ padding: 0.18, maxZoom: 1.1 }), 150);
     },
     [rf],
   );
@@ -158,22 +152,11 @@ function Workbench() {
     p.model.edges.find((x) => selected.includes(x.id));
   const isNode = !!item && p.model.nodes.some((n) => n.id === item.id);
   const flowUnit = p.preferences.flow_unit || 'm3/h';
-  const t = p.model.fluid.temperature || 20;
-  const rho =
-    result?.fluid?.density_kg_m3 ||
-    1000 * (1 - ((t + 288.9414) / (508929.2 * (t + 68.12963))) * (t - 3.9863) ** 2);
-  const flowFactor: Record<string, number> = {
-    'm3/h': 3600,
-    'kg/h': 3600 * rho,
-    't/h': 3.6 * rho,
-    'L/s': 1000,
-  };
-  const unitLabel: Record<string, string> = {
-    'm3/h': 'm³/h',
-    'kg/h': 'kg/h',
-    't/h': 't/h',
-    'L/s': 'L/s',
-  };
+  const t = p.model.fluid.temperature ?? 20;
+  const rho = waterDensity(t);
+  const flowFactor: Record<string, number> = Object.fromEntries(
+    flowUnits.map((unit) => [unit, getFlowFactor(unit, rho)]),
+  );
   useEffect(() => {
     api('examples')
       .then(setExamples)
@@ -183,7 +166,7 @@ function Workbench() {
         const draft = window.desktop
           ? await window.desktop.draft()
           : JSON.parse(localStorage.getItem('ohn-draft') || 'null');
-        if (draft?.format === 'openhydronet') setRecovery(draft);
+        if (draft?.format === 'openhydronet') setRecovery(await api('check-project', draft));
       } catch {
         setMessage('恢复草稿读取失败；可打开上次保存的工程');
       }
@@ -192,7 +175,7 @@ function Workbench() {
   useEffect(() => {
     if (welcome) return;
     const timer = setTimeout(() => {
-      const draft = clone(p);
+      const draft = clone(persistable(p, resultRef.current, resultSigRef.current));
       if (window.desktop)
         window.desktop.draft(draft).catch(() => setMessage('自动保存失败，请手动保存工程'));
       else
@@ -207,13 +190,89 @@ function Workbench() {
   useEffect(() => {
     document.documentElement.style.fontSize = `${(fontScale / 100) * 14}px`;
   }, [fontScale]);
+  useEffect(() => {
+    if (!window.desktop) return;
+    const valid = !document.querySelector('.workspace [aria-invalid="true"]');
+    window.desktop
+      .documentState({ project: persistable(p, result, resultSig), dirty: dirty || !valid, valid })
+      .catch(() => {});
+  }, [p, dirty, result, resultSig]);
+  useEffect(() => {
+    if (window.desktop)
+      return window.desktop.onFlushEditor(async () => {
+        flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
+        const valid = !document.querySelector('.workspace [aria-invalid="true"]');
+        await window.desktop!.documentState({
+          project: persistable(pRef.current, resultRef.current, resultSigRef.current),
+          dirty: JSON.stringify(pRef.current) !== savedRef.current || !valid,
+          valid,
+        });
+      });
+    const handler = (event: BeforeUnloadEvent) => {
+      flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
+      if (
+        JSON.stringify(pRef.current) !== savedRef.current ||
+        document.querySelector('.workspace [aria-invalid="true"]')
+      ) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, []);
+  function rejectInvalidEditor() {
+    const invalid = document.querySelector('.workspace [aria-invalid="true"]') as HTMLElement;
+    if (!invalid) return false;
+    invalid.focus();
+    setMessage('请先修正未提交的无效参数；没有使用旧值冒充本次输入。');
+    return true;
+  }
+  function setSelected(ids: React.SetStateAction<string[]>) {
+    if (!rejectInvalidEditor()) setSelection(ids);
+  }
+  function setTab(next: React.SetStateAction<string>) {
+    if (!rejectInvalidEditor()) setView(next);
+  }
+  async function allowReplacement() {
+    if (
+      JSON.stringify(pRef.current) === savedRef.current &&
+      !document.querySelector('.workspace [aria-invalid="true"]')
+    )
+      return true;
+    const choice = window.desktop
+      ? await window.desktop.confirmUnsaved('是否切换工程？')
+      : window.confirm('当前工程尚未保存。确定放弃修改并切换？')
+        ? 'discard'
+        : 'cancel';
+    return choice === 'discard' || (choice === 'save' && (await save()));
+  }
+  async function replace(next: Project, saved = false) {
+    if (!(await allowReplacement())) return false;
+    loadDocument(next, saved);
+    return true;
+  }
   function updateItem(key: string, value: any) {
     const next = clone(p);
     const objects = [...next.model.nodes, ...next.model.edges];
     for (const id of selected) {
       const obj = objects.find((x) => x.id === id);
-      if (obj && ((isNode && next.model.nodes.includes(obj)) || obj.kind === item?.kind))
+      if (obj && ((isNode && next.model.nodes.includes(obj)) || obj.kind === item?.kind)) {
         obj[key] = value;
+        if (
+          obj.device_data &&
+          [
+            'curve',
+            'valid_flow',
+            'nominal_rpm',
+            'efficiency',
+            'kv',
+            'characteristic',
+            'rangeability',
+          ].includes(key)
+        )
+          obj.device_data.modified = true;
+      }
     }
     edit(next);
   }
@@ -227,43 +286,42 @@ function Workbench() {
   }
   async function open() {
     try {
+      if (!(await allowReplacement())) return;
       if (window.desktop) {
         const data = await window.desktop.open();
-        if (data) replace(await api('check-project', data));
+        if (data) loadDocument(await api('check-project', data), true);
       } else fileRef.current?.click();
     } catch (e: any) {
       setMessage('打开失败：' + e.message);
     }
   }
   async function save() {
+    if (rejectInvalidEditor()) return false;
+    const snapshot = clone(pRef.current);
     try {
-      const saved = {
-        ...p,
-        result_metadata:
-          result && !stale
-            ? {
-                input_hash: result.input_hash,
-                algorithm: result.algorithm,
-                version: result.version,
-                calculated_at: result.calculated_at,
-                residuals: result.residuals,
-              }
-            : undefined,
-      };
+      const saved = persistable(snapshot, resultRef.current, resultSigRef.current);
       if (window.desktop) {
-        const ok = await window.desktop.save(saved);
-        if (ok) setMessage('工程已原子保存；设备数据和布局随工程携带');
+        setMessage('正在原子保存当前工程快照…');
+        if (!(await window.desktop.save(saved))) {
+          setMessage('已取消保存，未改变磁盘工程');
+          return false;
+        }
+        setMessage('工程已原子保存；设备数据和布局随工程携带');
       } else {
-        await download(p.name + '.ohn.json', JSON.stringify(saved, null, 2));
-        setMessage('工程已导出；可使用“打开工程”重新载入');
+        await download(snapshot.name + '.ohn.json', JSON.stringify(saved, null, 2));
+        setMessage('已请求导出；浏览器不能确认磁盘写入，仍保留未保存保护，请核对下载文件');
       }
+      if (window.desktop) setSavedSignature(JSON.stringify(snapshot));
+      return true;
     } catch (e: any) {
       setMessage('保存失败：' + e.message);
+      return false;
     }
   }
   async function check() {
+    if (rejectInvalidEditor()) return;
     try {
-      const r = await api('validate', p.model);
+      const r = await api('validate', pRef.current.model);
       setIssues(r.issues);
       setTab('issues');
       setMessage(
@@ -276,18 +334,25 @@ function Workbench() {
     }
   }
   async function calculate() {
-    if (busy) return;
+    if (busy || rejectInvalidEditor()) return;
+    const run = ++runRef.current,
+      owner = crypto.randomUUID();
     setBusy(true);
     setMessage('正在独立进程中计算，可继续编辑或取消任务');
-    const model = clone(p.model),
+    const model = clone(pRef.current.model),
       sig = JSON.stringify(model);
     try {
-      const job = await api('jobs', model);
+      const job = await api('jobs', { model, owner });
+      if (run !== runRef.current) {
+        api('jobs/' + job.id, undefined, 'DELETE').catch(() => {});
+        return;
+      }
       jobRef.current = job;
       const poll = async () => {
-        if (jobRef.current?.id !== job.id) return;
+        if (run !== runRef.current || jobRef.current?.id !== job.id) return;
         try {
           const j = await api('jobs/' + job.id);
+          if (run !== runRef.current || jobRef.current?.id !== job.id) return;
           if (j.status === 'running') {
             setTimeout(poll, 150);
             return;
@@ -301,7 +366,13 @@ function Workbench() {
           setResult(j.result);
           setResultSig(sig);
           setIssues(j.result.issues || []);
-          setTab(j.result.status === 'invalid_model' ? 'issues' : 'results');
+          setTab((current) =>
+            current === 'library'
+              ? current
+              : j.result.status === 'invalid_model'
+                ? 'issues'
+                : 'results',
+          );
           setMessage(
             (statusText[j.result.status] || j.result.status) +
               (JSON.stringify(pRef.current.model) !== sig
@@ -309,18 +380,27 @@ function Workbench() {
                 : '；点击管段或表格查看详情'),
           );
         } catch (e: any) {
-          setBusy(false);
-          setMessage('任务查询失败：' + e.message);
+          if (run === runRef.current) {
+            setBusy(false);
+            setMessage('任务查询失败：' + e.message);
+          }
         }
       };
       poll();
     } catch (e: any) {
-      setBusy(false);
-      setMessage('计算启动失败：' + e.message);
+      if (run === runRef.current) {
+        setBusy(false);
+        setMessage('计算启动失败：' + e.message);
+      }
     }
   }
   async function cancel() {
-    if (!jobRef.current) return;
+    const cancellation = ++runRef.current;
+    if (!jobRef.current) {
+      setBusy(false);
+      setMessage('已取消本次启动意图；收到任务 ID 后将请求终止进程');
+      return;
+    }
     const id = jobRef.current.id;
     try {
       await api('jobs/' + id, undefined, 'DELETE');
@@ -328,31 +408,51 @@ function Workbench() {
       setBusy(false);
       setMessage('已请求终止计算进程');
     } catch (e: any) {
-      setMessage('取消失败：' + e.message);
+      if (runRef.current === cancellation) {
+        jobRef.current = null;
+        setBusy(false);
+        setMessage('取消状态未确认：' + e.message + '；旧任务可能仍在执行，服务端有超时终止保护');
+      }
     }
   }
   async function exportResult(kind: string) {
-    if (!result?.edges || stale) {
+    if (rejectInvalidEditor()) return;
+    if (kind !== 'parameters-xlsx' && (!result?.edges || stale)) {
       setMessage('请先对当前输入完成一次有效计算，再导出结果');
       return;
     }
     try {
+      setMessage('正在生成导出文件…');
       const content = await api('export', {
         project: p,
         result,
         kind: kind === 'pdf' ? 'html' : kind,
       });
-      await download(
-        p.name + (kind === 'csv' ? '.csv' : kind === 'pdf' ? '.pdf' : '.html'),
-        content,
-        kind,
+      const exported = await download(
+        p.name +
+          (kind.endsWith('xlsx')
+            ? (kind === 'parameters-xlsx' ? '·输入参数' : '·计算结果') + '.xlsx'
+            : kind === 'csv'
+              ? '.csv'
+              : kind === 'pdf'
+                ? '.pdf'
+                : '.html'),
+        kind.endsWith('xlsx') ? content.content_base64 : content,
+        kind.endsWith('xlsx') ? 'xlsx' : kind,
       );
-      setMessage('导出完成：包含当前输入归属及计算信息');
+      setMessage(
+        exported === false
+          ? '已取消导出，没有写入文件'
+          : window.desktop
+            ? '导出完成：包含所选输入快照的归属及计算信息'
+            : '已请求导出，请确认浏览器下载文件',
+      );
     } catch (e: any) {
       setMessage('导出失败：' + e.message);
     }
   }
   function snapshot() {
+    if (rejectInvalidEditor()) return;
     if (!result?.edges || stale) {
       setMessage('请先计算当前工况');
       return;
@@ -371,12 +471,21 @@ function Workbench() {
   }
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.matches('input,textarea,select')) return;
       const ctrl = e.ctrlKey || e.metaKey;
-      if (ctrl && e.key === 's') {
+      if (ctrl && e.key.toLowerCase() === 's') {
         e.preventDefault();
+        flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
         save();
-      } else if (ctrl && e.key === 'z') {
+        return;
+      }
+      if (e.key === 'F5') {
+        e.preventDefault();
+        flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
+        calculate();
+        return;
+      }
+      if ((e.target as HTMLElement)?.matches('input,textarea,select')) return;
+      if (ctrl && e.key === 'z') {
         e.preventDefault();
         setHistory(e.shiftKey ? redo : undo);
       } else if (ctrl && e.key === 'y') {
@@ -407,18 +516,21 @@ function Workbench() {
   const select = useCallback((id: string) => setSelected([id]), []);
   const selectionChange = useCallback(({ nodes, edges }: any) => {
     const ids = [...nodes, ...edges].map((x) => x.id).sort();
-    setSelected((old) => ([...old].sort().join('|') === ids.join('|') ? old : ids));
+    setSelected((old) => (JSON.stringify([...old].sort()) === JSON.stringify(ids) ? old : ids));
   }, []);
   const rfNodes = useMemo(
     () =>
       p.model.nodes.map((n) => ({
         id: n.id,
         type: 'junction',
+        width: 40,
+        height: 40,
         position: p.layout[n.id] || { x: 0, y: 0 },
         selected: selected.includes(n.id),
         data: {
           name: n.name || n.id,
           fixed: n.head != null,
+          labels,
           showValue: labels && result && !stale,
           value: result?.nodes?.[n.id]
             ? fmt(result.nodes[n.id].pressure_pa_gauge / 1000) + ' kPa(g)'
@@ -493,7 +605,7 @@ function Workbench() {
             value:
               r && !stale
                 ? (r.flow_m3_s < 0 ? '← ' : '') +
-                  fmt(r.flow_m3_s * flowFactor[flowUnit]) +
+                  fmt(resultFlow(result, e.id, flowUnit)) +
                   ' ' +
                   unitLabel[flowUnit]
                 : '',
@@ -572,7 +684,7 @@ function Workbench() {
         const a = p.layout[e.source],
           b = p.layout[e.target];
         if (!a || !b) return '';
-        return `<path d="M${a.x + 20},${a.y + 20} L${b.x + 20},${a.y + 20} L${b.x + 20},${b.y + 20}" stroke="#2583ad" stroke-width="3" fill="none"/><text x="${(a.x + b.x) / 2 + 25}" y="${(a.y + b.y) / 2 + 10}">${esc(e.name || e.id)} ${result && !stale ? esc(fmt(result.edges[e.id]?.flow_m3_s * flowFactor[flowUnit]) + ' ' + unitLabel[flowUnit]) : ''}</text>`;
+        return `<path d="M${a.x + 20},${a.y + 20} L${b.x + 20},${a.y + 20} L${b.x + 20},${b.y + 20}" stroke="#2583ad" stroke-width="3" fill="none"/><text x="${(a.x + b.x) / 2 + 25}" y="${(a.y + b.y) / 2 + 10}">${esc(e.name || e.id)} ${result && !stale ? esc(fmt(resultFlow(result, e.id, flowUnit)) + ' ' + unitLabel[flowUnit]) : ''}</text>`;
       })
       .join('')}${p.model.nodes
       .map((n) => {
@@ -615,6 +727,8 @@ function Workbench() {
     max = Infinity,
     hint = '',
     strict = false,
+    integer = false,
+    optional = false,
   ) => (
     <NumberField
       key={key}
@@ -624,6 +738,8 @@ function Workbench() {
       min={min}
       max={max}
       strict={strict}
+      integer={integer}
+      optional={optional}
       hint={hint}
       onApply={(v: number) => updateItem(key, v)}
     />
@@ -639,10 +755,10 @@ function Workbench() {
           <b>OpenHydroNet</b>
           <span>供热与空调水系统工作台</span>
         </div>
-        <span className="version">预览版 0.1</span>
+        <span className="version">{APP_VERSION}</span>
         <div className="project-title">
           {p.name}
-          <small>离线工程 · SI 计算内核</small>
+          <small>{dirty ? '未保存修改 · ' : ''}离线工程 · SI 计算内核</small>
         </div>
         <button onClick={() => setWelcome(true)}>新建 / 模板</button>
         <button onClick={open}>打开工程</button>
@@ -805,7 +921,7 @@ function Workbench() {
               ↷
             </button>
             <span className="divider" />
-            <button onClick={() => rf.fitView({ padding: 0.18 })}>适配画布</button>
+            <button onClick={() => rf.fitView({ padding: 0.18, maxZoom: 1.1 })}>适配画布</button>
             <button onClick={() => edit(alignItems(p, selected, 'y'))}>水平对齐</button>
             <button onClick={() => edit(alignItems(p, selected, 'x'))}>垂直对齐</button>
             <button onClick={() => edit(alignItems(p, selected, 'distribute'))}>等距分布</button>
@@ -871,6 +987,21 @@ function Workbench() {
               selectionOnDrag
               panOnDrag={[1, 2]}
               multiSelectionKeyCode="Shift"
+              ariaLabelConfig={{
+                'node.a11yDescription.default':
+                  '按 Enter 选中节点，方向键移动图形，Escape 取消选择。',
+                'node.a11yDescription.keyboardDisabled': '按 Enter 选中节点，Escape 取消选择。',
+                'node.a11yDescription.ariaLiveMessage': ({ direction, x, y }) =>
+                  `节点已向${({ left: '左', right: '右', up: '上', down: '下' } as Record<string, string>)[direction] || direction}移动至画布坐标 ${x.toFixed(0)}, ${y.toFixed(0)}；物理参数未改变。`,
+                'edge.a11yDescription.default': '按 Enter 选中支路，Escape 取消选择。',
+                'controls.ariaLabel': '画布视图控制',
+                'controls.zoomIn.ariaLabel': '放大画布',
+                'controls.zoomOut.ariaLabel': '缩小画布',
+                'controls.fitView.ariaLabel': '适配全部图形',
+                'controls.interactive.ariaLabel': '切换图形编辑锁定',
+                'minimap.ariaLabel': '管网缩略图',
+                'handle.ariaLabel': '设备连接端口',
+              }}
               fitView
               minZoom={0.2}
               maxZoom={2.5}
@@ -879,6 +1010,7 @@ function Workbench() {
               <Background gap={20} size={1} color="#cfdce8" />
               <Controls showInteractive={false} />
               <MiniMap
+                style={{ width: 140, height: 90 }}
                 nodeColor={(n) => (n.data.fixed ? '#188f89' : '#6486a4')}
                 maskColor="#e9eff688"
                 pannable
@@ -922,15 +1054,22 @@ function Workbench() {
               </div>
             )}
           </div>
-          <section className="bottom-panel">
+          <section className={'bottom-panel' + (tab === 'library' ? ' library-panel' : '')}>
             <div className="tabbar">
               {[
                 ['results', '计算结果'],
                 ['pressure', '水压图'],
                 ['issues', `问题列表 ${issues.length || ''}`],
                 ['compare', '工况对比'],
+                ['library', '设备库 / 曲线'],
               ].map(([id, label]) => (
-                <button key={id} className={tab === id ? 'active' : ''} onClick={() => setTab(id)}>
+                <button
+                  key={id}
+                  className={tab === id ? 'active' : ''}
+                  onClick={() => {
+                    if (!rejectInvalidEditor()) setTab(id);
+                  }}
+                >
                   {label}
                 </button>
               ))}
@@ -949,6 +1088,35 @@ function Workbench() {
               </div>
             )}
             <div className="bottom-content">
+              {tab === 'library' && (
+                <DeviceLibrary
+                  key={epoch}
+                  project={p}
+                  selectedDevices={selected}
+                  onMutate={(fn: any) => {
+                    if (documentEpoch.current !== epoch) return false;
+                    const next = clone(pRef.current);
+                    fn(next);
+                    if (next.library.length > 500) {
+                      setMessage('设备库最多 500 项，请拆分；未覆盖原库');
+                      return false;
+                    }
+                    edit(next);
+                    return true;
+                  }}
+                  onApply={(entry: any, baseline: string, ids: string[]) => {
+                    if (rejectInvalidEditor()) throw Error('存在未提交的无效参数，未应用旧值');
+                    if (
+                      documentEpoch.current !== epoch ||
+                      JSON.stringify(pRef.current) !== baseline ||
+                      JSON.stringify(selectedRef.current) !== JSON.stringify(ids)
+                    )
+                      throw Error('校验期间工程或选择已变化，请重新应用；未覆盖当前输入');
+                    edit(applyLibrary(pRef.current, ids, entry));
+                    setMessage('设备数据副本已应用，保留稳定 ID、连接和运行设置');
+                  }}
+                />
+              )}
               {tab === 'results' &&
                 (result?.edges ? (
                   <>
@@ -976,18 +1144,20 @@ function Workbench() {
                                 {e.name || e.id}
                                 <small> {e.id}</small>
                               </td>
-                              <td>{fmt(r?.flow_m3_s * flowFactor[flowUnit], 5)}</td>
+                              <td>{fmt(resultFlow(result, e.id, flowUnit), 5)}</td>
                               <td>{fmt(r?.velocity_m_s)}</td>
                               <td>{fmt(r?.head_drop_m, 5)}</td>
                               <td>{fmt(r?.hydraulic_power_w)}</td>
                               <td>
-                                {r?.state === 'closed'
-                                  ? '关闭'
-                                  : r?.state === 'closed_check'
-                                    ? '止回关闭'
-                                    : r?.flow_m3_s < 0
-                                      ? '← 反向'
-                                      : '→ 正向'}
+                                {!r
+                                  ? '无对应结果'
+                                  : r?.state === 'closed'
+                                    ? '关闭'
+                                    : r?.state === 'closed_check'
+                                      ? '止回关闭'
+                                      : r?.flow_m3_s < 0
+                                        ? '← 反向'
+                                        : '→ 正向'}
                               </td>
                             </tr>
                           );
@@ -1021,12 +1191,18 @@ function Workbench() {
                     </select>
                     <span>H 为测压水头，不是总水头；供回水沿完整循环路径排列。</span>
                   </div>
-                  <PressureChart
-                    project={p}
-                    result={result}
-                    terminal={terminal}
-                    onSelect={locate}
-                  />
+                  {stale ? (
+                    <div className="empty-state">
+                      当前输入已变化，暂不混合新标高与旧水头绘图；请重新计算。
+                    </div>
+                  ) : (
+                    <PressureChart
+                      project={p}
+                      result={result}
+                      terminal={terminal}
+                      onSelect={locate}
+                    />
+                  )}
                 </>
               )}
               {tab === 'issues' &&
@@ -1082,7 +1258,22 @@ function Workbench() {
                         恢复该工况输入
                       </button>
                     )}
-                    <small>快照保存完整物理输入和结果；不是动态模拟。</small>
+                    {compared && (
+                      <button
+                        className="danger"
+                        onClick={() => {
+                          if (rejectInvalidEditor()) return;
+                          const next = clone(p);
+                          next.scenarios = next.scenarios.filter((s) => s.id !== comparison);
+                          edit(next);
+                          setComparison('');
+                          setMessage('已删除所选快照，可撤销；当前物理输入未改变');
+                        }}
+                      >
+                        删除所选快照
+                      </button>
+                    )}
+                    <small>快照保存完整输入/结果。质量流量按各自密度换算；不是动态模拟。</small>
                   </div>
                   {compared && result?.edges ? (
                     <table>
@@ -1097,18 +1288,17 @@ function Workbench() {
                       </thead>
                       <tbody>
                         {p.model.edges.map((e) => {
-                          const old = compared.result.edges[e.id]?.flow_m3_s,
-                            now = result.edges[e.id]?.flow_m3_s;
+                          const values = compareFlows(compared.result, result, e.id, flowUnit);
                           return (
                             <tr key={e.id} onClick={() => locate(e.id)}>
                               <td>{e.name || e.id}</td>
-                              <td>{fmt(old * flowFactor[flowUnit])}</td>
-                              <td>{fmt(now * flowFactor[flowUnit])}</td>
-                              <td>{fmt((now - old) * flowFactor[flowUnit])}</td>
+                              <td>{fmt(values.baseline)}</td>
+                              <td>{fmt(values.current)}</td>
+                              <td>{fmt(values.delta)}</td>
                               <td>
-                                {Math.abs(old) > 1e-12
-                                  ? fmt(((now - old) / Math.abs(old)) * 100) + '%'
-                                  : '基准为零 / 不可比'}
+                                {values.percent !== undefined
+                                  ? fmt(values.percent) + '%'
+                                  : '基准为零或缺数据 / 不可比'}
                               </td>
                             </tr>
                           );
@@ -1146,6 +1336,15 @@ function Workbench() {
                     <small>稳定 ID · {item.id}</small>
                   </div>
                 </div>
+                {item.device_data && (
+                  <div className="tip">
+                    库来源：{item.device_data.name} · {item.device_data.data_source}
+                    <br />
+                    {item.device_data.modified
+                      ? '有手工覆盖，请复核当前参数'
+                      : '参数副本随工程保存，不依赖库条目仍然存在'}
+                  </div>
+                )}
                 <label className="field">
                   <span>名称</span>
                   <input
@@ -1269,7 +1468,13 @@ function Workbench() {
                         <div className="button-row">
                           <button
                             onClick={() => {
-                              edit(splitEdge(p, item.id));
+                              if (rejectInvalidEditor()) return;
+                              try {
+                                edit(splitEdge(p, item.id));
+                              } catch (error: any) {
+                                setMessage(error.message);
+                                return;
+                              }
                               setMessage('已按 50% 拆分长度及局部阻力；总物理长度不变，可撤销');
                             }}
                           >
@@ -1277,7 +1482,13 @@ function Workbench() {
                           </button>
                           <button
                             onClick={() => {
-                              edit(insertDevice(p, item.id, 'valve'));
+                              if (rejectInvalidEditor()) return;
+                              try {
+                                edit(insertDevice(p, item.id, 'valve'));
+                              } catch (error: any) {
+                                setMessage(error.message);
+                                return;
+                              }
                               setMessage('已在管段中插入阀门；原管长与局部阻力分摊保留');
                             }}
                           >
@@ -1305,6 +1516,31 @@ function Workbench() {
                           1,
                           20,
                           '整数台数，假设同型同速并联',
+                          false,
+                          true,
+                        )}
+                        {field(
+                          'nominal_rpm',
+                          '基准曲线额定转速',
+                          'rpm，可留空',
+                          item.nominal_rpm ?? '',
+                          0,
+                          Infinity,
+                          '只声明曲线基准，不自动重算系数；未知时仅使用相对转速',
+                          true,
+                          false,
+                          true,
+                        )}
+                        {item.nominal_rpm > 0 && (
+                          <NumberField
+                            label="实际转速"
+                            unit="rpm"
+                            value={(item.speed ?? 1) * item.nominal_rpm}
+                            min={0}
+                            max={item.nominal_rpm * 2}
+                            onApply={(v: number) => updateItem('speed', v / item.nominal_rpm)}
+                            hint="由实际转速 / 基准额定转速换算相对转速"
+                          />
                         )}
                         <div className="formula">H(Q,n,k) = n² H₀(Q / kn)</div>
                         {(item.curve || [25, 0, -50000]).map((c: number, i: number) => (
@@ -1330,6 +1566,8 @@ function Workbench() {
                               0,
                               1,
                               '没有数据请留空；仅输出水力功率',
+                              true,
+                              false,
                               true,
                             )}
                             <button onClick={() => updateItem('efficiency', null)}>
@@ -1482,8 +1720,7 @@ function Workbench() {
                         <p>
                           流量{' '}
                           <b>
-                            {fmt(result.edges?.[item.id]?.flow_m3_s * flowFactor[flowUnit])}{' '}
-                            {unitLabel[flowUnit]}
+                            {fmt(resultFlow(result, item.id, flowUnit))} {unitLabel[flowUnit]}
                           </b>
                         </p>
                         <p>
@@ -1569,17 +1806,32 @@ function Workbench() {
                 <option value="head_drop_m">测压水头差 [m]</option>
               </select>
             </label>
-            <label className="field">
-              <span>
-                色标上限 <em>留空为自动</em>
-              </span>
-              <input
-                aria-label="色标上限"
-                placeholder="自动"
-                value={manualMax}
-                onChange={(e) => setManualMax(e.target.value)}
-              />
-            </label>
+            <NumberField
+              label="色标上限"
+              unit={metric === 'flow_m3_h' ? 'm³/h' : metric === 'velocity_m_s' ? 'm/s' : 'm'}
+              value={manualMax}
+              min={0}
+              strict
+              optional
+              hint="留空使用自动色标；必须为正数，不把非法值改成默认值"
+              onApply={(v: number | null) => setManualMax(v == null ? '' : String(v))}
+            />
+            <div className="button-row">
+              <button onClick={() => setTab('library')}>设备库 / 泵曲线</button>
+              <button
+                onClick={() => {
+                  if (!rejectInvalidEditor()) setImporting(true);
+                }}
+              >
+                导入参数表
+              </button>
+            </div>
+            <div className="button-row">
+              <button onClick={() => exportResult('parameters-xlsx')}>参数 Excel</button>
+              <button disabled={!result?.edges || stale} onClick={() => exportResult('xlsx')}>
+                结果 Excel
+              </button>
+            </div>
             <div className="button-row">
               <button onClick={() => exportGraph('svg')}>导出 SVG</button>
               <button onClick={() => exportGraph('png')}>导出 PNG</button>
@@ -1628,7 +1880,7 @@ function Workbench() {
         onChange={async (e) => {
           try {
             const f = e.target.files?.[0];
-            if (f) replace(await api('check-project', JSON.parse(await f.text())));
+            if (f) loadDocument(await api('check-project', JSON.parse(await f.text())), true);
           } catch (err: any) {
             setMessage('工程读取失败：' + err.message);
           }
@@ -1697,11 +1949,21 @@ function Workbench() {
           </section>
         </div>
       )}
+      {importing && (
+        <TableImport
+          getProject={() => clone(pRef.current)}
+          onApply={(next: Project) => {
+            edit(next);
+            setMessage('参数表已按预览整体应用；可撤销，旧结果已标记过期');
+          }}
+          onClose={() => setImporting(false)}
+        />
+      )}
       {wizard && (
         <Wizard
           onClose={() => setWizard(false)}
-          onBuild={(next) => {
-            replace(next);
+          onBuild={async (next) => {
+            if (!(await replace(next))) return;
             setWizard(false);
             setMessage('向导已建立最小闭式循环。下一步检查参数，再点击计算。');
           }}

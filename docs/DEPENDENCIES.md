@@ -168,6 +168,7 @@
 - Python 3.12.10 embeddable：PSF License，Windows 便携包保留其 LICENSE.txt。Linux 开发验证为 Python 3.12.3。
 - NumPy 2.4.3：BSD-3-Clause；Windows wheel 内含捆绑库声明，原样保留 dist-info/licenses 及 numpy.libs。
 - SciPy 1.17.1：BSD-3-Clause；wheel 的 OpenBLAS、LAPACK、GCC 运行时等许可声明原样随包保留，不将主包 BSD 许可替代捆绑组件声明。
+- openpyxl 3.1.5 与 et-xmlfile 2.0.0：MIT；defusedxml 0.7.1：PSFL（Python Software Foundation License），Windows 包原样保留各 wheel 的 dist-info 许可。数据表仅本地读取，不执行公式；三份通用 wheel 的来源和 SHA-256 见 requirements.lock 及对应构建清单。
 - Electron 44.9.1：MIT；Chromium 等多许可证，便携包必须保留根目录 LICENSE 和 LICENSES.chromium.html。
 - React、React DOM、React Flow：MIT，分发包保留合并第三方声明，界面保留 React Flow attribution。
 - FFmpeg、eSpeak NG 和 Noto 字体仅用于本地视频制作，不打入软件运行时。FFmpeg 构建启用 libx264，视频制作环境的工具许可证不等同于软件产品采用 GPL；不分发其工具二进制。字体为 SIL OFL，系统字体仅渲染成画面，不嵌入安装包。eSpeak NG 合成输出为本项目原创文本的音频。
