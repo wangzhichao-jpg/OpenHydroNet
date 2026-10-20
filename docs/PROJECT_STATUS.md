@@ -1,38 +1,59 @@
-# 项目执行状态
+# 项目状态与无损续作入口
 
-版本：0.1.0-preview.1（开发预览，不能称为全面覆盖或正式成品）。
+版本：`0.1.0-preview.1`。这是可运行开发预览，不是既定 A/B/C 全部完成，也不是已全面超过 HACNet 的正式版。
 
-## 已实际完成（截至首轮内核测试）
-- 完整读取用户说明书正文 109 个 body 结构块及 10 张嵌入截图；没有独立 Word 表格。
-- 私有提取物隔离在 `.local/reference/`，不发布原文和截图。
-- 建立 H01–H31、X01–X05 覆盖矩阵及 ADR。
-- 独立 Python 内核：节点守恒、测压水头、Darcy/Haaland/层流/过渡、两类局阻、直接阻力、泵曲线/变速/同型并联、Kv 阀、定阻末端/理想流控、关闭拓扑和止回互补关系、定压与分量检查、稀疏求解及未缩放残差。
-- 开放 JSON 工程 v1、原子保存、版本拒绝、CLI、稳态扫描、局部有界可及性搜索、有限差分敏感性、单线对称展开（后四项为 Python API/CLI，尚不能等同于完成全部桌面工作流）。
-- React Flow 中文工作台已构建：模板/向导、属性、结果表/水压图/问题定位、工况快照与比较、撤销重做/拆分/复制等命令、Electron 进程与文件接口。
+## 已落实的可运行基线
 
-## 已执行验证
-- `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`：36 passed（2.38 s）。
-- `npm run build`：TypeScript + Vite 成功。
-- `npm run test:commands`：7 passed。
-- 已启动 systemd 用户任务 `openhydronet-ui-test.service`，运行真实 Electron 界面端到端测试；结果和截图仍待检查，不能先写通过。
+- 全文读取说明书 109 个结构块及 10 张嵌入截图；Word 原生表格 0。来源证据在 `.local/reference/` 私有隔离，公开索引 `docs/REFERENCE_AUDIT.md`。
+- H01–H31、X01–X05 覆盖矩阵已按真实完成度审计；歧义与未明确算法没有伪称还原。
+- 独立 Python/SciPy 内核和 CLI：守恒、Darcy、层流/过渡/湍流、局阻/直接阻力、变速/并联泵、Kv 阀、定阻末端/理想流控、止回/关闭、定压/漏补水、稀疏/阻尼/残差。
+- React Flow + Electron 中文离线工作台：欢迎/示例/向导、拖放/端口连接、上下文属性、检查/计算/取消/结果过期、着色/表/问题定位/水压图、工况快照/差值/比例、撤销/复制/拆分/插阀/布局。
+- 公开工程 v1、JSON Schema、原子保存/草稿、桌面保存重开、CSV/PDF/SVG/PNG 实际导出。
+- API：对称单线展开映射、独立稳态扫描、有界局部可及性搜索、中心差分敏感性。专用桌面分析工作流仍不完整。
+- 中文 README/手册/模型说明/构建文档、Apache-2.0、依赖清单、贡献/问题模板、CI 配置；CI 尚未在远端执行。
 
-## 当前续作入口
-工作目录即仓库根目录。
-```
-systemctl --user show openhydronet-ui-test.service -p ActiveState -p ExecMainStatus
-# 用 read 工具检查 .local/logs/ui-test.log
-PYTHONPATH=src python3 -m openhydronet.cli solve examples/closed-loop.ohn.json
+## 实际验证
+
+- `PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`：**40 passed，4.66 s**。
+- `npm run test:commands`：**7 passed**；`npm run format:check` 全部匹配。
+- `npm run build`：TypeScript + Vite 6.4.4 成功。
+- **Electron 44.9.1** 下 `tests/ui.e2e.cjs`：模板→计算→水压图→改管径/泵速→过期保护→工况对比→实际保存重开→CSV/PDF→拆分撤销通过。
+- 同版本 `tests/ui.graph.cjs`：真实鼠标设备拖放、端口连接、反向流动、质量流量单位、复制粘贴/撤销、PNG/SVG 实际文件通过。
+- 公开基准 25/100/400 节点：约 0.038/0.295/1.110 s；残差和独立线性水头解析误差通过。机器/内存/误差见 `docs/VALIDATION.md`。
+- 完整 `npm audit`（含实际分发的 Electron）：**0 已知通告**。初版 38.2.0 的 7 项告警触发升级；旧包已移入 `.local/superseded-e0a9313/`，不得推荐分发。零通告不等于完整安全保证。
+- 静态隐私/包结构审计工具 `tools/release_audit.py` 已建立；最终产物完成后重跑。
+
+## 当前在推进的实际产物
+
+Windows 运行时已从国内镜像下载并校验：Electron 44.9.1、CPython 3.12.10、NumPy 2.4.3、SciPy 1.17.1。下一步按干净提交组装实际 zip；**本环境没有 Windows/Wine，尚未原生运行验收**。
+
+两条视频已有中文分镜/旁白和可复跑本地流程：`media/storyboards.json`、`media/*-narration.md`、`tools/record_video.cjs`、`tools/render_videos.py`。旧录制因安全升级已暂停隔离，下一步从新基线重新录制。仅脚本不算最终 MP4 已交付，实际状态见 `media/README.md` 和构建后的审计补充。
+
+## 精确执行入口
+
+在仓库根目录：
+```bash
 npm run build
+npm run desktop
+PYTHONPATH=src python3 -m openhydronet.cli solve examples/closed-loop.ohn.json
+PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q
+npm run test:commands
 xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:graph
+python3 tools/release_audit.py
 ```
-若用户任务仍在运行，不重复启动。中止必须 `systemctl --user stop UNIT` 并确认进程退出。
 
-## 尚未交付 / 未验证
-- 真实界面截图审查与端到端流程结果待检查。
-- Windows 实际便携/安装包与 Windows 运行验证未完成。
-- GitHub/Gitee 未创建或推送；未确认账号/组织及目标仓库，不能声称已发布。
-- 两条正式 MP4 视频尚未制作，不能用脚本替代。
-- 设备库完整编辑、Excel 字段映射导入、复杂子网、热量混合/时间状态控制动态、受约束平衡优化等仍未完整实现。
-- 用户手册、公式说明、依赖许可证审计、性能实测报告及最终矩阵审计仍在推进。
+依赖：当前系统 Python 已有锁定科学计算包；其他环境按 README 建虚拟环境。Electron 44 采用懒安装，首次测试前应明确执行 `ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run setup:desktop`，避免多个任务各自触发下载。
 
-此状态是断点，不是总项目完成声明。后续应先读取日志、修复真实运行问题，再继续扩展并更新矩阵及验证记录。
+长任务都使用 `systemd-run --user` 与 `.local/*.lock`。日志 `.local/logs/`。重试前检查 `systemctl --user show UNIT -p ActiveState -p ExecMainStatus`，中止必须 `systemctl --user stop UNIT` 并确认退出。不要以工具超时判断进程已停止。
+
+## 不可隐瞒的缺口
+
+1. Windows 原生运行、中文路径/高 DPI、退出未保存确认、崩溃注入和长期稳定性未完成。
+2. 完整泵阀库/曲线 UI、桌面单线映射/供回筛选、子网/注释、Excel 映射导入/XLSX、完整桌面可及性未完成。
+3. 平衡/能耗优化、稳态热输送混合、带状态控制/热动态未完成。扫描不是动态；水锤/CFD 未实现且非默认范围。
+4. 密集/近距离节点在高倍缩放时可能标签重叠；已有缩小时隐藏边标签策略，但没有智能全图避让。底部面板暂不能拖动调整高度。
+5. GitHub/Gitee **未发布**；用户最小待确认是两边账号/组织及仓库位置，并在本机完成安全认证，不在对话提供密码/令牌。视频平台/账号也待确认。
+6. 当前是自动化流程验收，没有真实新手用户测试，不编造客户、评价或第三方认证。
+
+整个项目仍应持续推进，后续不能因本预览基线可运行而把所有阶段标为完成。

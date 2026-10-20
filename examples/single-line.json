@@ -1,0 +1,7 @@
+{
+  "nodes": [{"id":"source","name":"源"},{"id":"user","name":"用户"}],
+  "edges": [{"id":"main","kind":"pipe","name":"对称主干管","source":"source","target":"user","length":100,"diameter":0.08,"roughness":0.00005,"zeta":2}],
+  "source": {"node":"source","head":30,"pump":{"id":"PU1","name":"人工构造泵","curve":[30,0,-100000],"speed":1,"parallel":1,"data_source":"虚构教学示例，非厂家数据"}},
+  "terminals": [{"id":"T1","node":"user","name":"定阻末端","design_flow":0.004,"design_head":8}],
+  "fluid":{"temperature":20,"atmospheric_pressure":101325}
+}

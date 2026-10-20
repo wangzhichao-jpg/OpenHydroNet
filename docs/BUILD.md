@@ -4,7 +4,7 @@
 
 已验证：Linux x86_64，Python 3.12.3、NumPy 2.4.3、SciPy 1.17.1、pytest 9.0.2、Node 22.22.2、npm 10.9.7。前端依赖 `package-lock.json` 含来源和 SRI。Python 运行时只需 NumPy/SciPy，设备库和项目不依赖在线服务。
 
-Windows 候选包：Electron 38.2.0 win32-x64、CPython 3.12.10 embeddable amd64、NumPy 2.4.3 cp312 win_amd64、SciPy 1.17.1 cp312 win_amd64。不通过 Linux 的 PyInstaller 冒充 Windows 可执行文件，而是组装上游实际 Windows 二进制。
+Windows 候选包：Electron 44.9.1 win32-x64、CPython 3.12.10 embeddable amd64、NumPy 2.4.3 cp312 win_amd64、SciPy 1.17.1 cp312 win_amd64。不通过 Linux 的 PyInstaller 冒充 Windows 可执行文件，而是组装上游实际 Windows 二进制。
 
 ## 1. 开发环境
 
@@ -12,6 +12,7 @@ Windows 候选包：Electron 38.2.0 win32-x64、CPython 3.12.10 embeddable amd64
 python3 -m venv .venv
 .venv/bin/python -m pip install --index-url https://pypi.tuna.tsinghua.edu.cn/simple -e . pytest==9.0.2
 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm ci --registry=https://registry.npmmirror.com --cache=.local/npm-cache
+ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run setup:desktop
 npm run build
 OHN_PYTHON="$PWD/.venv/bin/python" npm run desktop
 ```

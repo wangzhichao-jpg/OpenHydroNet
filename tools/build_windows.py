@@ -24,10 +24,10 @@ def main():
     destination=ROOT/'build'/f'OpenHydroNet-{VERSION}-win-x64'
     if destination.exists():raise FileExistsError('构建目录已存在；请先检查或归档，不自动覆盖')
     destination.mkdir(parents=True)
-    with ZipFile(D/'electron-v38.2.0-win32-x64.zip') as z:z.extractall(destination)
+    with ZipFile(D/'electron-v44.9.1-win32-x64.zip') as z:z.extractall(destination)
     (destination/'electron.exe').rename(destination/'OpenHydroNet.exe')
     application=destination/'resources/app';application.mkdir(parents=True)
-    for directory in ('src','desktop','examples','docs','third_party'):
+    for directory in ('src','desktop','examples','docs','third_party','schemas'):
         shutil.copytree(ROOT/directory,application/directory,ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
     for name in ('package.json','LICENSE','README.md','CHANGELOG.md','SECURITY.md'):
         shutil.copy2(ROOT/name,application/name)

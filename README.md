@@ -26,6 +26,7 @@ OpenHydroNet is an offline, open-source hydraulic network workbench with a Chine
 python3 -m venv .venv
 .venv/bin/python -m pip install --index-url https://pypi.tuna.tsinghua.edu.cn/simple -e . pytest==9.0.2
 ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm ci --registry=https://registry.npmmirror.com
+ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run setup:desktop
 npm run build
 OHN_PYTHON="$PWD/.venv/bin/python" npm run desktop
 ```

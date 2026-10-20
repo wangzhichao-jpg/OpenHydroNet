@@ -4,11 +4,11 @@
 
 ## 1. 执行基线
 
-2026-10-20，Linux x86_64/glibc 2.39，Python 3.12.3，NumPy 2.4.3，SciPy 1.17.1，pytest 9.0.2，Node 22.22.2，Electron 38.2.0。
+2026-10-20，Linux x86_64/glibc 2.39，Python 3.12.3，NumPy 2.4.3，SciPy 1.17.1，pytest 9.0.2，Node 22.22.2，Electron 44.9.1。
 
 |入口|实际结果|边界|
 |---|---|---|
-|`PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`|40 passed，4.70 s|内核/文件/分析/CLI/IPC，非 Windows 执行|
+|`PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q`|40 passed，4.66 s|内核/文件/分析/CLI/IPC，非 Windows 执行|
 |`npm run test:commands`|7 passed|纯图编辑命令，非整个人工交互验收|
 |`npm run build`|TypeScript 与 Vite 成功|不是桌面运行证明|
 |`xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui`|真实 Electron 端到端通过|Linux/Xvfb；测试为容器沙箱限制传入 `--no-sandbox`，产品窗口仍 contextIsolation/sandbox，生产启动不自动关闭 Chromium 沙箱|
@@ -67,7 +67,13 @@
 
 截图在 `artifacts/ui/01-welcome.png` 至 `05-comparison.png`。已实际打开并检查结果、水压图和失败诊断截图。初测发现选择回调造成 React 更新循环，修复为稳定回调后全流程通过；不是仅截图一个静态设计稿。
 
-尚未系统验收：全部拖放/端口合法连接提示的组合、多显示器高 DPI、Windows 中文字体、屏幕阅读器、复杂大图标签避让、崩溃注入恢复、真实新手操作和长时间稳定性。底部水压图在较矮窗口可能需要滚动，尚无可拖动面板分隔条。
+追加 `tests/ui.graph.cjs` 在 Electron 44.9.1 实际通过：鼠标从设备区拖放节点、端口拖动建管、两端定压编辑、反向流量文字/箭头、kg/h 显示切换、复制粘贴和撤销、PNG/SVG 真实输出（文件签名检查）。截图 `artifacts/graph/01-port-connected-reverse.png` 已打开检查，也暴露近距离节点在高缩放时标签重叠，已列入已知限制，不因流程通过就声称视觉质量全部合格。
+
+尚未系统验收：全部端口非法连接提示组合、多显示器高 DPI、Windows 中文字体、屏幕阅读器、复杂大图标签避让、崩溃注入恢复、真实新手操作和长时间稳定性。底部水压图在较矮窗口可能需要滚动，尚无可拖动面板分隔条。
+
+## 4.1 发行依赖安全复核
+
+初版完整 npm 审计发现 7 项通告（含 Electron 和 Vite），触发升级至 Electron 44.9.1、Vite 6.4.4、Playwright 1.64.1。升级后重新构建并运行两套真实界面测试通过；`artifacts/npm-audit-all.json` 实际报告 0 已知通告（包含开发/桌面依赖，不只前端生产包）。不将数据库零通告误称为不存在未知漏洞。旧未发布包和未完成视频隔离在 `.local/superseded-e0a9313/`。
 
 ## 5. 公开性能基准（单次实测，不是性能上限）
 

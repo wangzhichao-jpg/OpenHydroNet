@@ -9,8 +9,8 @@ import math
 from pathlib import Path
 import re
 import subprocess
+import sys
 import wave
-from tts_local import synthesize
 ROOT=Path(__file__).resolve().parents[1]
 
 
@@ -24,7 +24,9 @@ def make_audio(kind,plan):
     for i,scene in enumerate(plan['segments']):
         at=scene['at'];end=plan['segments'][i+1]['at'] if i+1<len(plan['segments']) else plan['duration'];slot=end-at
         original=directory/f'speech-{i:02}.wav'
-        natural=synthesize(scene['text'],original,rate=215)
+        # eSpeak NG cannot reliably reinitialize after Terminate in one process.
+        # Each utterance uses an isolated short-lived process with an explicit timeout.
+        natural=float(subprocess.check_output([sys.executable,str(ROOT/'tools/tts_local.py'),scene['text'],str(original)],text=True,timeout=30).strip())
         maximum=slot-1.3;factor=max(1,natural/maximum)
         fitted=original
         if factor>1:

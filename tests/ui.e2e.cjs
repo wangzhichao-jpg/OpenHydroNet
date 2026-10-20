@@ -1,18 +1,137 @@
-const {_electron:electron}=require('playwright');
-const assert=require('node:assert/strict');const fs=require('node:fs/promises');const path=require('node:path');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'artifacts','ui');
-(async()=>{await fs.mkdir(out,{recursive:true});const errors=[];const app=await electron.launch({args:[...(process.platform==='linux'?['--no-sandbox']:[]),root],env:{...process.env,OHN_PROFILE:path.join(root,'.local','ui-test-profile')},timeout:30000});
-try{const page=await app.firstWindow();page.on('pageerror',e=>{errors.push(e.message);console.error('PAGE ERROR',e.stack);});await page.waitForSelector('[data-testid="start-example"]');await page.waitForTimeout(600);await page.screenshot({path:path.join(out,'01-welcome.png')});await page.getByTestId('start-example').click();await page.getByTestId('select-P2').waitFor();await page.getByRole('button',{name:'计算',exact:true}).click();await page.locator('.canvas-badge').filter({hasText:'计算通过'}).waitFor({timeout:30000});await page.waitForTimeout(500);await page.screenshot({path:path.join(out,'02-results.png')});
-await page.getByRole('button',{name:'水压图',exact:true}).click();await page.getByRole('img',{name:'循环路径水压图'}).waitFor();await page.screenshot({path:path.join(out,'03-pressure.png')});
-await page.getByRole('button',{name:'对比',exact:true}).click();await page.getByRole('button',{name:'保存当前工况快照'}).click();
-await page.getByTestId('select-P2').click();await page.getByLabel('管道内径',{exact:true}).fill('0.05');await page.getByLabel('管道内径',{exact:true}).press('Enter');await page.locator('.canvas-badge').filter({hasText:'旧结果过期'}).waitFor();assert.equal(await page.getByRole('button',{name:'结果 CSV',exact:true}).isDisabled(),true);
-await page.getByTestId('select-PU1').click();await page.getByLabel('相对转速 n/n₀').fill('0.8');await page.getByLabel('相对转速 n/n₀').press('Enter');await page.getByRole('button',{name:'检查',exact:true}).click();await page.getByRole('button',{name:'计算',exact:true}).click();await page.locator('.canvas-badge').filter({hasText:'计算通过'}).waitFor({timeout:30000});await page.getByRole('button',{name:'问题列表',exact:false}).click();await page.screenshot({path:path.join(out,'04-diagnosis.png')});
-await page.getByRole('button',{name:'工况对比',exact:true}).click();await page.getByLabel('对比工况').selectOption({label:'工况 1'});await page.waitForTimeout(200);await page.screenshot({path:path.join(out,'05-comparison.png')});assert.ok((await page.locator('table').innerText()).includes('%'));
-await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async(_window,options)=>({canceled:false,filePath:output+'/'+options.defaultPath});},out);
-await page.getByRole('button',{name:'保存',exact:true}).click();const saved=path.join(out,'双末端闭式循环 · 公开教学示例.ohn.json');await page.waitForTimeout(600);const project=JSON.parse(await fs.readFile(saved,'utf-8'));assert.equal(project.model.edges.find(x=>x.id==='P2').diameter,.05);assert.equal(project.model.edges.find(x=>x.id==='PU1').speed,.8);assert.equal(project.scenarios.length,1);
-await page.getByRole('button',{name:'结果 CSV',exact:true}).click();await page.getByRole('button',{name:'PDF 报告',exact:true}).click();await page.waitForTimeout(1500);const pdf=await fs.readFile(path.join(out,project.name+'.pdf'));assert.equal(pdf.subarray(0,4).toString(),'%PDF');
-await app.evaluate(({dialog},input)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[input]});},saved);await page.getByRole('button',{name:'打开工程',exact:true}).click();await page.getByTestId('select-P2').click();assert.equal(await page.getByLabel('管道内径',{exact:true}).inputValue(),'0.05');await page.getByRole('button',{name:'计算',exact:true}).click();await page.locator('.canvas-badge').filter({hasText:'计算通过'}).waitFor({timeout:30000});
-// Actual graph mutation + keyboard undo/redo through the UI.
-await page.getByTestId('select-P2').click();await page.getByRole('button',{name:'等分管段',exact:true}).click();assert.equal(await page.locator('.react-flow__node').count(),9);await page.keyboard.press('Control+z');await page.waitForTimeout(150);assert.equal(await page.locator('.react-flow__node').count(),8);await page.keyboard.press('Control+y');await page.waitForTimeout(150);assert.equal(await page.locator('.react-flow__node').count(),9);
-assert.deepEqual(errors,[]);await fs.writeFile(path.join(out,'test-result.json'),JSON.stringify({status:'passed',version:'0.1.0-preview.1',runtime:process.platform,checks:['real Electron launch','template load','initial calculation','pressure chart','scenario snapshot','pipe edit','pump adjustment','stale protection','diagnostic view','scenario difference','atomic desktop save','desktop open roundtrip','CSV export','actual PDF signature','graph split','keyboard undo redo'],pageErrors:errors},null,2));console.log('PASS: real Electron end-to-end workflow, screenshots, CSV/PDF and project roundtrip');
-}catch(error){console.error(error,errors);try{const w=await app.firstWindow();await w.screenshot({path:path.join(out,'failure.png')});}catch{}process.exitCode=1;}finally{await app.close();}})();
+const { _electron: electron } = require('playwright');
+const assert = require('node:assert/strict');
+const fs = require('node:fs/promises');
+const path = require('node:path');
+const root = path.resolve(__dirname, '..'),
+  out = path.join(root, 'artifacts', 'ui');
+(async () => {
+  await fs.mkdir(out, { recursive: true });
+  const errors = [];
+  const app = await electron.launch({
+    args: [...(process.platform === 'linux' ? ['--no-sandbox'] : []), root],
+    env: { ...process.env, OHN_PROFILE: path.join(root, '.local', 'ui-test-profile') },
+    timeout: 30000,
+  });
+  try {
+    const page = await app.firstWindow();
+    page.on('pageerror', (e) => {
+      errors.push(e.message);
+      console.error('PAGE ERROR', e.stack);
+    });
+    await page.waitForSelector('[data-testid="start-example"]');
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: path.join(out, '01-welcome.png') });
+    await page.getByTestId('start-example').click();
+    await page.getByTestId('select-P2').waitFor();
+    await page.getByRole('button', { name: '计算', exact: true }).click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: path.join(out, '02-results.png') });
+    await page.getByRole('button', { name: '水压图', exact: true }).click();
+    await page.getByRole('img', { name: '循环路径水压图' }).waitFor();
+    await page.screenshot({ path: path.join(out, '03-pressure.png') });
+    await page.getByRole('button', { name: '对比', exact: true }).click();
+    await page.getByRole('button', { name: '保存当前工况快照' }).click();
+    await page.getByTestId('select-P2').click();
+    await page.getByLabel('管道内径', { exact: true }).fill('0.05');
+    await page.getByLabel('管道内径', { exact: true }).press('Enter');
+    await page.locator('.canvas-badge').filter({ hasText: '旧结果过期' }).waitFor();
+    assert.equal(
+      await page.getByRole('button', { name: '结果 CSV', exact: true }).isDisabled(),
+      true,
+    );
+    await page.getByTestId('select-PU1').click();
+    await page.getByLabel('相对转速 n/n₀').fill('0.8');
+    await page.getByLabel('相对转速 n/n₀').press('Enter');
+    await page.getByRole('button', { name: '检查', exact: true }).click();
+    await page.getByRole('button', { name: '计算', exact: true }).click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
+    await page.getByRole('button', { name: '问题列表', exact: false }).click();
+    await page.screenshot({ path: path.join(out, '04-diagnosis.png') });
+    await page.getByRole('button', { name: '工况对比', exact: true }).click();
+    await page.getByLabel('对比工况').selectOption({ label: '工况 1' });
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: path.join(out, '05-comparison.png') });
+    assert.ok((await page.locator('table').innerText()).includes('%'));
+    await app.evaluate(({ dialog }, output) => {
+      dialog.showSaveDialog = async (_window, options) => ({
+        canceled: false,
+        filePath: output + '/' + options.defaultPath,
+      });
+    }, out);
+    await page.getByRole('button', { name: '保存', exact: true }).click();
+    const saved = path.join(out, '双末端闭式循环 · 公开教学示例.ohn.json');
+    await page.waitForTimeout(600);
+    const project = JSON.parse(await fs.readFile(saved, 'utf-8'));
+    assert.equal(project.model.edges.find((x) => x.id === 'P2').diameter, 0.05);
+    assert.equal(project.model.edges.find((x) => x.id === 'PU1').speed, 0.8);
+    assert.equal(project.scenarios.length, 1);
+    await page.getByRole('button', { name: '结果 CSV', exact: true }).click();
+    await page.getByRole('button', { name: 'PDF 报告', exact: true }).click();
+    await page.waitForTimeout(1500);
+    const pdf = await fs.readFile(path.join(out, project.name + '.pdf'));
+    assert.equal(pdf.subarray(0, 4).toString(), '%PDF');
+    await app.evaluate(({ dialog }, input) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [input] });
+    }, saved);
+    await page.getByRole('button', { name: '打开工程', exact: true }).click();
+    await page.getByTestId('select-P2').click();
+    assert.equal(await page.getByLabel('管道内径', { exact: true }).inputValue(), '0.05');
+    await page.getByRole('button', { name: '计算', exact: true }).click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
+    // Actual graph mutation + keyboard undo/redo through the UI.
+    await page.getByTestId('select-P2').click();
+    await page.getByRole('button', { name: '等分管段', exact: true }).click();
+    assert.equal(await page.locator('.react-flow__node').count(), 9);
+    await page.keyboard.press('Control+z');
+    await page.waitForTimeout(150);
+    assert.equal(await page.locator('.react-flow__node').count(), 8);
+    await page.keyboard.press('Control+y');
+    await page.waitForTimeout(150);
+    assert.equal(await page.locator('.react-flow__node').count(), 9);
+    assert.deepEqual(errors, []);
+    await fs.writeFile(
+      path.join(out, 'test-result.json'),
+      JSON.stringify(
+        {
+          status: 'passed',
+          version: '0.1.0-preview.1',
+          runtime: process.platform,
+          checks: [
+            'real Electron launch',
+            'template load',
+            'initial calculation',
+            'pressure chart',
+            'scenario snapshot',
+            'pipe edit',
+            'pump adjustment',
+            'stale protection',
+            'diagnostic view',
+            'scenario difference',
+            'atomic desktop save',
+            'desktop open roundtrip',
+            'CSV export',
+            'actual PDF signature',
+            'graph split',
+            'keyboard undo redo',
+          ],
+          pageErrors: errors,
+        },
+        null,
+        2,
+      ),
+    );
+    console.log(
+      'PASS: real Electron end-to-end workflow, screenshots, CSV/PDF and project roundtrip',
+    );
+  } catch (error) {
+    console.error(error, errors);
+    try {
+      const w = await app.firstWindow();
+      await w.screenshot({ path: path.join(out, 'failure.png') });
+    } catch {}
+    process.exitCode = 1;
+  } finally {
+    await app.close();
+  }
+})();

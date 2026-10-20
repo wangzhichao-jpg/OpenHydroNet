@@ -1,0 +1,4 @@
+[
+  {"id":"PU1","field":"speed","values":[0.7,0.8,0.9,1.0]},
+  {"id":"V2","field":"opening","values":[0.5,0.75,1.0]}
+]

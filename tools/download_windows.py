@@ -37,10 +37,10 @@ else:
     import base64
     expected=base64.b64decode(expected).hex()
 fetch('https://repo.huaweicloud.com/python/3.12.10/'+pyname,pyname,expected)
-checks=fetch('https://npmmirror.com/mirrors/electron/38.2.0/SHASUMS256.txt','electron-38.2.0-SHASUMS256.txt')
-name='electron-v38.2.0-win32-x64.zip'
+checks=fetch('https://npmmirror.com/mirrors/electron/44.9.1/SHASUMS256.txt','electron-44.9.1-SHASUMS256.txt')
+name='electron-v44.9.1-win32-x64.zip'
 digest=next(line.split()[0] for line in checks.read_text().splitlines() if line.split()[-1].lstrip('*')==name)
-fetch('https://npmmirror.com/mirrors/electron/38.2.0/'+name,name,digest)
+fetch('https://npmmirror.com/mirrors/electron/44.9.1/'+name,name,digest)
 subprocess.run([sys.executable,'-m','pip','download','--dest',str(D),'--cache-dir',str(ROOT/'.local/pip-cache'),'--platform','win_amd64','--python-version','312','--implementation','cp','--abi','cp312','--only-binary=:all:','--no-deps','--index-url','https://pypi.tuna.tsinghua.edu.cn/simple','numpy==2.4.3','scipy==1.17.1'],check=True)
 for wheel in sorted(D.glob('*.whl')):
     records.append(dict(file=wheel.name,url='https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)',sha256=hashlib.sha256(wheel.read_bytes()).hexdigest(),bytes=wheel.stat().st_size))

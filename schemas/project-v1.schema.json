@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:openhydronet:project:1",
+  "title": "OpenHydroNet 工程格式 v1",
+  "type": "object",
+  "required": ["format", "schema_version", "name", "model", "layout", "scenarios"],
+  "properties": {
+    "format": {"const": "openhydronet"},
+    "schema_version": {"const": 1},
+    "name": {"type": "string"},
+    "model": {
+      "type": "object",
+      "required": ["nodes", "edges"],
+      "properties": {
+        "nodes": {"type": "array", "items": {"$ref": "#/$defs/node"}},
+        "edges": {"type": "array", "items": {"$ref": "#/$defs/edge"}},
+        "fluid": {"type": "object", "properties": {"temperature": {"type": "number", "minimum": 0, "maximum": 100}, "atmospheric_pressure": {"type": "number", "exclusiveMinimum": 0}}}
+      }
+    },
+    "layout": {"type": "object", "additionalProperties": {"type": "object", "required": ["x", "y"], "properties": {"x": {"type": "number"}, "y": {"type": "number"}}}},
+    "scenarios": {"type": "array", "items": {"type": "object", "required": ["id", "name", "model", "result"]}},
+    "library": {"type": "array"},
+    "preferences": {"type": "object"},
+    "result_metadata": {"type": "object"}
+  },
+  "$defs": {
+    "node": {"type": "object", "required": ["id"], "properties": {"id": {"type": "string", "minLength": 1}, "name": {"type": "string"}, "elevation": {"type": "number"}, "demand": {"type": "number"}, "head": {"type": ["number", "null"]}}},
+    "edge": {"type": "object", "required": ["id", "kind", "source", "target"], "properties": {"id": {"type": "string", "minLength": 1}, "kind": {"enum": ["pipe", "pump", "valve", "terminal", "resistance", "flow_control"]}, "source": {"type": "string"}, "target": {"type": "string"}, "closed": {"type": "boolean"}, "length": {"type": "number", "exclusiveMinimum": 0}, "diameter": {"type": "number", "exclusiveMinimum": 0}, "roughness": {"type": "number", "minimum": 0}, "speed": {"type": "number", "minimum": 0, "maximum": 2}, "parallel": {"type": "integer", "minimum": 1, "maximum": 20}, "opening": {"type": "number", "minimum": 0, "maximum": 1}}}
+  },
+  "$comment": "公开结构模式用于互操作；实际内核还检查稳定 ID 唯一、引用、所有设备参数、边界和连通性。扩展字段保留，不执行脚本。当前没有旧版本，不虚构迁移。"
+}

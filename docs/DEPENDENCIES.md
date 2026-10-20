@@ -23,7 +23,9 @@
 |@babel/template|7.29.7|MIT|是|
 |@babel/traverse|7.29.10|MIT|是|
 |@babel/types|7.29.8|MIT|是|
-|@electron/get|2.0.3|MIT|是|
+|@electron-internal/extract-zip|1.0.5|BSD-2-Clause|是|
+|@electron/get|5.1.0|MIT|是|
+|semver|7.8.5|ISC|是|
 |@esbuild/aix-ppc64|0.25.12|MIT|是|
 |@esbuild/android-arm|0.25.12|MIT|是|
 |@esbuild/android-arm64|0.25.12|MIT|是|
@@ -82,13 +84,10 @@
 |@rollup/rollup-win32-ia32-msvc|4.64.12|MIT|是|
 |@rollup/rollup-win32-x64-gnu|4.64.12|MIT|是|
 |@rollup/rollup-win32-x64-msvc|4.64.12|MIT|是|
-|@sindresorhus/is|4.6.0|MIT|是|
-|@szmarczak/http-timer|4.0.6|MIT|是|
 |@types/babel__core|7.20.5|MIT|是|
 |@types/babel__generator|7.27.0|MIT|是|
 |@types/babel__template|7.4.4|MIT|是|
 |@types/babel__traverse|7.28.0|MIT|是|
-|@types/cacheable-request|6.0.3|MIT|是|
 |@types/d3-color|3.1.3|MIT|否|
 |@types/d3-drag|3.0.7|MIT|否|
 |@types/d3-interpolate|3.0.4|MIT|否|
@@ -96,25 +95,16 @@
 |@types/d3-transition|3.0.9|MIT|否|
 |@types/d3-zoom|3.0.9|MIT|否|
 |@types/estree|1.0.9|MIT|是|
-|@types/http-cache-semantics|4.2.0|MIT|是|
-|@types/keyv|3.1.4|MIT|是|
-|@types/node|22.20.5|MIT|是|
+|@types/node|24.19.2|MIT|是|
 |@types/react|19.1.13|MIT|否|
 |@types/react-dom|19.1.9|MIT|是|
-|@types/responselike|1.0.3|MIT|是|
-|@types/yauzl|2.10.3|MIT|是|
 |@vitejs/plugin-react|4.7.0|MIT|是|
 |@xyflow/react|12.8.5|MIT|否|
 |@xyflow/system|0.0.69|MIT|否|
 |baseline-browser-mapping|2.11.30|Apache-2.0|是|
-|boolean|3.2.0|MIT|是|
 |browserslist|4.29.4|MIT|是|
-|buffer-crc32|0.2.13|MIT|是|
-|cacheable-lookup|5.0.4|MIT|是|
-|cacheable-request|7.0.4|MIT|是|
 |caniuse-lite|1.0.30001817|CC-BY-4.0|是|
 |classcat|5.0.5|MIT|否|
-|clone-response|1.0.3|MIT|是|
 |convert-source-map|2.0.0|MIT|是|
 |csstype|3.2.3|MIT|否|
 |d3-color|3.1.0|ISC|否|
@@ -127,95 +117,50 @@
 |d3-transition|3.0.1|ISC|否|
 |d3-zoom|3.0.0|ISC|否|
 |debug|4.4.3|MIT|是|
-|decompress-response|6.0.0|MIT|是|
-|mimic-response|3.1.0|MIT|是|
-|defer-to-connect|2.0.1|MIT|是|
-|define-data-property|1.1.4|MIT|是|
-|define-properties|1.2.1|MIT|是|
-|detect-node|2.1.0|MIT|是|
-|electron|38.2.0|MIT|是|
+|electron|44.9.1|MIT|是|
 |electron-to-chromium|1.5.461|ISC|是|
-|end-of-stream|1.4.5|MIT|是|
-|env-paths|2.2.1|MIT|是|
-|es-define-property|1.0.1|MIT|是|
-|es-errors|1.3.0|MIT|是|
-|es6-error|4.1.1|MIT|是|
+|env-paths|3.0.0|MIT|是|
 |esbuild|0.25.12|MIT|是|
 |escalade|3.2.0|MIT|是|
-|escape-string-regexp|4.0.0|MIT|是|
-|extract-zip|2.0.1|BSD-2-Clause|是|
-|fd-slicer|1.1.0|MIT|是|
 |fdir|6.5.0|MIT|是|
-|fs-extra|8.1.0|MIT|是|
 |fsevents|2.3.2|MIT|是|
 |gensync|1.0.0-beta.2|MIT|是|
-|get-stream|5.2.0|MIT|是|
 |get-tsconfig|4.14.3|MIT|是|
-|global-agent|3.0.0|BSD-3-Clause|是|
-|semver|7.8.5|ISC|是|
-|globalthis|1.0.4|MIT|是|
-|gopd|1.2.0|MIT|是|
-|got|11.8.6|MIT|是|
 |graceful-fs|4.2.11|ISC|是|
-|has-property-descriptors|1.0.2|MIT|是|
-|http-cache-semantics|4.3.0|BSD-2-Clause|是|
-|http2-wrapper|1.0.3|MIT|是|
 |js-tokens|4.0.0|MIT|是|
 |jsesc|3.1.0|MIT|是|
-|json-buffer|3.0.1|MIT|是|
-|json-stringify-safe|5.0.1|ISC|是|
 |json5|2.2.3|MIT|是|
-|jsonfile|4.0.0|MIT|是|
-|keyv|4.5.4|MIT|是|
-|lowercase-keys|2.0.0|MIT|是|
 |lru-cache|5.1.1|ISC|是|
-|matcher|3.0.0|MIT|是|
-|mimic-response|1.0.1|MIT|是|
 |ms|2.1.3|MIT|是|
 |nanoid|3.3.20|MIT|是|
 |node-releases|2.0.59|MIT|是|
-|normalize-url|6.1.0|MIT|是|
-|object-keys|1.1.1|MIT|是|
-|once|1.4.0|ISC|是|
-|p-cancelable|2.1.1|MIT|是|
-|pend|1.2.0|MIT|是|
 |picocolors|1.1.1|ISC|是|
 |picomatch|4.0.7|MIT|是|
-|playwright|1.55.1|Apache-2.0|是|
-|playwright-core|1.55.1|Apache-2.0|是|
+|playwright|1.64.1|Apache-2.0|是|
+|playwright-core|1.64.1|Apache-2.0|是|
 |postcss|8.5.31|MIT|是|
+|prettier|3.6.2|MIT|是|
 |progress|2.0.3|MIT|是|
-|pump|3.0.4|MIT|是|
-|quick-lru|5.1.1|MIT|是|
 |react|19.1.1|MIT|否|
 |react-dom|19.1.1|MIT|否|
 |react-refresh|0.17.0|MIT|是|
-|resolve-alpn|1.2.1|MIT|是|
 |resolve-pkg-maps|1.0.0|MIT|是|
-|responselike|2.0.1|MIT|是|
-|roarr|2.15.4|BSD-3-Clause|是|
 |rollup|4.64.12|MIT|是|
 |scheduler|0.26.0|MIT|否|
 |semver|6.3.1|ISC|是|
-|semver-compare|1.0.0|MIT|是|
-|serialize-error|7.0.1|MIT|是|
 |source-map-js|1.2.2|BSD-3-Clause|是|
-|sprintf-js|1.1.3|BSD-3-Clause|是|
 |sumchecker|3.0.1|Apache-2.0|是|
 |tinyglobby|0.2.17|MIT|是|
 |tsx|4.20.5|MIT|是|
 |fsevents|2.3.3|MIT|是|
-|type-fest|0.13.1|(MIT OR CC0-1.0)|是|
 |typescript|5.9.2|Apache-2.0|是|
-|undici-types|6.21.0|MIT|是|
-|universalify|0.1.2|MIT|是|
+|undici|7.30.1|MIT|是|
+|undici-types|7.24.6|MIT|是|
 |update-browserslist-db|1.3.4|MIT|是|
 |use-sync-external-store|1.7.0|MIT|否|
-|vite|6.3.6|MIT|是|
+|vite|6.4.4|MIT|是|
 |fsevents|2.3.3|MIT|是|
-|wrappy|1.0.2|ISC|是|
 |yallist|3.1.1|ISC|是|
-|yauzl|2.10.0|MIT|是|
 |zustand|4.5.7|MIT|否|
 
 ## 分发运行时
@@ -223,7 +168,7 @@
 - Python 3.12.10 embeddable：PSF License，Windows 便携包保留其 LICENSE.txt。Linux 开发验证为 Python 3.12.3。
 - NumPy 2.4.3：BSD-3-Clause；Windows wheel 内含捆绑库声明，原样保留 dist-info/licenses 及 numpy.libs。
 - SciPy 1.17.1：BSD-3-Clause；wheel 的 OpenBLAS、LAPACK、GCC 运行时等许可声明原样随包保留，不将主包 BSD 许可替代捆绑组件声明。
-- Electron 38.2.0：MIT；Chromium 等多许可证，便携包必须保留根目录 LICENSE 和 LICENSES.chromium.html。
+- Electron 44.9.1：MIT；Chromium 等多许可证，便携包必须保留根目录 LICENSE 和 LICENSES.chromium.html。
 - React、React DOM、React Flow：MIT，分发包保留合并第三方声明，界面保留 React Flow attribution。
 - FFmpeg、eSpeak NG 和 Noto 字体仅用于本地视频制作，不打入软件运行时。FFmpeg 构建启用 libx264，视频制作环境的工具许可证不等同于软件产品采用 GPL；不分发其工具二进制。字体为 SIL OFL，系统字体仅渲染成画面，不嵌入安装包。eSpeak NG 合成输出为本项目原创文本的音频。
 

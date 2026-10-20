@@ -26,6 +26,10 @@ jobs:
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
         run: npm ci --registry=https://registry.npmmirror.com
+      - name: 显式安装锁定桌面运行时（避免并发懒下载）
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+        run: npm run setup:desktop
       - name: 核心、协议与工程测试
         env:
           OPENBLAS_NUM_THREADS: '1'
@@ -36,13 +40,16 @@ jobs:
         if: runner.os == 'Linux'
         env:
           OHN_PYTHON: python3
-        run: xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
+        run: |
+          xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
+          xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:graph
       - name: Windows真实界面
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $env:OHN_PYTHON = (Get-Command python).Source
           npm run test:ui
+          npm run test:graph
       - uses: actions/upload-artifact@v4
         if: always()
         with:
