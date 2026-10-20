@@ -36,11 +36,18 @@ def main():
     if source.exists():
         backup = ROOT / '.local/provenance-source'
         backup.mkdir(exist_ok=True)
-        shutil.copy2(source, backup / (build['commit'][:7] + '-source.zip'))
+        backup_file = backup / (digest(source)[:12] + '-source.zip')
+        if not backup_file.exists():
+            shutil.copy2(source, backup_file)
     subprocess.run([
         'git', 'archive', '--format=zip', f'--prefix=OpenHydroNet-{VERSION}/',
         '-o', str(source), commit,
     ], cwd=ROOT, check=True)
+    examples = ART / f'OpenHydroNet-{VERSION}-examples.zip'
+    with ZipFile(examples, 'w', ZIP_DEFLATED) as archive:
+        archive.write(ROOT / 'LICENSE', 'LICENSE')
+        for file in sorted((ROOT / 'examples').rglob('*.json')):
+            archive.write(file, file.relative_to(ROOT).as_posix())
     docs = ART / f'OpenHydroNet-{VERSION}-docs.zip'
     with ZipFile(docs, 'w', ZIP_DEFLATED) as archive:
         for name in ('README.md', 'LICENSE', 'CHANGELOG.md', 'SECURITY.md'):
@@ -51,6 +58,7 @@ def main():
                     archive.write(file, file.relative_to(ROOT).as_posix())
     editable = ART / f'OpenHydroNet-{VERSION}-video-project.zip'
     with ZipFile(editable, 'w', ZIP_DEFLATED) as archive:
+        archive.write(ROOT / 'LICENSE', 'LICENSE')
         for file in sorted((ROOT / 'media').rglob('*')):
             if file.is_file(): archive.write(file, file.relative_to(ROOT).as_posix())
         for name in ('record_video.cjs', 'render_videos.py', 'tts_local.py', 'check_media.py'):

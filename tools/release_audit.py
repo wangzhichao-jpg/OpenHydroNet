@@ -25,6 +25,10 @@ def main():
         text=file.read_text(encoding='utf-8',errors='replace')
         if str(Path.home()) in text:
             issues.append('公开产物 JSON 含私人绝对路径：'+str(file.relative_to(ROOT)))
+    for candidate in (ROOT/'artifacts').glob('*.zip'):
+        with ZipFile(candidate) as z:
+            if not any(name.rsplit('/',1)[-1] == 'LICENSE' for name in z.namelist()):
+                issues.append('分发子包缺少 LICENSE：'+candidate.name)
     archives=[]
     for archive in (ROOT/'artifacts').glob('*win-x64.zip'):
         with ZipFile(archive) as z:
