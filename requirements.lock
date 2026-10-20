@@ -1,0 +1,8 @@
+# CPython 3.12, Linux x86_64 / Windows amd64; 国内镜像 wheel，SHA-256 校验。
+# python -m pip install --require-hashes -r requirements.lock -i https://pypi.tuna.tsinghua.edu.cn/simple
+numpy==2.4.3 \
+    --hash=sha256:65f3c2455188f09678355f5cae1f959a06b778bc66d535da07bf2ef20cd319d5 \
+    --hash=sha256:e7dd01a46700b1967487141a66ac1a3cf0dd8ebf1f08db37d46389401512ca97
+scipy==1.17.1 \
+    --hash=sha256:41b71f4a3a4cab9d366cd9065b288efc4d4f3c0b37a91a8e0947fb5bd7f31d87 \
+    --hash=sha256:02ae3b274fde71c5e92ac4d54bc06c42d80e399fec704383dcd99b301df37458

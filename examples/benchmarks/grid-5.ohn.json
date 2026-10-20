@@ -1,0 +1,672 @@
+{
+  "format": "openhydronet",
+  "schema_version": 1,
+  "name": "公开基准 5×5",
+  "model": {
+    "nodes": [
+      {
+        "id": "n0_0",
+        "elevation": 0,
+        "demand": 0,
+        "head": 50
+      },
+      {
+        "id": "n1_0",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n2_0",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n3_0",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n4_0",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      },
+      {
+        "id": "n0_1",
+        "elevation": 0,
+        "demand": 0,
+        "head": 50
+      },
+      {
+        "id": "n1_1",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n2_1",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n3_1",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n4_1",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      },
+      {
+        "id": "n0_2",
+        "elevation": 0,
+        "demand": 0,
+        "head": 50
+      },
+      {
+        "id": "n1_2",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n2_2",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n3_2",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n4_2",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      },
+      {
+        "id": "n0_3",
+        "elevation": 0,
+        "demand": 0,
+        "head": 50
+      },
+      {
+        "id": "n1_3",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n2_3",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n3_3",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n4_3",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      },
+      {
+        "id": "n0_4",
+        "elevation": 0,
+        "demand": 0,
+        "head": 50
+      },
+      {
+        "id": "n1_4",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n2_4",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n3_4",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "n4_4",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      }
+    ],
+    "edges": [
+      {
+        "id": "e0_0_1",
+        "source": "n0_0",
+        "target": "n1_0",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_0_0",
+        "source": "n0_0",
+        "target": "n0_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_0_1",
+        "source": "n1_0",
+        "target": "n2_0",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_0_0",
+        "source": "n1_0",
+        "target": "n1_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_0_1",
+        "source": "n2_0",
+        "target": "n3_0",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_0_0",
+        "source": "n2_0",
+        "target": "n2_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_0_1",
+        "source": "n3_0",
+        "target": "n4_0",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_0_0",
+        "source": "n3_0",
+        "target": "n3_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e4_0_0",
+        "source": "n4_0",
+        "target": "n4_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_1_1",
+        "source": "n0_1",
+        "target": "n1_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_1_0",
+        "source": "n0_1",
+        "target": "n0_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_1_1",
+        "source": "n1_1",
+        "target": "n2_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_1_0",
+        "source": "n1_1",
+        "target": "n1_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_1_1",
+        "source": "n2_1",
+        "target": "n3_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_1_0",
+        "source": "n2_1",
+        "target": "n2_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_1_1",
+        "source": "n3_1",
+        "target": "n4_1",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_1_0",
+        "source": "n3_1",
+        "target": "n3_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e4_1_0",
+        "source": "n4_1",
+        "target": "n4_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_2_1",
+        "source": "n0_2",
+        "target": "n1_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_2_0",
+        "source": "n0_2",
+        "target": "n0_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_2_1",
+        "source": "n1_2",
+        "target": "n2_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_2_0",
+        "source": "n1_2",
+        "target": "n1_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_2_1",
+        "source": "n2_2",
+        "target": "n3_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_2_0",
+        "source": "n2_2",
+        "target": "n2_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_2_1",
+        "source": "n3_2",
+        "target": "n4_2",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_2_0",
+        "source": "n3_2",
+        "target": "n3_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e4_2_0",
+        "source": "n4_2",
+        "target": "n4_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_3_1",
+        "source": "n0_3",
+        "target": "n1_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_3_0",
+        "source": "n0_3",
+        "target": "n0_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_3_1",
+        "source": "n1_3",
+        "target": "n2_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_3_0",
+        "source": "n1_3",
+        "target": "n1_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_3_1",
+        "source": "n2_3",
+        "target": "n3_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_3_0",
+        "source": "n2_3",
+        "target": "n2_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_3_1",
+        "source": "n3_3",
+        "target": "n4_3",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_3_0",
+        "source": "n3_3",
+        "target": "n3_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e4_3_0",
+        "source": "n4_3",
+        "target": "n4_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e0_4_1",
+        "source": "n0_4",
+        "target": "n1_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e1_4_1",
+        "source": "n1_4",
+        "target": "n2_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e2_4_1",
+        "source": "n2_4",
+        "target": "n3_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      },
+      {
+        "id": "e3_4_1",
+        "source": "n3_4",
+        "target": "n4_4",
+        "kind": "pipe",
+        "length": 10,
+        "diameter": 0.1,
+        "roughness": 5e-05,
+        "zeta": 0
+      }
+    ],
+    "fluid": {
+      "temperature": 20
+    }
+  },
+  "layout": {
+    "n0_0": {
+      "x": 0,
+      "y": 0
+    },
+    "n1_0": {
+      "x": 100,
+      "y": 0
+    },
+    "n2_0": {
+      "x": 200,
+      "y": 0
+    },
+    "n3_0": {
+      "x": 300,
+      "y": 0
+    },
+    "n4_0": {
+      "x": 400,
+      "y": 0
+    },
+    "n0_1": {
+      "x": 0,
+      "y": 100
+    },
+    "n1_1": {
+      "x": 100,
+      "y": 100
+    },
+    "n2_1": {
+      "x": 200,
+      "y": 100
+    },
+    "n3_1": {
+      "x": 300,
+      "y": 100
+    },
+    "n4_1": {
+      "x": 400,
+      "y": 100
+    },
+    "n0_2": {
+      "x": 0,
+      "y": 200
+    },
+    "n1_2": {
+      "x": 100,
+      "y": 200
+    },
+    "n2_2": {
+      "x": 200,
+      "y": 200
+    },
+    "n3_2": {
+      "x": 300,
+      "y": 200
+    },
+    "n4_2": {
+      "x": 400,
+      "y": 200
+    },
+    "n0_3": {
+      "x": 0,
+      "y": 300
+    },
+    "n1_3": {
+      "x": 100,
+      "y": 300
+    },
+    "n2_3": {
+      "x": 200,
+      "y": 300
+    },
+    "n3_3": {
+      "x": 300,
+      "y": 300
+    },
+    "n4_3": {
+      "x": 400,
+      "y": 300
+    },
+    "n0_4": {
+      "x": 0,
+      "y": 400
+    },
+    "n1_4": {
+      "x": 100,
+      "y": 400
+    },
+    "n2_4": {
+      "x": 200,
+      "y": 400
+    },
+    "n3_4": {
+      "x": 300,
+      "y": 400
+    },
+    "n4_4": {
+      "x": 400,
+      "y": 400
+    }
+  },
+  "scenarios": [],
+  "preferences": {
+    "flow_unit": "m3/h",
+    "scenario": "heating"
+  },
+  "library": []
+}

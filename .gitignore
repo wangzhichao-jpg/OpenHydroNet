@@ -1,0 +1,12 @@
+.local/
+.venv/
+node_modules/
+web/dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+artifacts/*
+!artifacts/.gitkeep
+build/
+dist/
+*.egg-info/

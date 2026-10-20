@@ -1,0 +1,30 @@
+{
+  "name": "openhydronet",
+  "version": "0.1.0-preview.1",
+  "private": true,
+  "description": "离线中文供热与空调水系统分析",
+  "license": "Apache-2.0",
+  "main": "desktop/main.cjs",
+  "scripts": {
+    "dev": "vite --config web/vite.config.ts --host 127.0.0.1",
+    "build": "tsc --project web/tsconfig.json && vite build --config web/vite.config.ts",
+    "desktop": "electron .",
+    "test:ui": "node tests/ui.e2e.cjs",
+    "test:commands": "tsx --test web/src/commands.test.ts"
+  },
+  "dependencies": {
+    "@xyflow/react": "12.8.5",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.13",
+    "@types/react-dom": "19.1.9",
+    "@vitejs/plugin-react": "4.7.0",
+    "electron": "38.2.0",
+    "playwright": "1.55.1",
+    "tsx": "4.20.5",
+    "typescript": "5.9.2",
+    "vite": "6.3.6"
+  }
+}

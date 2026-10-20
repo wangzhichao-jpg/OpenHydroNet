@@ -1,0 +1,82 @@
+name: 验证与Windows候选包
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: 科学计算与测试依赖
+        run: python -m pip install --index-url https://pypi.tuna.tsinghua.edu.cn/simple -e . pytest==9.0.2
+      - name: 前端依赖
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+        run: npm ci --registry=https://registry.npmmirror.com
+      - name: 核心、协议与工程测试
+        env:
+          OPENBLAS_NUM_THREADS: '1'
+        run: python -m pytest -q
+      - run: npm run test:commands
+      - run: npm run build
+      - name: Linux真实界面
+        if: runner.os == 'Linux'
+        env:
+          OHN_PYTHON: python3
+        run: xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui
+      - name: Windows真实界面
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $env:OHN_PYTHON = (Get-Command python).Source
+          npm run test:ui
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: interface-${{ runner.os }}
+          path: artifacts/ui/
+  windows-candidate:
+    if: github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci --registry=https://registry.npmmirror.com
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
+      - run: npm run build
+      - run: python tools/download_windows.py
+      - run: python tools/build_windows.py
+      - name: 随包Python实际求解
+        shell: pwsh
+        run: |
+          & './build/OpenHydroNet-0.1.0-preview.1-win-x64/resources/app/runtime/python.exe' -m openhydronet.cli solve examples/closed-loop.ohn.json -o artifacts/windows-smoke-result.json
+          if ($LASTEXITCODE -ne 0) { throw 'Windows runtime smoke failed' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Windows-portable-candidate
+          path: |
+            artifacts/*.zip
+            artifacts/*.sha256
+            artifacts/*MANIFEST.json
+            artifacts/windows-smoke-result.json
+# 此流程只验证和生成候选，不自动发布到任何未经确认的账号/仓库。
