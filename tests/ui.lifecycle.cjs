@@ -53,6 +53,12 @@ const root = path.resolve(__dirname, '..'),
     await page.getByLabel('流量单位').selectOption('kg/h');
     await page.keyboard.press('Escape');
     await number('水温', 0);
+    await page.getByRole('status').filter({ hasText: '输入已变更，请重新计算' }).waitFor();
+    assert.ok(!(await page.getByRole('status').innerText()).includes('计算通过'));
+    assert.equal(
+      await page.getByRole('button', { name: '结果 CSV', exact: true }).isDisabled(),
+      true,
+    );
     await page.getByTestId('select-T2').click();
     assert.ok(
       Math.abs(
@@ -141,6 +147,7 @@ const root = path.resolve(__dirname, '..'),
           checks: [
             '0°C before re-solving uses current density',
             '20→80°C scenario mass comparison',
+            'stale statusbar and result-export guard after changing temperature',
             'integer inline validation',
             'invalid-input computation blocked',
             'native close flushes focused numeric editor',

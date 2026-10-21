@@ -4,14 +4,16 @@ import hashlib
 import json
 import math
 import time
+import warnings as numerical_warnings
 from datetime import datetime, timezone
 import numpy as np
 from scipy.optimize import least_squares
-from scipy.sparse import lil_matrix
+from scipy.sparse import coo_matrix, diags
+from scipy.sparse.linalg import spsolve, MatrixRankWarning
 from .physics import G, water, loss, pump_head
 from .validation import validate, ModelError, active_edge
 
-ALGORITHM = "sparse-head-flow-trf-v1"
+ALGORITHM = "sparse-head-flow-newton-trf-v2"
 from .version import VERSION
 MASS_TOL = 1e-8
 HEAD_TOL = 1e-5
@@ -28,6 +30,8 @@ def solve(model, *, max_nfev=600, timeout=30.0):
     Result statuses: converged, demand_unsatisfied, boundary_conflict,
     numerical_failure, timeout. Local failure is NOT proof of infeasibility.
     """
+    if isinstance(max_nfev, bool) or not isinstance(max_nfev, (int, np.integer)) or max_nfev < 1:
+        raise ValueError('max_nfev 必须是正整数')
     start = time.perf_counter()
     issues = validate(model)
     if issues:
@@ -45,13 +49,6 @@ def solve(model, *, max_nfev=600, timeout=30.0):
     qs = max([.001] + [abs(n.get("demand", 0)) for n in nodes] + [e.get("design_flow", e.get("set_flow", 0)) for e in edges])
     hs = max(10.0, np.ptp(list(fixed.values())) if len(fixed) > 1 else 10.0,
              max([0] + [abs(e.get("curve", [25])[0]) * e.get("speed", 1)**2 for e in edges if e["kind"] == "pump"]))
-    pattern = lil_matrix((nh + nq, nh + nq), dtype=int)
-    for j, e in enumerate(edges):
-        for node in (e["source"], e["target"]):
-            if node in hi:
-                pattern[hi[node], nh+j] = 1
-                pattern[nh+j, hi[node]] = 1
-        pattern[nh+j, nh+j] = 1
     def unpack(x):
         heads = {**fixed, **{key: float(x[i] * hs) for key, i in hi.items()}}
         return heads, x[nh:] * qs
@@ -78,6 +75,46 @@ def solve(model, *, max_nfev=600, timeout=30.0):
             else:
                 r[nh+j] = (dh - loss(e, q, nu)) / hs
         return r
+    def jacobian(x):
+        # Differentiate only the scalar branch law, not the full network.
+        # This is a numerical derivative, NOT a minimum physical flow/resistance.
+        heads, flows = unpack(x)
+        rr, cc, vv = [], [], []
+        for j, (e, q) in enumerate(zip(edges, flows)):
+            delta = math.sqrt(np.finfo(float).eps) * max(abs(q), qs*.001)
+            slope = (loss(e, q+delta, nu)-loss(e, q-delta, nu))/(2*delta)
+            hfactor, qfactor = 1.0, -slope*qs/hs
+            if e['kind'] == 'flow_control':
+                hfactor, qfactor = 0.0, 1.0
+            elif e.get('check_valve', e['kind'] == 'pump'):
+                a = q/qs
+                b = (loss(e, q, nu)-heads[e['source']]+heads[e['target']])/hs
+                radius = math.hypot(a, b)
+                da = a/radius-1 if radius else -1.0
+                db = b/radius-1 if radius else -1.0
+                hfactor, qfactor = -db, da+db*slope*qs/hs
+            for node, sign in ((e['source'], 1.0), (e['target'], -1.0)):
+                if node in hi:
+                    rr.extend((hi[node], nh+j)); cc.extend((nh+j, hi[node]))
+                    vv.extend((sign, sign*hfactor))
+            rr.append(nh+j); cc.append(nh+j); vv.append(qfactor)
+        return coo_matrix((vv, (rr, cc)), shape=(nh+nq, nh+nq)).tocsr()
+
+    def energy_error(e, q, dh):
+        if e['kind'] == 'flow_control':
+            return abs(q-e.get('set_flow', .01))/qs*hs
+        expected = loss(e, q, nu)
+        if e.get('check_valve', e['kind'] == 'pump') and q < 1e-9:
+            return max(0, dh-expected, -q/qs*hs)
+        return abs(dh-expected)
+
+    def acceptable(x, r):
+        # Stop by physical residuals, never by an optimizer's success flag.
+        heads, flows = unpack(x)
+        return (np.max(np.abs(r[:nh]), initial=0)*qs <= MASS_TOL*.01
+                and max((energy_error(e, q, heads[e['source']]-heads[e['target']])
+                         for e, q in zip(edges, flows)), default=0) <= HEAD_TOL*.01)
+
     q0 = np.ones(nq)
     for j, e in enumerate(edges):
         if e['source'] in fixed and e['target'] in fixed and e['kind'] not in ('pump', 'flow_control'):
@@ -87,14 +124,53 @@ def solve(model, *, max_nfev=600, timeout=30.0):
     x0 = np.r_[np.full(nh, np.mean(list(fixed.values())) / hs), q0]
     try:
         if nh+nq:
-            # SciPy LSMR's 2D trust subspace is undefined for one unknown.
-            # Use its mature dense factorization for 1–2 unknowns only.
-            sparse_options = dict(jac_sparsity=pattern.tocsr(), tr_solver='lsmr', tr_options={'atol':1e-12,'btol':1e-12}) if nh+nq > 2 else dict(tr_solver='exact')
-            opt = least_squares(residual, x0, method="trf", x_scale="jac",
-                                ftol=1e-12, xtol=1e-12, gtol=1e-12, max_nfev=max_nfev, **sparse_options)
-            heads, flows = unpack(opt.x)
-            evaluations = int(opt.nfev)
-            termination = str(opt.message)
+            # A full sparse Newton direction avoids LSMR's truncated/damped
+            # direction on high-contrast networks. Equilibration changes only
+            # the linear system; line search uses the ORIGINAL residual.
+            x, r = x0, residual(x0)
+            evaluations = 1
+            newton_budget = min(80, max_nfev//2)
+            while not acceptable(x, r) and evaluations < newton_budget:
+                j = jacobian(x)
+                row_scale = 1/np.maximum(abs(j).max(axis=1).toarray().ravel(), 1e-30)
+                scaled = diags(row_scale) @ j
+                col_scale = 1/np.maximum(abs(scaled).max(axis=0).toarray().ravel(), 1e-30)
+                try:
+                    with numerical_warnings.catch_warnings():
+                        numerical_warnings.simplefilter('error', MatrixRankWarning)
+                        step = col_scale*spsolve((scaled @ diags(col_scale)).tocsc(), -r*row_scale)
+                except (MatrixRankWarning, RuntimeError, ValueError):
+                    break  # Singular local linearization: use TRF, not a fake solution.
+                if not np.isfinite(step).all():
+                    break
+                alpha, norm = 1.0, np.linalg.norm(r)
+                accepted = False
+                while evaluations < newton_budget and alpha >= 2**-12:
+                    candidate = x+alpha*step
+                    trial = residual(candidate)
+                    evaluations += 1
+                    if np.isfinite(trial).all() and (np.linalg.norm(trial) < (1-1e-4*alpha)*norm or acceptable(candidate, trial)):
+                        x, r, accepted = candidate, trial, True
+                        break
+                    alpha *= .5
+                if not accepted:
+                    break
+            termination = 'sparse Newton: physical residual tolerances satisfied'
+            if not acceptable(x, r) and evaluations < max_nfev:
+                # Dense TRF is deliberately bounded. Large models stay sparse;
+                # no unbounded dense null-space or incidence factorization.
+                options = dict(tr_solver='exact', jac=lambda v: jacobian(v).toarray()) if nh+nq <= 128 else dict(
+                    tr_solver='lsmr', jac=jacobian,
+                    tr_options={'atol':1e-12, 'btol':1e-12, 'maxiter':max(100, 2*(nh+nq))})
+                opt = least_squares(residual, x, method='trf', x_scale='jac',
+                                    ftol=1e-12, xtol=1e-12, gtol=1e-12,
+                                    max_nfev=max_nfev-evaluations, **options)
+                x = opt.x
+                evaluations += int(opt.nfev)
+                termination = 'Newton/TRF: '+str(opt.message)
+            elif not acceptable(x, r):
+                termination = 'evaluation budget exhausted; residuals must be checked'
+            heads, flows = unpack(x)
         else:
             heads, flows = fixed, np.array([])
             evaluations, termination = 0, "isolated fixed boundary"
@@ -111,13 +187,7 @@ def solve(model, *, max_nfev=600, timeout=30.0):
         balance[s] += q
         balance[t] -= q
         dh = heads[s] - heads[t]
-        expected = loss(e, q, nu)
-        if e["kind"] == "flow_control":
-            err = abs(q-e.get("set_flow", .01)) / qs * hs
-        elif e.get("check_valve", e["kind"] == "pump") and q < 1e-9:
-            err = max(0, dh-expected, -q/qs*hs)
-        else:
-            err = abs(dh-expected)
+        err = energy_error(e, q, dh)
         energy_errors.append(err)
         result = {"flow_m3_s": q, "flow_m3_h": q*3600, "mass_flow_kg_h": q*rho*3600,
                   "head_drop_m": float(dh), "pressure_drop_pa": float(dh*rho*G),

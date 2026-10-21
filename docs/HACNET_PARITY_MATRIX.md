@@ -2,7 +2,7 @@
 
 来源：用户提供《HACNet软件用户说明.docx》，SHA-256 见 [读取审计](REFERENCE_AUDIT.md)。P 为 document.xml/body 结构块序号，非页码；I 为嵌入 imageN.png。原文和截图不再分发。全部正文及 10 张图片已读取，没有独立 Word 表格。
 
-状态审计：0.1.0-preview.2。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
+状态审计：0.1.0-preview.3。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
 
 |ID|原功能及出处|原交互/限制或歧义|对应功能及改进验收|阶段|实现状态|测试/验收入口|
 |---|---|---|---|---|---|---|
@@ -10,7 +10,7 @@
 |H02|单/双线 P37–38,78,80,87|对称自动回水、复制参数|显式展开、稳定映射、等价验证|B|部分：API/等价解析测试通过，桌面映射编辑待补|tests/test_analysis.py|
 |H03|供热/空调/单位 P39–40,55,105|m³/h、kg/h、t/h 原文有差异|SI 内核、明确密度换算、显示独立|A|部分：0/20/80 ℃参数与跨温度质量比较真实验收；全部设备/单位组合待扩测|web/src/units.test.ts、tests/ui.lifecycle.cjs|
 |H04|管段 P69–81,I4|长度/内径/粗糙度，后两者 mm|范围即时校验、Darcy、公式可查|A|部分：层流/湍流及桌面内径编辑通过，全部字段待扩测|tests/test_solver.py、tests/ui.e2e.cjs|
-|H05|直接阻力 P74,I4|公式/单位定义不完整|定义 ΔH=RQ·abs(Q)，R 单位 s²/m⁵|A|解析内核已验证；私有高阻比衍生例默认失败待修复，桌面专用流程待扩测|docs/MODELS.md、tests/test_solver.py、docs/VALIDATION.md|
+|H05|直接阻力 P74,I4|公式/单位定义不完整|定义 ΔH=RQ·abs(Q)，R 单位 s²/m⁵|A|解析/独立自建高阻比回归已验证，私有衍生例已修复且与独立环流解相符；不等于现场精度认证，桌面专用流程待扩测|docs/MODELS.md、tests/test_solver.py、tests/test_solver_robustness.py、docs/VALIDATION.md|
 |H06|局阻 P75–79,I4|ζ 或沿程倍率互斥|公开两种互斥模型，拒绝重复定义|A|内核已验证；高级属性路径待扩测|tests/test_physics.py|
 |H07|节点/定压/漏补水 P82–87,I5|单个静压点，新设置取消旧点|每分量检查、多定压、边界供入量|A|部分：边界/守恒/标高测试通过，复杂边界待扩测|tests/test_solver.py|
 |H08|泵库 P88–90,100–105,I6,I9|只能从库选，增删改、四系数|工程携带数据、库管理与曲线编辑|B|部分：泵阀库增改复制删除、JSON 往返、来源副本应用已实现；无完整厂家目录/效率曲面|tests/test_library_table.py、tests/ui.features.cjs|
@@ -42,5 +42,7 @@
 |X03|新增：热输送/能耗|原文未给算法|水力功率和输入功率区分，有依据的效率|C|部分：水力功率/效率缺失处理已有；热/年耗能未实现|tests/test_solver.py、docs/MODELS.md|
 |X04|新增：API/批处理|原文未描述|CLI/API/哈希/版本/残差/任务|A/C|基础 API/CLI/协议已验证，后续设备接口待扩充|tests/test_project.py、tests/test_protocol.py|
 |X05|新增：映射导入/图像导出|原文未描述|导入预览校验，SVG/PNG|B|部分：已有设备 CSV/XLSX 字段/单位预览与原子应用/撤销、PNG/SVG 真正导出已验；整网创建导入/施工图待补|tests/ui.features.cjs、tests/ui.graph.cjs|
+
+Windows 补充：preview.2 已收到 Windows 11 中文路径、150% 系统缩放的条件验收回执，10 项 P0/5 项 P1 通过；其余子项和新版复测仍待补，不能把矩阵全部升级为完成。详见 [回执与边界](WINDOWS_FEEDBACK_PREVIEW2.md)。
 
 **全面超过的判据**：H01–H31 全部有可重复验收记录，且 X01–X05 公开承诺完成，A/B/C 总验收还包含 Windows 实际运行、双平台同提交同标签及两条实际视频。当前不满足，禁止称为完整替代品或正式成品。

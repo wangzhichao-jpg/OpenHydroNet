@@ -1,0 +1,35 @@
+{
+  "repo": "csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17",
+  "revision": "2365baeacb507f821a0c8120fcee3d484dba7a07",
+  "license": "FunASR Model License v1.1, Alibaba/ModelScope SenseVoiceSmall; not Apache-2.0; optional internal reference QA only, weights not redistributed",
+  "files": [
+    {
+      "file": "LICENSE",
+      "bytes": 71,
+      "sha256": "221c6df10b0931a5629adad671ea48fb7747e034c414b6d2bfa275bc3dd4ea17",
+      "source": "https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/LICENSE",
+      "verified_against": "Git blob SHA-1"
+    },
+    {
+      "file": "README.md",
+      "bytes": 104,
+      "sha256": "763991a00edaea534ab36bf1b7cf89e61e911666dcfabbba71f91f9f7c593a63",
+      "source": "https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/README.md",
+      "verified_against": "Git blob SHA-1"
+    },
+    {
+      "file": "model.int8.onnx",
+      "bytes": 239233841,
+      "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+      "source": "https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/model.int8.onnx",
+      "verified_against": "LFS SHA-256"
+    },
+    {
+      "file": "tokens.txt",
+      "bytes": 315894,
+      "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+      "source": "https://hf-mirror.com/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/resolve/2365baeacb507f821a0c8120fcee3d484dba7a07/tokens.txt",
+      "verified_against": "Git blob SHA-1"
+    }
+  ]
+}

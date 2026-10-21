@@ -62,7 +62,8 @@ def check_payload(file):
 def reference_data():
     sys.path.insert(0, str(ROOT / "src"))
     from openhydronet import load_project, solve
-    reference = {"version": VERSION, "origin": "Same-implementation Linux numerical reference, not independent external solver or Windows execution",
+    from openhydronet.version import VERSION as reference_version
+    reference = {"version": reference_version, "origin": "Same-implementation Linux numerical reference, not independent external solver or Windows execution",
                  "dependencies": {"numpy": "2.4.3", "scipy": "1.17.1", "openpyxl": "3.1.5", "et-xmlfile": "2.0.0", "defusedxml": "0.7.1"}, "cases": {}}
     p = load_project(ROOT / "examples/closed-loop.ohn.json")
     for temperature in (20, 80):
@@ -150,6 +151,8 @@ def main():
     if target.exists() or archive.exists():
         raise FileExistsError("验收资料已存在，不自动覆盖；如需修改请另行归档/版本化")
     build = check_payload(a / (SOFTWARE + ".zip"))
+    if reference_data()['version'] != VERSION:
+        raise RuntimeError('此工具冻结于 preview.2；须切换原构建源码，不能拿新版内核冒充旧版参考值')
     source = ROOT / "validation/windows"
     guide = (source / "Windows验收说明.md").read_text()
     target.mkdir()

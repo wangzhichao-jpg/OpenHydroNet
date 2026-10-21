@@ -36,6 +36,23 @@ def test_exports_escape_spreadsheet_html():
     assert r['input_hash'] in h
 
 
+def test_report_missing_power_is_a_dash_not_python_none():
+    import csv
+    import io
+    p=load_project(ROOT/'examples/closed-loop.ohn.json')
+    result=solve(p['model'])
+    assert result['edges']['PU1']['input_power_w'] is None
+    h=report_html(p,result)
+    assert '<td>None</td>' not in h
+    assert '<td>—</td>' in h
+    # Machine-readable exports keep genuinely missing numbers empty, not a string.
+    rows=list(csv.reader(io.StringIO(result_csv(p['model'],result).lstrip('\ufeff'))))
+    assert next(row for row in rows[1:] if row[0]=='PU1')[-1]==''
+    result['edges']['PU1']['input_power_w']=0.0
+    assert '<td>0</td>' in report_html(p,result)
+    assert result['input_hash'] in h
+
+
 def test_cli_end_to_end(tmp_path):
     out=tmp_path/'result.json'
     r=subprocess.run([sys.executable,'-m','openhydronet.cli','solve',str(ROOT/'examples/closed-loop.ohn.json'),'-o',str(out)],capture_output=True,text=True)

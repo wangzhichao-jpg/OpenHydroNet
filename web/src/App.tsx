@@ -147,6 +147,9 @@ function Workbench() {
     [rf],
   );
   const stale = !!result && signature(p) !== resultSig;
+  useEffect(() => {
+    if (stale) setMessage('输入已变更，请重新计算；旧结果过期，不能导出为当前结果');
+  }, [stale]);
   const item =
     p.model.nodes.find((x) => selected.includes(x.id)) ||
     p.model.edges.find((x) => selected.includes(x.id));
@@ -374,10 +377,9 @@ function Workbench() {
                 : 'results',
           );
           setMessage(
-            (statusText[j.result.status] || j.result.status) +
-              (JSON.stringify(pRef.current.model) !== sig
-                ? '；计算期间输入已变化，结果已标记过期'
-                : '；点击管段或表格查看详情'),
+            JSON.stringify(pRef.current.model) !== sig
+              ? '输入已变更，请重新计算；本次结果对应计算开始时的输入'
+              : (statusText[j.result.status] || j.result.status) + '；点击管段或表格查看详情',
           );
         } catch (e: any) {
           if (run === runRef.current) {

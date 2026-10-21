@@ -4,21 +4,32 @@ const { spawn } = require('node:child_process');
 const path = require('node:path');
 const fs = require('node:fs/promises');
 const root = path.resolve(__dirname, '..'),
-  kind = process.argv[2] || 'quickstart';
+  kind = process.argv[2] || 'quickstart',
+  version = require('../package.json').version,
+  smoke = process.argv.includes('--smoke');
 (async () => {
   const storyboard = JSON.parse(
     await fs.readFile(path.join(root, 'media/storyboards.json'), 'utf8'),
   )[kind];
   if (!storyboard) throw Error('Unknown storyboard');
-  const out = path.join(root, 'artifacts/media', kind);
+  const sourceTreeClean = !require('node:child_process')
+    .execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' })
+    .trim();
+  if (!smoke && !sourceTreeClean) throw Error('Final recordings require a clean source commit');
+  const out = path.join(root, 'artifacts/media', version, kind + (smoke ? '-smoke' : ''));
   await fs.mkdir(out, { recursive: true });
   const app = await _electron.launch({
     args: ['--no-sandbox', root],
-    env: { ...process.env, OHN_PROFILE: path.join(root, '.local', 'recording-' + kind) },
+    env: {
+      ...process.env,
+      OHN_PROFILE: path.join(root, '.local', `recording-${version}-${kind}-${Date.now()}`),
+    },
   });
   let ffmpeg;
   try {
     const page = await app.firstWindow();
+    const errors = [];
+    page.on('pageerror', (error) => errors.push(error.message));
     await page.getByTestId('start-example').waitFor();
     await app.evaluate(({ BrowserWindow }) => {
       const w = BrowserWindow.getAllWindows()[0];
@@ -26,6 +37,10 @@ const root = path.resolve(__dirname, '..'),
     });
     await page.waitForTimeout(700);
     await app.evaluate(({ dialog }, dir) => {
+      dialog.showOpenDialog = async () => ({
+        canceled: false,
+        filePaths: [globalThis.recordingInput],
+      });
       dialog.showSaveDialog = async (_window, options) => ({
         canceled: false,
         filePath: dir + '/' + options.defaultPath,
@@ -164,7 +179,34 @@ const root = path.resolve(__dirname, '..'),
           await page.getByRole('button', { name: '水压图', exact: true }).click();
           await page.getByLabel('水压图末端').selectOption('T2');
           break;
+        case 'library':
+          await page.getByRole('button', { name: '设备库 / 泵曲线', exact: true }).click();
+          await page.getByRole('button', { name: '＋ 水泵', exact: true }).click();
+          await page.getByLabel('库中名称', { exact: true }).fill('循环泵 · 教学拟合');
+          await page
+            .getByLabel('泵性能点', { exact: true })
+            .fill('0,32\n14.4,29.12\n28.8,20.48\n43.2,6.08');
+          await page.getByRole('button', { name: '拟合并更新曲线', exact: true }).click();
+          await page.locator('.library-status').filter({ hasText: '拟合完成' }).waitFor();
+          await page.getByRole('img', { name: '泵库基准流量扬程曲线' }).waitFor();
+          break;
+        case 'tablepreview':
+          await app.evaluate(
+            (_electron, file) => {
+              globalThis.recordingInput = file;
+            },
+            path.join(root, 'examples/parameter-update.csv'),
+          );
+          await page.getByRole('button', { name: '导入参数表', exact: true }).click();
+          await page.getByRole('button', { name: '选择 CSV / XLSX', exact: true }).click();
+          await page.getByLabel('映射 diameter', { exact: true }).selectOption('diameter_mm');
+          await page.getByLabel('输入单位 diameter', { exact: true }).selectOption('mm');
+          await page.getByRole('button', { name: '转换单位并预览变化', exact: true }).click();
+          await page.getByRole('table', { name: '导入变化预览' }).waitFor();
+          break;
         case 'export':
+          if (await page.getByRole('button', { name: '关闭导入', exact: true }).isVisible())
+            await page.getByRole('button', { name: '关闭导入', exact: true }).click();
           await closeHelp();
           await page.getByRole('button', { name: '结果 CSV', exact: true }).click();
           await wait(1000);
@@ -189,7 +231,7 @@ const root = path.resolve(__dirname, '..'),
       }
     }
     for (const scene of storyboard.segments) {
-      await wait(started + scene.at * 1000 - Date.now());
+      if (!smoke) await wait(started + scene.at * 1000 - Date.now());
       await run(scene.action);
       events.push({
         expected_s: scene.at,
@@ -201,7 +243,8 @@ const root = path.resolve(__dirname, '..'),
         path: path.join(out, `frame-${String(scene.at).padStart(3, '0')}.png`),
       });
     }
-    await wait(started + storyboard.duration * 1000 - Date.now());
+    if (!smoke) await wait(started + storyboard.duration * 1000 - Date.now());
+    if (errors.length) throw Error('Renderer errors: ' + errors.join('; '));
     ffmpeg.stdin.write('q\n');
     await new Promise((resolve, reject) => {
       ffmpeg.once('exit', (code) =>
@@ -213,7 +256,14 @@ const root = path.resolve(__dirname, '..'),
       path.join(out, 'recording.json'),
       JSON.stringify(
         {
-          software: '0.1.0-preview.1',
+          software: version,
+          sourceTreeClean,
+          capture_sha256: require('node:crypto')
+            .createHash('sha256')
+            .update(await fs.readFile(path.join(out, 'capture.mkv')))
+            .digest('hex'),
+          smoke,
+          pageErrors: errors,
           commit: require('node:child_process')
             .execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' })
             .trim(),
@@ -232,6 +282,12 @@ const root = path.resolve(__dirname, '..'),
       ffmpeg.stdin.write('q\n');
       await new Promise((r) => ffmpeg.once('exit', r));
     }
+    await app
+      .evaluate(({ dialog }) => {
+        // End-of-recording cleanup only; this never changes the recorded UI flow.
+        dialog.showMessageBox = async () => ({ response: 1 });
+      })
+      .catch(() => {});
     await app.close();
   }
 })().catch((e) => {

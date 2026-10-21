@@ -2,7 +2,7 @@
 
 **离线、中文、可解释的供热与空调水系统稳态分析工作台。**
 
-> 当前源码版本：`0.1.0-preview.2`。这是正在开发的开源预览版，**尚未全面覆盖或超过 HACNet**，不应未经独立复核直接用于安全关键设计。OpenHydroNet 是工作名称，尚未完成商标和仓库名称可用性核查。
+> 当前源码版本：`0.1.0-preview.3`。这是正在开发的开源预览版，**尚未全面覆盖或超过 HACNet**，不应未经独立复核直接用于安全关键设计。OpenHydroNet 是工作名称，尚未完成商标和仓库名称可用性核查。
 
 OpenHydroNet is an offline, open-source hydraulic network workbench with a Chinese desktop interface and an independent Python solver. This is a development preview, not a certified engineering product.
 
@@ -19,6 +19,12 @@ OpenHydroNet is an offline, open-source hydraulic network workbench with a Chine
 - 在 Python API/CLI 中进行单线对称展开、独立稳态扫描、有界局部可行性搜索和有限差分敏感性。上述 API 不代表相应桌面工作流已全部实现。
 
 没有遥测、强制账号、许可证服务器、付费解锁或联网计算要求。启动后不需要外部互联网；进程通信仅使用会话认证的本机回环地址。
+
+## preview.3 修复与验收状态
+
+- 高阻比网络使用稀疏牛顿/回溯与 TRF 回退；有符号损失和物理残差门槛不变。新增独立自建解析回归，不将论文结果反算 R 当作现场精度验证。
+- 修复 Windows 反馈中的 PDF 空值和过期状态文案。[preview.2 Windows 条件验收回执](docs/WINDOWS_FEEDBACK_PREVIEW2.md)：10 项 P0、5 项 P1 通过，但真实断网、部分 DPI 档位等仍未完成；新版不自动继承旧版结论。
+- 新版视频重做神经配音、逐句时间轴和回识别检查。实际成片/上传状态见视频交付记录；历史包和视频不覆盖。
 
 ## 真实运行截图
 
