@@ -24,7 +24,7 @@
 
 - 本轮最终核心 **91 passed，4.14 s**，TypeScript **18**、Node 文档/存储 **11**；构建和 Prettier 通过。
 - preview.3 五套真实 Electron 入口均通过：ui/graph/lifecycle/features/jobs；额外录制动作 smoke 通过。Linux/Xvfb，不冒充 Windows 原生。
-- 数值摘要：`artifacts/numerical/0.1.0-preview.3/ROBUSTNESS.json`。新版完整收据生成后使用 `artifacts/VALIDATION-0.1.0-preview.3.json`；不存在即不能称已收集完成。
+- 已生成数值摘要 `artifacts/numerical/0.1.0-preview.3/ROBUSTNESS.json` 和完整开发侧收据 `artifacts/VALIDATION-0.1.0-preview.3.json`；软件/录制提交与核心证据均为 bc2ff1b。
 - 历史 preview.2：软件基线 72，验收辅助后 77；18/11 命令/存储测试和五 UI 均通过。实际候选、源码/文档/示例与证据见同版本交付索引。
 - Windows preview.2 用户回传证据单独保留；不改旧构建清单的 `windows_executed=false`。本机仍无 Windows/Wine，新版不继承旧版的原生通过结论。
 
@@ -35,7 +35,9 @@
 - preview.2 验收总包 SHA-256：`dfc9d7459253b819ade33c54402baa1ed38308bf97c3c2102b690331b985088d`；用户百度网盘 `07_项目与合作/OpenHydroNet/Windows实机验收/0.1.0-preview.2/` 保持不变。
 - preview.3 软件/录制提交 `bc2ff1b7515cd6b3db3a2eac4e90ef1c48e07264`。Windows 候选已组装并上传 `07_项目与合作/OpenHydroNet/修复候选/0.1.0-preview.3/`，220,330,491 字节，SHA-256 `a1d875121023505e0d5f710dd2005d54d887f44b5188098825a0932d97166935`。不是新版 Windows 原生通过。
 - 新版媒体输出到 `artifacts/media/0.1.0-preview.3/`；用户网盘 `07_项目与合作/OpenHydroNet/视频重制/0.1.0-preview.3/` 已有两视频/视频工程/说明/校验 5 个文件。文件经 provider 刷新列表/大小、无本任务活动上传和 CloudDrive SHA-256 回读核验，缓存独立性未证明，未创建公开分享。
-- 同版本交付索引/源码/文档/示例包由交付工具实际生成后才计完成。核心验证收据收集早于媒体完成，保留当时 media_recorded=false；后续媒体事实由独立 MEDIA_QA/最终音轨报告记录，不反写旧快照。
+- 同版本源码/文档/示例 ZIP、DELIVERY_INDEX/RELEASE_AUDIT 与全套校验已实际生成并检查，运行时 20 文件逐字节匹配，247 个可达历史 blob 启发式审计无发现。交付快照提交为 c395fbd，与软件提交分开；本次后续纯文档审计不重写冻结 ZIP。
+- 修复候选目录的软件/摘要 2 项及补充源码/文档/示例/高阻工程/隔离启动器/说明/索引/校验 13 项均已上传、回读核验。新版启动器仅生成/文本核对，不冒充已原生执行。
+- 核心验证收据收集早于媒体完成，保留当时 new_version_media_recorded=false；后续媒体事实由独立 MEDIA_QA/最终音轨报告记录，不反写旧快照。
 - 旧 `prepare_windows_validation.py` 是 preview.2 冻结工具，拒绝拿新版内核冒充旧参考；不自动覆盖已交付验收包。
 - 没有公开 GitHub/Gitee 仓库、标签、公开下载/观看链接或二维码；还需用户确认发布目标。
 
