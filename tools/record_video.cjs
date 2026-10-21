@@ -16,7 +16,8 @@ const root = path.resolve(__dirname, '..'),
     .execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' })
     .trim();
   if (!smoke && !sourceTreeClean) throw Error('Final recordings require a clean source commit');
-  const out = path.join(root, 'artifacts/media', version, kind + (smoke ? '-smoke' : ''));
+  const mediaRoot = process.env.OHN_MEDIA_DIR || path.join(root, 'artifacts/media', version);
+  const out = path.join(mediaRoot, kind + (smoke ? '-smoke' : ''));
   await fs.mkdir(out, { recursive: true });
   const app = await _electron.launch({
     args: ['--no-sandbox', root],

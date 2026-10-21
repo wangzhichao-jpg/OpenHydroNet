@@ -66,3 +66,12 @@ def test_all_storyboard_captions_roundtrip_and_length():
             assert ''.join(chunks)==segment['text']
             assert all(len(chunk)<=28 for chunk in chunks)
     assert stamp(120)=='00:02:00,000'
+
+
+def test_spoken_text_avoids_confirmed_polyphone_dictionary_traps():
+    # The pinned Chinese lexicon maps isolated 重/长 to zhong4/zhang3.
+    # Use familiar phrases with correct lexical readings, not a relaxed CER gate.
+    plans=json.loads((Path(__file__).resolve().parents[1]/'media/storyboards.json').read_text())
+    spoken=''.join(s['text'] for p in plans.values() for s in p['segments'])
+    assert all(word not in spoken for word in ('重开','重算','管长'))
+    assert '再次计算' in spoken and '管道长度' in spoken

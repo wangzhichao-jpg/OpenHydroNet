@@ -7,6 +7,7 @@ sherpa-onnx==1.13.8; not bundled with or used by OpenHydroNet itself.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -15,7 +16,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT/'package.json').read_text())['version']
-MEDIA = ROOT/'artifacts/media'/VERSION
+MEDIA = Path(os.environ.get('OHN_MEDIA_DIR', str(ROOT/'artifacts/media'/VERSION)))
 
 
 def normalize(text):

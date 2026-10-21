@@ -7,6 +7,7 @@ No speech acceleration, no overlapping narration, no invented UI frames.
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -14,7 +15,7 @@ import wave
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = json.loads((ROOT/'package.json').read_text())['version']
-MEDIA = ROOT/'artifacts/media'/VERSION
+MEDIA = Path(os.environ.get('OHN_MEDIA_DIR', str(ROOT/'artifacts/media'/VERSION)))
 
 
 def stamp(seconds):
