@@ -24,7 +24,7 @@ OpenHydroNet is an offline, open-source hydraulic network workbench with a Chine
 
 - 高阻比网络使用稀疏牛顿/回溯与 TRF 回退；有符号损失和物理残差门槛不变。新增独立自建解析回归，不将论文结果反算 R 当作现场精度验证。
 - 修复 Windows 反馈中的 PDF 空值和过期状态文案。[preview.2 Windows 条件验收回执](docs/WINDOWS_FEEDBACK_PREVIEW2.md)：10 项 P0、5 项 P1 通过，但真实断网、部分 DPI 档位等仍未完成；新版不自动继承旧版结论。
-- 新版视频重做神经配音、逐句时间轴和回识别检查。实际成片/上传状态见视频交付记录；历史包和视频不覆盖。
+- 新版 120/300 s 视频已实际重录：神经中文、逐句时间轴、最终音轨回识别/响度/整片解码通过，已交用户百度网盘；真人试听仍待确认。详见视频交付记录，历史包和视频不覆盖。
 
 ## 真实运行截图
 

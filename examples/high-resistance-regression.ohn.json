@@ -1,0 +1,39 @@
+{
+  "format": "openhydronet",
+  "schema_version": 1,
+  "name": "人工高阻比数值回归 · 非工程设计",
+  "model": {
+    "fluid": {"temperature": 20},
+    "nodes": [
+      {"id": "n0", "name": "定压参考", "head": 100, "elevation": 0, "demand": 0},
+      {"id": "n1", "name": "节点 1", "head": null, "elevation": 0, "demand": 0.294},
+      {"id": "n2", "name": "节点 2", "head": null, "elevation": 0, "demand": 0.1398},
+      {"id": "n3", "name": "节点 3", "head": null, "elevation": 0, "demand": 0.08545},
+      {"id": "n4", "name": "节点 4", "head": null, "elevation": 0, "demand": 0.0006},
+      {"id": "n5", "name": "节点 5", "head": null, "elevation": 0, "demand": 0.00215}
+    ],
+    "edges": [
+      {"id": "e0", "name": "人工阻力 0", "kind": "resistance", "source": "n0", "target": "n1", "resistance": 4},
+      {"id": "e1", "name": "人工阻力 1", "kind": "resistance", "source": "n1", "target": "n2", "resistance": 25},
+      {"id": "e2", "name": "人工阻力 2", "kind": "resistance", "source": "n2", "target": "n3", "resistance": 156.25},
+      {"id": "e3", "name": "人工阻力 3", "kind": "resistance", "source": "n3", "target": "n4", "resistance": 4000000},
+      {"id": "e4", "name": "人工阻力 4", "kind": "resistance", "source": "n4", "target": "n5", "resistance": 100000000},
+      {"id": "e5", "name": "人工阻力 5", "kind": "resistance", "source": "n0", "target": "n2", "resistance": 5000},
+      {"id": "e6", "name": "人工阻力 6", "kind": "resistance", "source": "n1", "target": "n3", "resistance": 55555.555555555555},
+      {"id": "e7", "name": "人工阻力 7", "kind": "resistance", "source": "n2", "target": "n4", "resistance": 50000000},
+      {"id": "e8", "name": "人工阻力 8", "kind": "resistance", "source": "n3", "target": "n5", "resistance": 800000000},
+      {"id": "e9", "name": "人工阻力 9", "kind": "resistance", "source": "n0", "target": "n5", "resistance": 1250000}
+    ]
+  },
+  "layout": {
+    "n0": {"x": 0, "y": 180},
+    "n1": {"x": 240, "y": 0},
+    "n2": {"x": 500, "y": 0},
+    "n3": {"x": 500, "y": 360},
+    "n4": {"x": 760, "y": 360},
+    "n5": {"x": 1000, "y": 180}
+  },
+  "preferences": {"flow_unit": "m3/h", "scenario": "heating"},
+  "library": [],
+  "scenarios": []
+}

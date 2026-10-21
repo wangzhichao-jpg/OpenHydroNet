@@ -6,10 +6,12 @@
 
 源配音的 23 个场景已通过独立回识别初查（逐段字错率 ≤12%，否定词计数一致）。首个 MeloTTS 候选多段不达标，已拒绝使用；换为 Kokoro 后仍改写了一处易混淆否定表达，并重新检查。ASR 的同音误识仍会出现，**它不证明真人已经听清或主观自然度合格**。
 
-实际成片、全帧解码、最终音轨回识别、响度及上传状态，以 `artifacts/media/0.1.0-preview.3/MEDIA_QA.json` 和交付记录为准；只有文件和记录生成后才算完成，当前制作脚本本身不是成片证据。新版输出不覆盖历史目录。
+**两条成片已实际生成、技术 QA 通过并上传用户百度网盘**：`07_项目与合作/OpenHydroNet/视频重制/0.1.0-preview.3/`。包括两个 MP4、可编辑视频工程 ZIP、中文说明和 SHA-256 清单，5 个文件均经 provider 刷新列表/大小/上传队列检查与 SHA-256 回读核验。回读经 CloudDrive 认证代理，可能使用缓存，不声称完全独立云端源回读或 provider MD5 相等；未创建公开分享。新版输出不覆盖历史目录。
 
-- 快速上手目标：120 s，`OpenHydroNet-quickstart-0.1.0-preview.3-清晰配音.mp4`。
-- 产品介绍目标：300 s，`OpenHydroNet-intro-0.1.0-preview.3-清晰配音.mp4`。
+实际录制的软件/源码提交为 `bc2ff1b7515cd6b3db3a2eac4e90ef1c48e07264`，完整技术收据在 `artifacts/media/0.1.0-preview.3/MEDIA_QA.json`。两条最终 MP4 的 23 场景均通过独立 ASR/否定词门槛；编码后实测约 -16.18/-16.08 LUFS，真峰值 -1.48/-1.47 dBTP，音画流时长差 0。解码、回识别和播放器检查不等于真人试听。
+
+- 快速上手实际：120.000 s，`OpenHydroNet-quickstart-0.1.0-preview.3-清晰配音.mp4`。
+- 产品介绍实际：300.000 s，`OpenHydroNet-intro-0.1.0-preview.3-清晰配音.mp4`。
 - 字幕：同版本目录内 quickstart.srt / intro.srt，另有供烧录的 ASS。
 - 画面是 **Linux/Electron 实际运行录制**，页脚明确标注，不冒充 Windows 录屏。
 - 产品介绍包含当前设备库/泵性能点拟合、CSV 单位映射预览；两段均使用同一人工教学工程，不含用户真实工程。

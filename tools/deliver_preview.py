@@ -63,6 +63,25 @@ def main():
     for relative,digest in evidence['runtime_sha256'].items():
         if not (ROOT/relative).is_file() or sha((ROOT/relative).read_bytes())!=digest:raise RuntimeError('验证后运行时代码已变化，必须重新测试：'+relative)
     if set(runtime)!=set(evidence['runtime_sha256']):raise RuntimeError('验证后的运行时文件集合已经改变')
+    media=A/'media'/VERSION
+    media_products=[]
+    media_updated=(media/'MEDIA_QA.json').is_file()
+    if media_updated:
+        qa=json.loads((media/'MEDIA_QA.json').read_text())
+        asr=json.loads((media/'NARRATION_FINAL_ASR.json').read_text())
+        if len(qa)!=2 or not asr.get('accepted') or asr.get('software')!=VERSION:
+            raise RuntimeError('新版媒体证据不完整')
+        for r in qa:
+            name=r['file']
+            if Path(name).name!=name or r['software']!=VERSION or r['commit']!=build['commit'] or not r.get('full_decode'):
+                raise RuntimeError('视频版本/录制来源/全片解码不符')
+            video=media/name
+            if sha(video.read_bytes())!=r['sha256']:raise RuntimeError('视频在验证后变化')
+            same=next((v for v in asr['records'] if v.get('file')==name),None)
+            if not same or not same['accepted'] or same['sha256']!=r['sha256']:
+                raise RuntimeError('最终音轨识别与视频归属不一致')
+            media_products.append(video)
+        media_products.extend(media/name for name in ('intro.srt','quickstart.srt','MEDIA_QA.json','NARRATION_FINAL_ASR.json'))
     tracked=[s.decode() for s in git('ls-files','-z').split(b'\x00') if s]
     products=[archive]
     source=A/f'OpenHydroNet-{VERSION}-source.zip'
@@ -81,9 +100,11 @@ def main():
             if z.testzip() is not None:raise RuntimeError('分发 ZIP CRC 失败：'+path.name)
     audit=A/f'RELEASE_AUDIT-{VERSION}.json'
     audit.write_text(json.dumps({'version':VERSION,'software_commit':build['commit'],'delivery_commit':commit,'runtime_files_byte_identical':runtime,'zip_crc':'passed','windows_pe':'passed','windows_executed':False,'git_history':privacy},ensure_ascii=False,indent=2)+'\n')
-    products.extend([audit,A/f'WINDOWS_BUILD_MANIFEST-{VERSION}.json',A/f'VALIDATION-{VERSION}.json',A/f'npm-audit-{VERSION}.json'])
+    products.extend([audit,A/f'WINDOWS_BUILD_MANIFEST-{VERSION}.json',A/f'VALIDATION-{VERSION}.json',A/f'npm-audit-{VERSION}.json',*media_products])
+    numerical=A/'numerical'/VERSION/'ROBUSTNESS.json'
+    if numerical.is_file():products.append(numerical)
     index=A/f'DELIVERY_INDEX-{VERSION}.json'
-    index.write_text(json.dumps({'version':VERSION,'software_commit':build['commit'],'delivery_commit':commit,'published':False,'windows_executed':False,'media_version':'0.1.0-preview.1','media_updated_for_this_version':False,'pending':['Windows native acceptance','new-version video and human audio review','full B/C parity','confirmed GitHub/Gitee/video destinations'],'files':[{'path':str(p.relative_to(ROOT)),'bytes':p.stat().st_size,'sha256':sha(p.read_bytes())} for p in products]},ensure_ascii=False,indent=2)+'\n')
+    index.write_text(json.dumps({'version':VERSION,'software_commit':build['commit'],'delivery_commit':commit,'published':False,'windows_executed':False,'media_version':VERSION if media_updated else None,'media_updated_for_this_version':media_updated,'media_human_listening_review':False,'pending':['this-version Windows native revalidation; preview.2 conditional feedback kept separately','human narration review']+([] if media_updated else ['new-version video'])+['full B/C parity','confirmed GitHub/Gitee/public video destinations'],'files':[{'path':str(p.relative_to(ROOT)),'bytes':p.stat().st_size,'sha256':sha(p.read_bytes())} for p in products]},ensure_ascii=False,indent=2)+'\n')
     products.append(index)
     checks=A/f'SHA256SUMS-{VERSION}'
     checks.write_text(''.join(f'{sha(p.read_bytes())}  {p.relative_to(A).as_posix()}\n' for p in products))
