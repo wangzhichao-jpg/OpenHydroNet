@@ -10,7 +10,7 @@
 |H02|单/双线 P37–38,78,80,87|对称自动回水、复制参数|显式展开、稳定映射、等价验证|B|部分：API/等价解析测试通过，桌面映射编辑待补|tests/test_analysis.py|
 |H03|供热/空调/单位 P39–40,55,105|m³/h、kg/h、t/h 原文有差异|SI 内核、明确密度换算、显示独立|A|部分：0/20/80 ℃参数与跨温度质量比较真实验收；全部设备/单位组合待扩测|web/src/units.test.ts、tests/ui.lifecycle.cjs|
 |H04|管段 P69–81,I4|长度/内径/粗糙度，后两者 mm|范围即时校验、Darcy、公式可查|A|部分：层流/湍流及桌面内径编辑通过，全部字段待扩测|tests/test_solver.py、tests/ui.e2e.cjs|
-|H05|直接阻力 P74,I4|公式/单位定义不完整|定义 ΔH=RQ·abs(Q)，R 单位 s²/m⁵|A|内核已验证；桌面专用流程待扩测|docs/MODELS.md、tests/test_solver.py|
+|H05|直接阻力 P74,I4|公式/单位定义不完整|定义 ΔH=RQ·abs(Q)，R 单位 s²/m⁵|A|解析内核已验证；私有高阻比衍生例默认失败待修复，桌面专用流程待扩测|docs/MODELS.md、tests/test_solver.py、docs/VALIDATION.md|
 |H06|局阻 P75–79,I4|ζ 或沿程倍率互斥|公开两种互斥模型，拒绝重复定义|A|内核已验证；高级属性路径待扩测|tests/test_physics.py|
 |H07|节点/定压/漏补水 P82–87,I5|单个静压点，新设置取消旧点|每分量检查、多定压、边界供入量|A|部分：边界/守恒/标高测试通过，复杂边界待扩测|tests/test_solver.py|
 |H08|泵库 P88–90,100–105,I6,I9|只能从库选，增删改、四系数|工程携带数据、库管理与曲线编辑|B|部分：泵阀库增改复制删除、JSON 往返、来源副本应用已实现；无完整厂家目录/效率曲面|tests/test_library_table.py、tests/ui.features.cjs|
