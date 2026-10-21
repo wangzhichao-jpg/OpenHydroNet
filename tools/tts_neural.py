@@ -1,25 +1,40 @@
 """Offline Mandarin narration. Optional production tool, never a runtime dependency.
 
 Requires sherpa-onnx==1.13.8 and the Apache-2.0 csukuangfj/kokoro-multi-lang-v1_1
-ONNX conversion. Uses a generic Chinese speaker zf_001, not a cloned user voice. No remote code, account, voice cloning, or network fallback.
+ONNX conversion. Uses one of the model's built-in generic Chinese speakers; no
+cloning of a user/real person, no remote code, account or network fallback.
 Model acquisition/provenance: media/ASSETS.md.
 """
 from pathlib import Path
+import os
 import wave
 
 import numpy as np
 
+DEFAULT_SPEAKER = os.environ.get('OHN_TTS_SPEAKER', 'zm_010')
+
+
+def speaker_ids(model):
+    import onnxruntime
+    meta = onnxruntime.InferenceSession(str(model), providers=['CPUExecutionProvider']).get_modelmeta()
+    return {name: int(i) for i, name in (x.split('->') for x in meta.custom_metadata_map['id2speaker'].split(','))}
+
 
 class Narrator:
-    def __init__(self, model_dir, threads=4):
+    def __init__(self, model_dir, threads=4, speaker=DEFAULT_SPEAKER, speed=1.0):
         import sherpa_onnx
         root = Path(model_dir).resolve()
         required = ['model.onnx', 'voices.bin', 'tokens.txt', 'lexicon-zh.txt', 'dict/jieba.dict.utf8', 'LICENSE']
         if not all((root / name).is_file() for name in required):
             raise FileNotFoundError('缺少离线中文配音模型；不会改用旧 eSpeak 或在线配音')
-        self.speed = 0.93  # Slightly slower model duration prediction, not waveform resampling.
+        ids = speaker_ids(root/'model.onnx')
+        if speaker not in ids:
+            raise ValueError('模型中不存在该内置说话人：' + speaker)
+        self.speaker, self.sid = speaker, ids[speaker]
+        # Natural model-predicted duration; no waveform time-stretching.
+        self.speed = float(speed)
         self.model_sha256 = __import__('hashlib').sha256((root / 'model.onnx').read_bytes()).hexdigest()
-        # eSpeak is used only for fallback phoneme lookup, never for its voice.
+        # eSpeak data is used only for fallback phoneme lookup, never as a voice.
         data = next((p for p in [root/'espeak-ng-data',
                     Path('/usr/lib/x86_64-linux-gnu/espeak-ng-data'),
                     Path('/usr/share/espeak-ng-data')] if (p/'phontab').is_file()), None)
@@ -34,10 +49,14 @@ class Narrator:
             max_num_sentences=1,
         ))
 
+    @property
+    def engine_label(self):
+        return f'sherpa-onnx 1.13.8 / Kokoro v1.1 Chinese, built-in generic male voice {self.speaker}, whole-sentence synthesis'
+
     def synthesize(self, text, destination):
-        # Fixed natural speed. A sentence that will not fit must be rewritten,
-        # not time-compressed, cut off, or allowed to overlap the next sentence.
-        audio = self.engine.generate(text, sid=3, speed=self.speed)
+        # One complete sentence per call keeps natural phrase intonation; a
+        # sentence that will not fit must be rewritten, not compressed or cut.
+        audio = self.engine.generate(text, sid=self.sid, speed=self.speed)
         samples = np.asarray(audio.samples, dtype=np.float64)
         if not len(samples) or not np.isfinite(samples).all():
             raise RuntimeError('配音为空或含非有限样本')
@@ -55,5 +74,6 @@ if __name__ == '__main__':
     parser.add_argument('--model-dir', required=True)
     parser.add_argument('--text', required=True)
     parser.add_argument('--out', required=True)
+    parser.add_argument('--speaker', default=DEFAULT_SPEAKER)
     args = parser.parse_args()
-    print(Narrator(args.model_dir).synthesize(args.text, args.out))
+    print(Narrator(args.model_dir, speaker=args.speaker).synthesize(args.text, args.out))

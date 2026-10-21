@@ -37,6 +37,27 @@ def subtitle_chunks(text, maximum=28):
     return chunks
 
 
+SENTENCE_GAP_S = .32
+
+
+def sentences(text):
+    """Whole sentences are synthesized together, keeping natural phrase prosody."""
+    return re.findall(r'[^。！？]+[。！？]?', text)
+
+
+def caption_pieces(text, duration):
+    """Sentence boundaries are exact WAV boundaries; within one sentence, the
+    caption split point is estimated by spoken character share (documented)."""
+    chunks = subtitle_chunks(text)
+    weights = [max(1, len(re.findall(r'[\u4e00-\u9fff0-9A-Za-z]', c))) for c in chunks]
+    total, at, out = sum(weights), 0.0, []
+    for chunk, weight in zip(chunks, weights):
+        span = duration*weight/total
+        out.append((chunk, at, at+span))
+        at += span
+    return out
+
+
 def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
@@ -47,10 +68,10 @@ def prepare_speech(kind, plan, narrator):
     manifest_file = directory/'speech-manifest.json'
     previous = json.loads(manifest_file.read_text()) if manifest_file.exists() else {}
     cached = {x['file']:x for x in previous.get('clips', [])}
-    manifest = dict(engine='sherpa-onnx 1.13.8 / Kokoro v1.1 Chinese, generic zf_001 voice',
+    manifest = dict(engine=narrator.engine_label, speaker=narrator.speaker,
                     model_sha256=narrator.model_sha256, speed=narrator.speed, clips=[])
     for i, scene in enumerate(plan['segments']):
-        for k, text in enumerate(subtitle_chunks(scene['text'])):
+        for k, text in enumerate(sentences(scene['text'])):
             file = f'speech-{i:02}-{k:02}.wav'
             clip = cached.get(file)
             if not (previous.get('model_sha256') == narrator.model_sha256
@@ -63,7 +84,7 @@ def prepare_speech(kind, plan, narrator):
                             sha256=digest(directory/file))
             manifest['clips'].append(clip)
             manifest_file.write_text(json.dumps(manifest, ensure_ascii=False, indent=2)+'\n')
-        duration = sum(c['duration_s']+.16 for c in manifest['clips'] if c['scene']==i)-.16
+        duration = sum(c['duration_s']+SENTENCE_GAP_S for c in manifest['clips'] if c['scene']==i)-SENTENCE_GAP_S
         end = plan['segments'][i+1]['at'] if i+1 < len(plan['segments']) else plan['duration']
         print(kind, i, 'speech seconds', round(duration,2), 'slot', end-scene['at'], flush=True)
         if duration+1.0 > end-scene['at']:
@@ -121,14 +142,16 @@ def compose_audio(kind, plan):
                 raise RuntimeError(f'{kind} 场景 {i} 实际操作后空间不足，请缩短旁白或调整分镜')
             begin = round(offset*sample_rate)*2
             combined[begin:begin+len(audio)] = audio
-            captions.append(dict(start_s=offset,end_s=offset+duration,text=clip['text'],file=clip['file'],scene=i))
-            offset += duration+.16
+            for text, a, b in caption_pieces(clip['text'], duration):
+                captions.append(dict(start_s=offset+a,end_s=offset+b,text=text,file=clip['file'],scene=i))
+            offset += duration+SENTENCE_GAP_S
     with wave.open(str(directory/'narration.wav'), 'wb') as stream:
         stream.setparams((1,2,sample_rate,0,'NONE','not compressed'))
         stream.writeframes(combined)
     write_subtitles(kind, captions)
-    manifest = dict(software=VERSION, model_sha256=speech['model_sha256'], speed=speech['speed'],
-                    no_time_compression=True, timing='each caption uses its own WAV duration, after actual action completion',
+    manifest = dict(software=VERSION, engine=speech['engine'], speaker=speech.get('speaker'),
+                    model_sha256=speech['model_sha256'], speed=speech['speed'],
+                    no_time_compression=True, timing='whole-sentence WAVs placed after actual action completion; sentence boundaries exact, intra-sentence caption splits estimated by character share',
                     captions=captions)
     (directory/'audio-manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
 
@@ -174,6 +197,7 @@ def main():
     parser.add_argument('--audio-only',action='store_true')
     parser.add_argument('--remux',action='store_true',help='reuse this version’s actual capture and speech clips')
     parser.add_argument('--kind',choices=['intro','quickstart'])
+    parser.add_argument('--speaker',help='Kokoro built-in generic speaker, e.g. zm_010')
     args = parser.parse_args()
     plans = json.loads((ROOT/'media/storyboards.json').read_text())
     narrator = None
@@ -181,7 +205,7 @@ def main():
         if not args.model_dir:
             parser.error('--model-dir is required; no online or eSpeak fallback')
         from tts_neural import Narrator
-        narrator = Narrator(args.model_dir)
+        narrator = Narrator(args.model_dir, **({'speaker':args.speaker} if args.speaker else {}))
     for kind in ([args.kind] if args.kind else ['quickstart','intro']):
         if narrator:
             prepare_speech(kind,plans[kind],narrator)

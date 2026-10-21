@@ -19,7 +19,7 @@ def make_fake_audio(tmp_path, monkeypatch, late=False):
         stream.setparams((1,2,1000,0,'NONE','not compressed'))
         stream.writeframes(b'\x01\x00'*1000)
     digest=hashlib.sha256((directory/'voice.wav').read_bytes()).hexdigest()
-    manifest=dict(model_sha256='test-only',speed=.9,clips=[dict(file='voice.wav',text='请重新计算。',scene=0,sha256=digest)])
+    manifest=dict(engine='test-only',speaker='zm_test',model_sha256='test-only',speed=1.0,clips=[dict(file='voice.wav',text='请重新计算。',scene=0,sha256=digest)])
     (directory/'speech-manifest.json').write_text(json.dumps(manifest))
     recording=dict(software=render.VERSION,smoke=False,events=[dict(action='calculate',expected_s=0,actual_s=3.5 if late else 1.5)])
     (directory/'recording.json').write_text(json.dumps(recording))
@@ -75,3 +75,15 @@ def test_spoken_text_avoids_confirmed_polyphone_dictionary_traps():
     spoken=''.join(s['text'] for p in plans.values() for s in p['segments'])
     assert all(word not in spoken for word in ('重开','重算','管长'))
     assert '再次计算' in spoken and '管道长度' in spoken
+
+
+def test_whole_sentence_units_and_exact_sentence_caption_bounds():
+    import pytest
+    from tools.render_videos import sentences, caption_pieces
+    text='先检查模型，再点击计算。程序同时核对节点质量守恒和支路能量残差，计算在独立进程中执行，结果保留算法版本和输入摘要。'
+    units=sentences(text)
+    assert ''.join(units)==text and len(units)==2
+    pieces=caption_pieces(units[1],6.0)
+    assert ''.join(p[0] for p in pieces)==units[1] and all(len(p[0])<=28 for p in pieces)
+    assert pieces[0][1]==0 and pieces[-1][2]==pytest.approx(6.0)
+    assert all(a[2]==pytest.approx(b[1]) for a,b in zip(pieces,pieces[1:]))
