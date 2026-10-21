@@ -58,6 +58,12 @@ python3 tools/deliver_preview.py
 3. A 质量：更多参数交叉校验/画布组合、密集标签、可调面板、真实崩溃/长稳、高 DPI/Windows 原生验收。详见 KNOWN_LIMITATIONS，不能因新流程通过就全勾完成。
 4. 更新/试听视频；用户确认 GitHub/Gitee 和视频位置后才安全发布同版本同标签，并实际验链接/下载。
 
+## Windows 用户验收交接
+
+专门说明位于 `validation/windows/Windows验收说明.md`，分 12 项 P0 必测与 6 项 P1 扩展。`tools/prepare_windows_validation.py` 将原版候选的完整解压软件（逐文件字节相同）、中文 TXT/离线 HTML、人工样例、反馈模板、隔离启动与校验/收集脚本组成独立的 `artifacts/OpenHydroNet-0.1.0-preview.2-Windows-validation.zip`，用户无需 Node/Python 开发环境。总包出现且 CRC/清单通过后再交付下载，不能把源脚本视作已完成组包。
+
+测试启动器使用包内 `feedback/test-profile`，不改默认配置；反馈只收集有限本机摘要/本包进程/人工样例输出，不自动上传、不发送浏览器配置、不杀其他 Python。脚本受执行策略限制时有完整手工备用流程，不要求关闭安全功能。PowerShell/Windows 原生执行仍待用户；Linux 辅助测试只标 developer check，不冒充原生通过。用户返回材料存私有 `.local/windows-feedback/`，不是公开源码。
+
 ## 需要用户并行配合，不阻塞其余本地开发
 
 - 有 Windows 10/11 x64 电脑时，按 ACCEPTANCE.md 验证候选的启动、中文路径/高 DPI、计算/导出/取消退出、进程清理，给实际结果。
