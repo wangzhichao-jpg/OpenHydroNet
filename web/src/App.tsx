@@ -17,6 +17,7 @@ import DeviceLibrary from './DeviceLibrary';
 import './workspaces.css';
 import TableImport from './TableImport';
 import AnalysisPanel from './AnalysisPanel';
+import { applyAdjustments } from './analysis';
 import { statusText } from './status';
 import { applyLibrary } from './library';
 import { persistable } from './document';
@@ -1092,7 +1093,46 @@ function Workbench() {
             )}
             <div className="bottom-content">
               <div className="analysis-host" hidden={tab !== 'analysis'}>
-                <AnalysisPanel key={epoch} model={p.model} flowUnit={flowUnit} />
+                <AnalysisPanel
+                  key={epoch}
+                  model={p.model}
+                  flowUnit={flowUnit}
+                  actions={{
+                    onSaveScenario: (model, scenarioResult, summary) => {
+                      if (documentEpoch.current !== epoch || rejectInvalidEditor()) return;
+                      const next = clone(pRef.current),
+                        id = uid('S'),
+                        name = '可及性方案 ' + (next.scenarios.length + 1);
+                      next.scenarios.push({
+                        id,
+                        name,
+                        model: clone(model),
+                        result: clone(scenarioResult),
+                      });
+                      edit(next);
+                      setComparison(id);
+                      setTab('compare');
+                      setMessage(
+                        `${name} 已保存为工况快照（${summary || '无调节'}）；当前工程未改变`,
+                      );
+                    },
+                    onApply: (changes, summary) => {
+                      if (documentEpoch.current !== epoch || rejectInvalidEditor()) return false;
+                      try {
+                        const next = clone(pRef.current);
+                        next.model = applyAdjustments(next.model, changes);
+                        edit(next);
+                      } catch (e: any) {
+                        setMessage('未应用：' + e.message);
+                        return false;
+                      }
+                      setMessage(
+                        `已应用调节：${summary || '无变化'}；可撤销。请重新计算以更新主结果`,
+                      );
+                      return true;
+                    },
+                  }}
+                />
               </div>
               {tab === 'library' && (
                 <DeviceLibrary

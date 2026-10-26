@@ -20,10 +20,21 @@ import {
   searchVariables,
   searchProblems,
   adjustmentRows,
+  adjustmentSummary,
+  applyAdjustments,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
+import type { AnalysisActions } from './AnalysisPanel';
 
-export default function AccessibilityView({ model, flowUnit }: { model: any; flowUnit: string }) {
+export default function AccessibilityView({
+  model,
+  flowUnit,
+  actions,
+}: {
+  model: any;
+  flowUnit: string;
+  actions: AnalysisActions;
+}) {
   const [rows, setRows] = useState<ConstraintRow[]>(() => defaultConstraintRows(model));
   // Only the user's choices are stored; the list itself follows the live model, so current values stay
   // up to date and deleted pumps/valves disappear instead of producing a rejected request.
@@ -49,20 +60,36 @@ export default function AccessibilityView({ model, flowUnit }: { model: any; flo
     [rows, model, vars],
   );
   const running = state.status === 'starting' || state.status === 'running';
-  const stale =
-    state.status === 'completed' &&
-    !!state.modelSignature &&
-    state.modelSignature !== JSON.stringify(model);
   const frozenModel = useMemo(
     () => (state.modelSignature ? JSON.parse(state.modelSignature) : model),
     [state.modelSignature, model],
   );
-  const update = (key: string, patch: Partial<ConstraintRow>) =>
-    setRows((all) => all.map((r) => (r.key === key ? { ...r, ...patch } : r)));
-  const firstTerminal = model.edges.find((e: any) => e.kind === 'terminal') || model.edges[0];
   const result = state.status === 'completed' ? state.result : null;
   const satisfied =
     result && ['feasible_at_this_point', 'feasible_point_found'].includes(result.conclusion);
+  // The found point, as a model. When the current model equals it, the adjustment has been applied:
+  // the shown checks describe the current model exactly, so the result is not stale.
+  const foundSignature = useMemo(() => {
+    if (!result?.changes || result.conclusion !== 'feasible_point_found') return null;
+    try {
+      return JSON.stringify(applyAdjustments(frozenModel, result.changes));
+    } catch {
+      return null;
+    }
+  }, [result, frozenModel]);
+  const currentSignature = JSON.stringify(model);
+  const applied =
+    !!foundSignature &&
+    foundSignature === currentSignature &&
+    foundSignature !== state.modelSignature;
+  const stale =
+    state.status === 'completed' &&
+    !!state.modelSignature &&
+    state.modelSignature !== currentSignature &&
+    !applied;
+  const update = (key: string, patch: Partial<ConstraintRow>) =>
+    setRows((all) => all.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  const firstTerminal = model.edges.find((e: any) => e.kind === 'terminal') || model.edges[0];
 
   if (!model.edges.length) return <div className="tip">当前模型没有支路，无法设置约束。</div>;
 
@@ -273,6 +300,38 @@ export default function AccessibilityView({ model, flowUnit }: { model: any; flo
                         ))}
                       </tbody>
                     </table>
+                    {satisfied && (
+                      <div className="button-row" data-testid="found-actions">
+                        <button
+                          disabled={stale}
+                          onClick={() =>
+                            actions.onSaveScenario(
+                              applyAdjustments(frozenModel, result.changes),
+                              result.result,
+                              adjustmentSummary(result, frozenModel),
+                            )
+                          }
+                        >
+                          保存为工况快照
+                        </button>
+                        <button
+                          className="primary"
+                          disabled={stale || applied}
+                          onClick={() =>
+                            actions.onApply(result.changes, adjustmentSummary(result, frozenModel))
+                          }
+                        >
+                          {applied ? '已应用' : '应用到当前工程'}
+                        </button>
+                        <small data-testid="found-actions-note">
+                          {stale
+                            ? '模型已修改，搜索结果过期，不能保存或应用；请重新搜索。'
+                            : applied
+                              ? `已应用到当前工程：${adjustmentSummary(result, frozenModel)}。可撤销（Ctrl+Z）；请重新计算主结果。`
+                              : '保存工况不改变当前工程；应用后可撤销，需重新计算主结果。'}
+                        </small>
+                      </div>
+                    )}
                     <h4>该点各约束</h4>
                   </>
                 )}

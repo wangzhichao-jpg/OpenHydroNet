@@ -330,3 +330,28 @@ export function adjustmentRows(result: any, frozenModel: any): AdjustmentRow[] {
     return { label: p?.label || c.id, from, to: c.value, delta: +(c.value - from).toPrecision(12) };
   });
 }
+
+// ---- 可行点落地（T-007）----
+/** Copy of ``model`` with found operating adjustments applied (pump speed / valve opening only). */
+export function applyAdjustments(
+  model: any,
+  changes: { id: string; field: string; value: number }[],
+) {
+  const next = structuredClone(model);
+  for (const c of changes) {
+    const e = next.edges.find((x: any) => x.id === c.id);
+    if (!e) throw Error(`调节对象不存在：${c.id}`);
+    if (!adjustableParams({ edges: [e] }).some((p) => p.field === c.field))
+      throw Error('只能应用泵相对转速和阀开度，仅限运行调节量');
+    e[c.field] = c.value;
+  }
+  return next;
+}
+
+/** One-line description of the real changes (|Δ| ≥ 1e-5), e.g. "循环泵 · 相对转速 1 → 1.135". */
+export function adjustmentSummary(result: any, frozenModel: any) {
+  return adjustmentRows(result, frozenModel)
+    .filter((a) => Math.abs(a.delta) >= 1e-5)
+    .map((a) => `${a.label} ${fmt(a.from)} → ${fmt(a.to)}`)
+    .join('；');
+}

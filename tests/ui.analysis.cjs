@@ -198,6 +198,58 @@ const inPanelView = (locator) =>
       'all constraints satisfied: ' + after,
     );
     await page.screenshot({ path: path.join(out, '04-accessibility-found.png') });
+    // ---- T-007: save the found point as a scenario, or apply it (undoable) ----
+    const actions = page.getByTestId('found-actions');
+    await actions.getByRole('button', { name: '保存为工况快照' }).click();
+    await page.locator('.statusbar').filter({ hasText: '可及性方案 1 已保存为工况快照' }).waitFor();
+    const compareSelect = page.getByLabel('对比工况');
+    assert.equal(await compareSelect.locator('option:checked').innerText(), '可及性方案 1');
+    const speedField = page.getByLabel('相对转速 n/n₀');
+    assert.equal(
+      Number(await speedField.inputValue()),
+      1,
+      'saving a scenario leaves the project unchanged',
+    );
+    await page.getByRole('button', { name: '分析', exact: true }).click();
+    await actions.getByRole('button', { name: '应用到当前工程' }).click();
+    const applied = Number(await speedField.inputValue());
+    assert.ok(applied > 1.12 && applied < 1.16, 'applied pump speed: ' + applied);
+    // The current model is exactly the found point: shown as applied, not stale.
+    const note = page.getByTestId('found-actions-note');
+    await note
+      .filter({ hasText: '已应用到当前工程：循环泵 · 虚构示例 · 相对转速 1 → 1.13' })
+      .waitFor();
+    assert.equal(await actions.getByRole('button', { name: '已应用' }).isDisabled(), true);
+    assert.equal(await page.getByTestId('accessibility-stale').count(), 0);
+    await page.getByTitle('撤销 Ctrl+Z').click();
+    assert.equal(Number(await speedField.inputValue()), 1, 'undo restores the original speed');
+    assert.equal(await actions.getByRole('button', { name: '应用到当前工程' }).isDisabled(), false);
+    // Any other edit makes the search stale: both buttons are disabled.
+    await speedField.fill('0.95');
+    await speedField.press('Enter');
+    await page.getByTestId('accessibility-stale').waitFor();
+    assert.equal(await actions.getByRole('button', { name: '应用到当前工程' }).isDisabled(), true);
+    assert.equal(await actions.getByRole('button', { name: '保存为工况快照' }).isDisabled(), true);
+    await page.getByTitle('撤销 Ctrl+Z').click();
+    assert.equal(Number(await speedField.inputValue()), 1);
+    // Recalculating the applied point reproduces the scenario's T2 flow (same model, same kernel).
+    await actions.getByRole('button', { name: '应用到当前工程' }).click();
+    await page.getByRole('button', { name: '计算', exact: true }).click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
+    await page.getByRole('button', { name: '工况对比', exact: true }).click();
+    await compareSelect.selectOption({ label: '可及性方案 1' });
+    const t2Cells = await page
+      .locator('.bottom-content > table tbody tr')
+      .filter({ hasText: '用户末端 2' })
+      .locator('td')
+      .allInnerTexts();
+    // [name, baseline, current, delta, percent]: the saved scenario equals the recalculated point.
+    assert.equal(t2Cells[1], t2Cells[2], 'scenario and recalculated point agree: ' + t2Cells);
+    assert.ok(num(t2Cells[1]) >= 14.4 - 1e-3, 'scenario meets the design flow: ' + t2Cells);
+    assert.equal(num(t2Cells[3]), 0);
+    await page.screenshot({ path: path.join(out, '06-scenario-compare.png') });
+    await page.getByTitle('撤销 Ctrl+Z').click();
+    await page.getByRole('button', { name: '分析', exact: true }).click();
     // Unreachable target: undetermined + closest point, never an infeasibility claim.
     await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).fill('36');
     await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).press('Enter');

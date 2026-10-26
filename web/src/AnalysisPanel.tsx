@@ -8,7 +8,23 @@ const MODES = [
   ['accessibility', '可及性'],
 ] as const;
 
-export default function AnalysisPanel({ model, flowUnit }: { model: any; flowUnit: string }) {
+/** Ways an analysis result may change the project; both go through the document's undo history. */
+export type AnalysisActions = {
+  /** Add the found point (frozen model + adjustments, with its own result) as a scenario. */
+  onSaveScenario: (model: any, result: any, summary: string) => void;
+  /** Write the found adjustments into the current model. Returns false if the document refused. */
+  onApply: (changes: { id: string; field: string; value: number }[], summary: string) => boolean;
+};
+
+export default function AnalysisPanel({
+  model,
+  flowUnit,
+  actions,
+}: {
+  model: any;
+  flowUnit: string;
+  actions: AnalysisActions;
+}) {
   const [mode, setMode] = useState<string>('scan');
   return (
     <div className="analysis-panel" data-testid="analysis-panel">
@@ -24,7 +40,7 @@ export default function AnalysisPanel({ model, flowUnit }: { model: any; flowUni
         <ScanView model={model} flowUnit={flowUnit} />
       </div>
       <div className="analysis-mode" hidden={mode !== 'accessibility'}>
-        <AccessibilityView model={model} flowUnit={flowUnit} />
+        <AccessibilityView model={model} flowUnit={flowUnit} actions={actions} />
       </div>
     </div>
   );

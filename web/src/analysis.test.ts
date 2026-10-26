@@ -254,3 +254,40 @@ test('adjustment rows compare found values with the frozen model', () => {
   assert.equal(rows[1].delta, 0);
   assert.deepEqual(adjustmentRows({ changes: null }, withDesign), []);
 });
+
+// ---- T-007 apply / save found point ----
+import { applyAdjustments, adjustmentSummary } from './analysis';
+
+test('found adjustments patch a copy of the model and only touch speed/opening', () => {
+  const patched = applyAdjustments(withDesign, [
+    { id: 'PU1', field: 'speed', value: 1.1348 },
+    { id: 'V1', field: 'opening', value: 0.5 },
+  ]);
+  assert.equal(patched.edges[0].speed, 1.1348);
+  assert.equal(withDesign.edges[0].speed, 1, 'original untouched');
+  assert.notEqual(patched, withDesign);
+  assert.throws(
+    () => applyAdjustments(withDesign, [{ id: 'P1', field: 'diameter', value: 1 }]),
+    /仅限/,
+  );
+  assert.throws(
+    () => applyAdjustments(withDesign, [{ id: 'gone', field: 'speed', value: 1 }]),
+    /不存在/,
+  );
+});
+
+test('adjustment summary names only real changes', () => {
+  const s = adjustmentSummary(
+    {
+      changes: [
+        { id: 'PU1', field: 'speed', value: 1.1348 },
+        { id: 'V1', field: 'opening', value: 0.5000001 },
+      ],
+    },
+    {
+      ...withDesign,
+      edges: withDesign.edges.map((e: any) => (e.id === 'V1' ? { ...e, opening: 0.5 } : e)),
+    },
+  );
+  assert.equal(s, '循环泵 · 相对转速 1 → 1.135');
+});

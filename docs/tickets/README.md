@@ -13,7 +13,8 @@
 | [T-004](T-004.md) | 敏感性分析（多观测量） | T-001 | analysis.py, SensitivityView.tsx | todo |
 | [T-005](T-005.md) | 可及性：约束编辑与固定检查 | T-001 | AccessibilityView.tsx | done |
 | [T-006](T-006.md) | 可及性：有界局部搜索 | T-005 | AccessibilityView.tsx, analysis.py | done |
-| [T-007](T-007.md) | 可行点保存为工况 / 应用到工程 | T-006 | AccessibilityView.tsx, App.tsx | todo |
+| [T-007](T-007.md) | 可行点保存为工况 / 应用到工程 | T-006 | AccessibilityView.tsx, App.tsx | done |
+| [T-009](T-009.md) | 可及性改进：最小调整与设定精度（待用户取舍） | T-007 | analysis.py, AccessibilityView.tsx | todo |
 | [T-008](T-008.md) | 文档、覆盖矩阵、CI 收尾 | T-002..T-007 | docs/, ci.yml | todo |
 
 T-001 完成后，T-002、T-004、T-005 可由不同 agent 在独立 worktree 并行（文件不重叠）。
