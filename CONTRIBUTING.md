@@ -10,4 +10,4 @@
 6. 行为变更更新用户手册、模型说明、验证记录和状态；未实现不能填“完成”。
 7. 公开贡献默认按 Apache-2.0 提交，不要求转让版权。尊重不同经验背景的用户，使用可理解的中文问题说明。
 
-实际 GitHub 主仓库和 Gitee 镜像尚待确认；不要把不存在的地址写成贡献入口。
+仓库：GitHub `wangzhichao-jpg/OpenHydroNet`，Gitee 镜像 `bigtaurus/OpenHydroNet`。开发流程与规则见根目录 `AGENTS.md`，术语见 `GLOSSARY.md`。

@@ -1,0 +1,42 @@
+# AGENTS.md — 给编码 agent 的入口
+
+OpenHydroNet：离线中文供热/空调水系统稳态水力工作台。Python 内核 + React Flow 界面 + Electron 桌面。
+术语一律以 [GLOSSARY.md](GLOSSARY.md) 为准；命名变量、函数、文件时使用其中的词。
+
+## 分工（ADR-009）
+- 本机 SER8 只做**代码开发**：内核、界面、测试、规范与任务卡。
+- 视频、配音、宣传、网盘交付、Windows 打包分发在用户 PC 端完成。不要在 SER8 上新增媒体/交付工作。
+
+## 常用命令
+```bash
+PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q       # 内核/协议，约 4 s
+npm run test:commands                                            # TS 单元 + Node 存储
+npm run build && npm run format:check
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/lifecycle/features/jobs/analysis
+```
+每套 E2E 单独启动真实 Electron；不要并行跑两套（共享端口/配置目录）。
+
+## 目录
+- `src/openhydronet/`：SI 内核。`solver.py` 求解，`analysis.py` 扫描/敏感性/可及性，`server.py` 本机协议，`cli.py` 子进程入口。
+- `web/src/`：界面。`App.tsx` 是历史单体（约 2100 行）——**新功能写成独立模块/组件**，只在 App 中挂载，不要继续加大它。
+- `tests/`：`test_*.py` 内核，`*.test.cjs`/`web/src/*.test.ts` 单元，`ui.*.cjs` 真实 Electron E2E。
+- `docs/specs/` 规范，`docs/tickets/` 任务卡（本地任务跟踪），`docs/DECISIONS.md` ADR。
+
+## 工作流
+1. 需求先追问澄清（只问需要用户取舍的问题），结论写入 GLOSSARY/ADR。
+2. 写规范 `docs/specs/SPEC-NNN-*.md`：做什么、不做什么、完成标准。
+3. 拆任务卡 `docs/tickets/`：按用户可见功能纵向拆，写验收标准与 `blocked_by`。
+4. 每张卡 TDD：先写失败测试再实现；一卡一提交，提交信息引用卡号。
+5. 完成后两路审查：代码规范 / 对照规范逐条核对，分开做。
+6. 一个阶段结束做复盘，把绕路和重复错误写回本文件。
+
+## 硬性规则
+- 内核全部 SI（m、s、m³/s、Pa）；显示单位只在界面换算。
+- 不得为了让测试通过而修改输入、放宽残差门槛或伪造数据；局部搜索失败只能报“未确定”，不能报“不可行”。
+- 新结论要有测试入口；未实现的不写“完成”。覆盖矩阵状态只能如实升级。
+- 不提交 `.local/`、`artifacts/`、参考说明书原文、CNKI 全文、凭据。
+- 下载优先国内镜像（pip 清华、npm npmmirror），保持 TLS 校验；长任务用 systemd 用户任务 + `.local/*.lock`。
+- 远程：`origin`=GitHub（HTTPS），`gitee`=Gitee（SSH 别名 `gitee-ohn`）。两端保持同一提交。
+
+## 复盘记录（持续追加）
+- 2026-10-26：媒体/交付收据曾占用约一半提交，产品缺口停滞 → 已移交 PC 端。大提交（>3000 行）难审查 → 一卡一提交。
