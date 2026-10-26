@@ -67,6 +67,39 @@ const inPanelView = (locator) =>
       Math.abs(t2[2] - 13.679) < 0.01,
       'speed 1.0 matches the documented example: ' + t2[2],
     );
+    // ---- T-002: chart, legend toggle and CSV export ----
+    const chart = page.getByRole('img', { name: /参数扫描曲线/ });
+    assert.equal(await chart.locator('circle').count(), 10, 'two series × five points');
+    assert.equal(await chart.locator('polyline').count(), 2, 'no failed point, so no breaks');
+    const legendT1 = scan.getByRole('button', { name: '用户末端 1 流量 [m³/h]', exact: true });
+    assert.ok(await inPanelView(legendT1), 'legend stays inside the analysis panel');
+    await legendT1.click();
+    assert.equal(await legendT1.getAttribute('aria-pressed'), 'false');
+    assert.equal(await chart.locator('circle').count(), 5);
+    await legendT1.click();
+    assert.equal(await chart.locator('circle').count(), 10);
+    await app.evaluate(({ dialog }, dir) => {
+      dialog.showSaveDialog = async (_w, options) => ({
+        canceled: false,
+        filePath: dir + '/' + options.defaultPath,
+      });
+    }, out);
+    await scan.getByRole('button', { name: '导出 CSV' }).click();
+    await scan.getByText('已导出 CSV（当前显示单位）').waitFor();
+    const csv = await fs.readFile(
+      path.join(out, '双末端闭式循环 · 公开教学示例·参数扫描.csv'),
+      'utf8',
+    );
+    assert.ok(csv.startsWith('\ufeff'), 'UTF-8 BOM for spreadsheet software');
+    const csvLines = csv.slice(1).trim().split('\r\n');
+    assert.equal(
+      csvLines[0],
+      '循环泵 · 虚构示例 · 相对转速,用户末端 1 流量 [m³/h],用户末端 2 流量 [m³/h],状态,问题',
+    );
+    assert.equal(csvLines.length, 6);
+    const csvT2 = Number(csvLines[3].split(',')[2]);
+    assert.ok(Math.abs(csvT2 - 13.679) < 0.001, 'CSV keeps full precision: ' + csvLines[3]);
+    await page.screenshot({ path: path.join(out, '01b-scan-chart.png') });
     assert.ok(await inPanelView(page.locator('.analysis-modes')), 'mode bar stays in view');
     assert.ok(await inPanelView(table.locator('thead')), 'table header stays in view');
     assert.ok(

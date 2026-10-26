@@ -19,10 +19,12 @@ export type AnalysisActions = {
 export default function AnalysisPanel({
   model,
   flowUnit,
+  projectName,
   actions,
 }: {
   model: any;
   flowUnit: string;
+  projectName: string;
   actions: AnalysisActions;
 }) {
   const [mode, setMode] = useState<string>('scan');
@@ -37,7 +39,7 @@ export default function AnalysisPanel({
         <small>分析在运行时冻结的模型副本上进行；每个点都是独立稳态计算。</small>
       </nav>
       <div className="analysis-mode" hidden={mode !== 'scan'}>
-        <ScanView model={model} flowUnit={flowUnit} />
+        <ScanView model={model} flowUnit={flowUnit} projectName={projectName} />
       </div>
       <div className="analysis-mode" hidden={mode !== 'accessibility'}>
         <AccessibilityView model={model} flowUnit={flowUnit} actions={actions} />

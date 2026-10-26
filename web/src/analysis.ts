@@ -397,3 +397,81 @@ export function refinementNotes(result: any, frozenModel: any): string[] {
   else if (r.status === 'not_verified') notes.push('已达评估上限，未完成取整验算，以下为未取整值');
   return notes;
 }
+
+// ---- 扫描曲线与 CSV（T-002）----
+/** Round axis ticks (1/2/5 × 10ⁿ) covering [min, max]; a flat range is widened so the axis is never empty. */
+export function niceTicks(min: number, max: number, count = 5): number[] {
+  if (!(max > min)) {
+    const pad = Math.abs(min) * 0.1 || 1;
+    min -= pad;
+    max += pad;
+  }
+  const raw = (max - min) / count,
+    mag = 10 ** Math.floor(Math.log10(raw)),
+    norm = raw / mag;
+  const step = (norm < 1.5 ? 1 : norm < 3 ? 2 : norm < 7 ? 5 : 10) * mag;
+  const ticks: number[] = [];
+  for (let k = Math.floor(min / step); k <= Math.ceil(max / step); k++)
+    ticks.push(+(k * step).toPrecision(12));
+  return ticks;
+}
+
+/** Split a series at missing values: failed points break the line and are never interpolated. */
+export function seriesSegments(xs: number[], ys: (number | undefined)[]): [number, number][][] {
+  const segments: [number, number][][] = [];
+  let current: [number, number][] = [];
+  xs.forEach((x, i) => {
+    const y = ys[i];
+    if (typeof y === 'number' && Number.isFinite(y)) current.push([x, y]);
+    else if (current.length) {
+      segments.push(current);
+      current = [];
+    }
+  });
+  if (current.length) segments.push(current);
+  return segments;
+}
+
+/** Observables sharing a y axis, in order of first appearance. */
+export function unitGroups(observables: Observable[], flowUnit: string) {
+  const groups: { unit: string; indexes: number[] }[] = [];
+  observables.forEach((o, i) => {
+    const unit = displayUnit(o, flowUnit);
+    const g = groups.find((x) => x.unit === unit);
+    if (g) g.indexes.push(i);
+    else groups.push({ unit, indexes: [i] });
+  });
+  return groups;
+}
+
+/** CSV cell; text starting like a formula is prefixed with ' (never executed), then quoted if needed. */
+function csvCell(value: string | number | undefined) {
+  if (value === undefined) return '';
+  if (typeof value === 'number') return String(+value.toPrecision(12));
+  let text = /^[=+\-@\t\r]/.test(value) ? "'" + value : value;
+  if (/[",\r\n]/.test(text)) text = '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+
+/** Scan result as CSV (UTF-8 BOM, CRLF), in the current display units and the result's own density. */
+export function scanCsv(result: any, frozenModel: any, flowUnit: string) {
+  const params = adjustableParams(frozenModel);
+  const paramLabels = result.variables.map(
+    (v: any) => params.find((p) => p.id === v.id && p.field === v.field)?.label || v.id,
+  );
+  const header = [
+    ...paramLabels,
+    ...result.observables.map((o: Observable) => observableLabel(o, frozenModel, flowUnit)),
+    '状态',
+    '问题',
+  ];
+  const rows = scanRows(result, flowUnit, frozenModel).map((r) => [
+    ...r.params,
+    ...r.values,
+    r.status,
+    r.issues.join('；'),
+  ]);
+  return (
+    '\ufeff' + [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n'
+  );
+}

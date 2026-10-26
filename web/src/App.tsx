@@ -1097,6 +1097,7 @@ function Workbench() {
                   key={epoch}
                   model={p.model}
                   flowUnit={flowUnit}
+                  projectName={p.name}
                   actions={{
                     onSaveScenario: (model, scenarioResult, summary) => {
                       if (documentEpoch.current !== epoch || rejectInvalidEditor()) return;

@@ -342,3 +342,67 @@ test('refinement notes explain first point → least adjustment → rounding, ho
     /评估上限/,
   );
 });
+
+// ---- T-002 scan chart and CSV ----
+import { niceTicks, seriesSegments, unitGroups, scanCsv } from './analysis';
+
+test('nice ticks cover the data with round steps; flat data still gets a range', () => {
+  assert.deepEqual(niceTicks(0, 24.5), [0, 5, 10, 15, 20, 25]);
+  assert.deepEqual(niceTicks(10.48, 24.52), [10, 12, 14, 16, 18, 20, 22, 24, 26]);
+  const flat = niceTicks(13.6, 13.6);
+  assert.ok(flat[0] < 13.6 && flat[flat.length - 1] > 13.6);
+  assert.deepEqual(niceTicks(0, 0).length > 1, true);
+});
+
+test('a failed point breaks the line instead of being interpolated', () => {
+  assert.deepEqual(seriesSegments([0.6, 0.8, 1, 1.2], [1, undefined, 3, 4]), [
+    [[0.6, 1]],
+    [
+      [1, 3],
+      [1.2, 4],
+    ],
+  ]);
+  assert.deepEqual(seriesSegments([1, 2], [undefined, undefined]), []);
+});
+
+test('observables are grouped by display unit for the y axis', () => {
+  const obs: any = [
+    { scope: 'edge', id: 'T1', field: 'flow_m3_s' },
+    { scope: 'node', id: 'a', field: 'pressure_pa_gauge' },
+    { scope: 'edge', id: 'P1', field: 'flow_m3_s' },
+  ];
+  assert.deepEqual(unitGroups(obs, 'm3/h'), [
+    { unit: 'm³/h', indexes: [0, 2] },
+    { unit: 'kPa', indexes: [1] },
+  ]);
+});
+
+test('scan CSV: BOM, unit headers, full precision, blanks for missing, formula-safe text', () => {
+  const evil: any = structuredClone(withDesign);
+  evil.edges.find((e: any) => e.id === 'T1').name = '=HYPERLINK("x")';
+  const result = {
+    fluid: { density_kg_m3: 1000 },
+    variables: [{ id: 'PU1', field: 'speed', values: [0.6, 1] }],
+    observables: [{ scope: 'edge', id: 'T1', field: 'flow_m3_s' }],
+    records: [
+      {
+        changes: [{ id: 'PU1', field: 'speed', value: 0.6 }],
+        status: 'converged',
+        values: [0.00291234567],
+        issues: [],
+      },
+      {
+        changes: [{ id: 'PU1', field: 'speed', value: 1 }],
+        status: 'numerical_failure',
+        values: [null],
+        issues: [{ code: 'RESIDUAL', object_id: null }],
+      },
+    ],
+  };
+  const csv = scanCsv(result, evil, 'm3/h');
+  assert.ok(csv.startsWith('\ufeff'));
+  const lines = csv.slice(1).trim().split('\r\n');
+  assert.equal(lines[0], `循环泵 · 相对转速,"'=HYPERLINK(""x"") 流量 [m³/h]",状态,问题`);
+  assert.equal(lines[1], '0.6,10.484444412,计算通过,');
+  assert.equal(lines[2], '1,,残差未达标,残差未达标');
+});

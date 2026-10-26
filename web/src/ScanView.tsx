@@ -13,10 +13,22 @@ import {
   Observable,
   MAX_SCAN_POINTS,
   fmt,
+  unitGroups,
+  scanCsv,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
+import LineChart, { ChartSeries, SERIES_COLORS } from './LineChart';
+import { download } from './api';
 
-export default function ScanView({ model, flowUnit }: { model: any; flowUnit: string }) {
+export default function ScanView({
+  model,
+  flowUnit,
+  projectName,
+}: {
+  model: any;
+  flowUnit: string;
+  projectName: string;
+}) {
   const params = useMemo(() => adjustableParams(model), [model]);
   const [paramKey, setParamKey] = useState(() =>
     params[0] ? params[0].id + ':' + params[0].field : '',
@@ -35,11 +47,15 @@ export default function ScanView({ model, flowUnit }: { model: any; flowUnit: st
   const [observables, setObservables] = useState<Observable[]>(() => defaultObservables(model));
   const options = useMemo(() => observableOptions(model), [model]);
   const { state, start, cancel } = useAnalysisJob();
-  // Column labels come from the model the scan actually ran on, not the edited one.
-  const frozenParams = useMemo(
-    () => (state.modelSignature ? adjustableParams(JSON.parse(state.modelSignature)) : []),
-    [state.modelSignature],
+  // Labels and names come from the model the scan actually ran on, not the edited one.
+  const frozenModel = useMemo(
+    () => (state.modelSignature ? JSON.parse(state.modelSignature) : model),
+    [state.modelSignature, model],
   );
+  const frozenParams = useMemo(() => adjustableParams(frozenModel), [frozenModel]);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [unitIndex, setUnitIndex] = useState(0);
+  const [exportNote, setExportNote] = useState('');
   const currentSignature = JSON.stringify(model);
   const stale =
     !!state.modelSignature &&
@@ -57,8 +73,30 @@ export default function ScanView({ model, flowUnit }: { model: any; flowUnit: st
 
   if (!params.length) return <div className="tip">当前模型没有泵或阀，无可扫描的调节量。</div>;
 
-  const rows = state.status === 'completed' ? scanRows(state.result, flowUnit, model) : [];
+  const rows = state.status === 'completed' ? scanRows(state.result, flowUnit, frozenModel) : [];
   const resultObservables: Observable[] = state.result?.observables || [];
+  const groups = unitGroups(resultObservables, flowUnit);
+  const group = groups[unitIndex] || groups[0];
+  const chartSeries: ChartSeries[] = (group?.indexes || [])
+    .filter((i) => !hidden.includes(observableKey(resultObservables[i])))
+    .map((i) => ({
+      key: observableKey(resultObservables[i]),
+      label: observableLabel(resultObservables[i], frozenModel, flowUnit),
+      ys: rows.map((row) => row.values[i]),
+      color: SERIES_COLORS[i % SERIES_COLORS.length],
+    }));
+  async function exportCsv() {
+    try {
+      const written = await download(
+        `${projectName || '未命名工程'}·参数扫描.csv`,
+        scanCsv(state.result, frozenModel, flowUnit),
+        'csv',
+      );
+      setExportNote(written === false ? '已取消导出' : '已导出 CSV（当前显示单位）');
+    } catch (e: any) {
+      setExportNote('导出失败：' + e.message);
+    }
+  }
   const resultParam = state.result?.variables?.[0];
   const resultParamLabel =
     frozenParams.find((x) => x.id === resultParam?.id && x.field === resultParam?.field)?.label ||
@@ -180,12 +218,63 @@ export default function ScanView({ model, flowUnit }: { model: any; flowUnit: st
           </div>
         )}
         {state.status === 'completed' && (
+          <div className="scan-toolbar">
+            {groups.length > 1 && (
+              <select
+                aria-label="纵轴单位"
+                value={groups.indexOf(group)}
+                onChange={(e) => setUnitIndex(Number(e.target.value))}
+              >
+                {groups.map((g, i) => (
+                  <option key={g.unit} value={i}>
+                    纵轴：{g.unit}
+                  </option>
+                ))}
+              </select>
+            )}
+            <div className="scan-legend">
+              {group?.indexes.map((i) => {
+                const key = observableKey(resultObservables[i]);
+                const shown = !hidden.includes(key);
+                return (
+                  <button
+                    key={key}
+                    className="legend-item"
+                    aria-pressed={shown}
+                    onClick={() =>
+                      setHidden((all) => (shown ? [...all, key] : all.filter((k) => k !== key)))
+                    }
+                  >
+                    <i
+                      style={{
+                        background: shown ? SERIES_COLORS[i % SERIES_COLORS.length] : '#ccd6df',
+                      }}
+                    />
+                    {observableLabel(resultObservables[i], frozenModel, flowUnit)}
+                  </button>
+                );
+              })}
+            </div>
+            <button onClick={exportCsv}>导出 CSV</button>
+            {exportNote && <small>{exportNote}</small>}
+          </div>
+        )}
+        {state.status === 'completed' && rows.length > 1 && (
+          <LineChart
+            xs={rows.map((row) => row.params[0])}
+            series={chartSeries}
+            xLabel={resultParamLabel}
+            yLabel={group?.unit || ''}
+            title={`参数扫描曲线：${resultParamLabel}`}
+          />
+        )}
+        {state.status === 'completed' && (
           <table data-testid="scan-table">
             <thead>
               <tr>
                 <th>{resultParamLabel}</th>
                 {resultObservables.map((o) => (
-                  <th key={observableKey(o)}>{observableLabel(o, model, flowUnit)}</th>
+                  <th key={observableKey(o)}>{observableLabel(o, frozenModel, flowUnit)}</th>
                 ))}
                 <th>状态</th>
               </tr>

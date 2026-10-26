@@ -384,3 +384,49 @@
 .search-bounds .field > span {
   display: none;
 }
+.scan-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.scan-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+.legend-item {
+  font-size: 0.74rem;
+  padding: 2px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.legend-item[aria-pressed='false'] {
+  color: #9aabba;
+}
+.legend-item i {
+  width: 14px;
+  height: 3px;
+  display: inline-block;
+}
+.line-chart {
+  width: 100%;
+  max-width: 760px;
+  height: auto;
+  display: block;
+  margin-bottom: 6px;
+}
+.line-chart text {
+  font-size: 10px;
+  fill: #5b6f80;
+}
+.line-chart .axis-label {
+  font-size: 11px;
+  fill: #36505f;
+}
+.line-chart .grid {
+  stroke: #e3eaf0;
+}
