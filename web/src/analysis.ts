@@ -475,3 +475,77 @@ export function scanCsv(result: any, frozenModel: any, flowUnit: string) {
     '\ufeff' + [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\r\n') + '\r\n'
   );
 }
+
+// ---- 敏感性（T-004）----
+export const DEFAULT_DIFF_STEP = 0.005;
+
+export function buildSensitivityRequest(
+  model: any,
+  parameters: { id: string; field: string }[],
+  observables: Observable[],
+  step = DEFAULT_DIFF_STEP,
+) {
+  return {
+    kind: 'sensitivity' as const,
+    model: structuredClone(model),
+    parameters,
+    observables,
+    step,
+  };
+}
+
+const METHOD_TEXT: Record<string, string> = {
+  central: '中心差分',
+  forward: '单侧差分（已在下限）',
+  backward: '单侧差分（已在上限）',
+};
+
+export type SensitivityCell = {
+  param: string;
+  elasticity?: number;
+  derivative?: number;
+  method: string;
+};
+export type SensitivityRow = {
+  label: string;
+  base?: number;
+  cells: SensitivityCell[];
+  strongest: number;
+};
+
+/** One row per observable; derivatives in display units per unit of the parameter, ranked by |elasticity|. */
+export function sensitivityRows(result: any, frozenModel: any, flowUnit: string): SensitivityRow[] {
+  const density = result?.fluid?.density_kg_m3;
+  const params = adjustableParams(frozenModel);
+  return (result?.observables || []).map((o: Observable, i: number) => {
+    const cells: SensitivityCell[] = result.parameters.map((p: any) => {
+      const ok = p.status === 'ok';
+      const e = ok ? p.elasticities[i] : null;
+      return {
+        param: params.find((x) => x.id === p.id && x.field === p.field)?.label || p.id,
+        elasticity: typeof e === 'number' && Number.isFinite(e) ? e : undefined,
+        derivative: ok ? toDisplay(o, p.derivatives[i], flowUnit, density) : undefined,
+        method: ok ? METHOD_TEXT[p.method] || p.method : '未确定（差分点未收敛）',
+      };
+    });
+    let strongest = -1;
+    cells.forEach((c, j) => {
+      if (c.elasticity === undefined) return;
+      if (strongest < 0 || Math.abs(c.elasticity) > Math.abs(cells[strongest].elasticity!))
+        strongest = j;
+    });
+    return {
+      label: observableLabel(o, frozenModel, flowUnit),
+      base: toDisplay(o, result.base_values[i], flowUnit, density),
+      cells,
+      strongest,
+    };
+  });
+}
+
+export function strongestText(row: SensitivityRow) {
+  if (row.strongest < 0) return '基准值为 0 或差分未完成，无法按弹性排序';
+  const c = row.cells[row.strongest],
+    e = c.elasticity!;
+  return `影响最大：${c.param}（弹性 ${fmt(e, 3)}：参数增加 1%，约${e >= 0 ? '增加' : '减少'} ${fmt(Math.abs(e), 3)}%）`;
+}

@@ -4,7 +4,6 @@ import NumberField from './NumberField';
 import {
   adjustableParams,
   defaultObservables,
-  observableOptions,
   observableLabel,
   observableKey,
   linspace,
@@ -17,6 +16,7 @@ import {
   scanCsv,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
+import ObservablePicker from './ObservablePicker';
 import LineChart, { ChartSeries, SERIES_COLORS } from './LineChart';
 import { download } from './api';
 
@@ -45,7 +45,6 @@ export default function ScanView({
   const setR = (patch: Partial<typeof r>) =>
     param && setRange((all) => ({ ...all, [param.id + ':' + param.field]: { ...r, ...patch } }));
   const [observables, setObservables] = useState<Observable[]>(() => defaultObservables(model));
-  const options = useMemo(() => observableOptions(model), [model]);
   const { state, start, cancel } = useAnalysisJob();
   // Labels and names come from the model the scan actually ran on, not the edited one.
   const frozenModel = useMemo(
@@ -143,40 +142,12 @@ export default function ScanView({
             onApply={(v: number) => setR({ count: v })}
           />
         </div>
-        <div className="field">
-          <span>观测量</span>
-          <div className="chips">
-            {observables.map((o) => (
-              <button
-                key={observableKey(o)}
-                className="chip"
-                title="移除该观测量"
-                onClick={() =>
-                  setObservables((all) => all.filter((x) => observableKey(x) !== observableKey(o)))
-                }
-              >
-                {observableLabel(o, model, flowUnit)} ×
-              </button>
-            ))}
-            <select
-              aria-label="添加观测量"
-              value=""
-              onChange={(e) => {
-                const o = options.find((x) => observableKey(x) === e.target.value);
-                if (o) setObservables((all) => [...all, o]);
-              }}
-            >
-              <option value="">＋ 添加…</option>
-              {options
-                .filter((o) => !observables.some((x) => observableKey(x) === observableKey(o)))
-                .map((o) => (
-                  <option key={observableKey(o)} value={observableKey(o)}>
-                    {observableLabel(o, model, flowUnit)}
-                  </option>
-                ))}
-            </select>
-          </div>
-        </div>
+        <ObservablePicker
+          model={model}
+          flowUnit={flowUnit}
+          value={observables}
+          onChange={setObservables}
+        />
         <div className="analysis-actions">
           {running ? (
             <button onClick={cancel}>取消分析</button>

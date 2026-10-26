@@ -2,9 +2,11 @@
 import React, { useState } from 'react';
 import ScanView from './ScanView';
 import AccessibilityView from './AccessibilityView';
+import SensitivityView from './SensitivityView';
 
 const MODES = [
   ['scan', '参数扫描'],
+  ['sensitivity', '敏感性'],
   ['accessibility', '可及性'],
 ] as const;
 
@@ -40,6 +42,9 @@ export default function AnalysisPanel({
       </nav>
       <div className="analysis-mode" hidden={mode !== 'scan'}>
         <ScanView model={model} flowUnit={flowUnit} projectName={projectName} />
+      </div>
+      <div className="analysis-mode" hidden={mode !== 'sensitivity'}>
+        <SensitivityView model={model} flowUnit={flowUnit} />
       </div>
       <div className="analysis-mode" hidden={mode !== 'accessibility'}>
         <AccessibilityView model={model} flowUnit={flowUnit} actions={actions} />

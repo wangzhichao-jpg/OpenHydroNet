@@ -21,6 +21,7 @@ def patched_model(model, changes):
 MAX_SCAN_POINTS = 1000
 MAX_SEARCH_EVALUATIONS = 800
 DEFAULT_STEP = 0.01  # settable precision of pump speed and valve opening (SPEC-001 D8)
+DEFAULT_DIFF_STEP = 0.005  # finite-difference step for sensitivity (speed ratio / opening fraction)
 # Operating adjustments only (SPEC-001 D3): design parameters are not scanned.
 ADJUSTABLE = {"pump": {"speed": (0.0, 2.0)}, "valve": {"opening": (0.0, 1.0)}}
 OBSERVABLE_FIELDS = {
@@ -106,11 +107,27 @@ def check_request(request):
 
     scan: {kind, model, variables:[{id, field, values:[...]}] (1–2), observables:[{scope, id, field}]}
     """
-    if not isinstance(request, dict) or request.get("kind") not in ("scan", "accessibility"):
+    if not isinstance(request, dict) or request.get("kind") not in ("scan", "accessibility", "sensitivity"):
         raise ValueError("不支持的分析类型")
     model = request.get("model")
     if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
         raise ValueError("分析请求缺少模型")
+    if request["kind"] == "sensitivity":
+        parameters = request.get("parameters")
+        if not isinstance(parameters, list) or not parameters:
+            raise ValueError("请至少选择一个参数")
+        clean, seen = [], set()
+        for p in parameters:
+            if not isinstance(p, dict): raise ValueError("参数格式无效")
+            _check_adjustable(model, p)
+            if (p["id"], p["field"]) in seen: raise ValueError(f"参数重复：{p['id']}")
+            seen.add((p["id"], p["field"]))
+            clean.append(dict(id=p["id"], field=p["field"]))
+        step = request.get("step", DEFAULT_DIFF_STEP)
+        if not isinstance(step, (int, float)) or isinstance(step, bool) or not math.isfinite(step) or not 0 < step <= .1:
+            raise ValueError("差分步长须大于 0 且不超过 0.1")
+        return dict(kind="sensitivity", model=model, parameters=clean, step=float(step),
+                    observables=_check_observables(model, request.get("observables")), total=1+2*len(clean))
     if request["kind"] == "accessibility":
         variables = _check_search_variables(model, request.get("variables") or [], DEFAULT_STEP)
         return dict(kind="accessibility", model=model, constraints=_check_constraints(model, request.get("constraints")),
@@ -206,6 +223,8 @@ def _check_constraints(model, constraints):
 def run_request(request, progress=None):
     """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
     req = check_request(request)
+    if req["kind"] == "sensitivity":
+        return sensitivity_matrix(req["model"], req["parameters"], req["observables"], req["step"], progress)
     if req["kind"] == "accessibility":
         result = accessibility(req["model"], req["constraints"], req["variables"], progress=progress)
         if progress and not req["variables"]: progress(1, 1)
@@ -400,9 +419,54 @@ def _round_to_steps(point, feasible, x0, variables, state):
                 rounded_violations=tried[0]["violations"] or [])
 
 
+def sensitivity_matrix(model, parameters, observables, step=DEFAULT_DIFF_STEP, progress=None):
+    """Finite-difference sensitivity of each observable to each adjustable parameter at the current point.
+
+    Central difference when x±step stays inside the physical limits, otherwise one-sided (``method``).
+    Elasticity = dY/dX · X/Y (percent change of Y per percent change of X); None when Y or X is 0.
+    A local, linearised statement about this operating point only.
+    """
+    total, done = 1 + 2*len(parameters), [0]
+    usable = ("converged", "demand_unsatisfied")
+    def run(changes):
+        try:
+            r = solve(patched_model(model, changes))
+        except ModelError as exc:
+            r = {"status": "invalid_model", "issues": exc.issues}
+        done[0] += 1
+        if progress: progress(done[0], total)
+        return r
+    base = run([])
+    base_values = observe(base, observables) if base["status"] in usable else [None]*len(observables)
+    edges = {e["id"]: e for e in model["edges"]}
+    rows = []
+    for p in parameters:
+        low, high = ADJUSTABLE[edges[p["id"]]["kind"]][p["field"]]
+        x = float(edges[p["id"]].get(p["field"], 1))
+        if low <= x-step and x+step <= high: a, b, method = x-step, x+step, "central"
+        elif x+step <= high: a, b, method = x, x+step, "forward"
+        else: a, b, method = x-step, x, "backward"
+        ra, rb = (run([dict(id=p["id"], field=p["field"], value=v)]) for v in (a, b))
+        row = dict(id=p["id"], field=p["field"], value=x, step=step, method=method,
+                   point_statuses=[ra["status"], rb["status"]])
+        if ra["status"] in usable and rb["status"] in usable and base["status"] in usable:
+            ya, yb = observe(ra, observables), observe(rb, observables)
+            derivatives = [None if A is None or B is None else (B-A)/(b-a) for A, B in zip(ya, yb)]
+            elasticities = [None if d is None or y is None or abs(y) < 1e-12 or x == 0 else d*x/y
+                            for d, y in zip(derivatives, base_values)]
+            row.update(status="ok", derivatives=derivatives, elasticities=elasticities)
+        else:
+            row.update(status="undetermined", derivatives=[None]*len(observables), elasticities=[None]*len(observables))
+        rows.append(row)
+    return {"kind":"sensitivity", "analysis":"finite_difference_sensitivity", "observables":observables,
+            "parameters":rows, "base_values":base_values, "base_status":base["status"], "fluid":base.get("fluid"),
+            "base_input_hash":model_hash(model)}
+
+
 def sensitivity(model, edge_id, field, step, observable_edge, observable_field="flow_m3_s"):
     if step <= 0: raise ValueError("差分步长必须为正")
-    edge=next(e for e in model["edges"] if e["id"]==edge_id)
+    edge=next((e for e in model["edges"] if e["id"]==edge_id), None)
+    if edge is None: raise ValueError(f"参数对象不存在：{edge_id}")
     value=edge[field]
     points=[]
     for offset in (-step,step):

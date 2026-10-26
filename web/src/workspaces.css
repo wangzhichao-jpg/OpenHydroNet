@@ -430,3 +430,28 @@
 .line-chart .grid {
   stroke: #e3eaf0;
 }
+.sensitivity-param {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.sensitivity-param input[type='checkbox'] {
+  width: auto;
+  flex: none;
+  margin: 0;
+}
+.sensitivity-summary {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  line-height: 1.8;
+}
+.analysis-output td.strongest {
+  font-weight: 700;
+  color: #0d6f80;
+}
+.analysis-output td small {
+  color: #7a8d9f;
+  margin-left: 2px;
+}

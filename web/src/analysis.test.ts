@@ -406,3 +406,88 @@ test('scan CSV: BOM, unit headers, full precision, blanks for missing, formula-s
   assert.equal(lines[1], '0.6,10.484444412,计算通过,');
   assert.equal(lines[2], '1,,残差未达标,残差未达标');
 });
+
+// ---- T-004 sensitivity matrix ----
+import { buildSensitivityRequest, sensitivityRows, strongestText } from './analysis';
+
+test('sensitivity request carries chosen parameters, observables and step', () => {
+  const req = buildSensitivityRequest(
+    withDesign,
+    [{ id: 'PU1', field: 'speed' }],
+    defaultObservables(withDesign),
+    0.005,
+  );
+  assert.equal(req.kind, 'sensitivity');
+  assert.deepEqual(req.parameters, [{ id: 'PU1', field: 'speed' }]);
+  assert.equal(req.step, 0.005);
+  assert.notEqual(req.model, withDesign);
+});
+
+test('sensitivity rows: display-unit derivatives, elasticity, strongest by |elasticity|', () => {
+  const result = {
+    fluid: { density_kg_m3: 1000 },
+    observables: [{ scope: 'edge', id: 'T1', field: 'flow_m3_s' }],
+    base_values: [0.004],
+    parameters: [
+      {
+        id: 'PU1',
+        field: 'speed',
+        method: 'central',
+        status: 'ok',
+        derivatives: [0.004],
+        elasticities: [1.0],
+      },
+      {
+        id: 'V1',
+        field: 'opening',
+        method: 'backward',
+        status: 'ok',
+        derivatives: [-0.01],
+        elasticities: [-2.5],
+      },
+    ],
+  };
+  const [row] = sensitivityRows(result, withDesign, 'm3/h');
+  assert.equal(row.label, '末端1 流量 [m³/h]');
+  assert.ok(Math.abs(row.base! - 14.4) < 1e-9);
+  assert.deepEqual(
+    row.cells.map((c) => [c.param, c.elasticity, c.method]),
+    [
+      ['循环泵 · 相对转速', 1, '中心差分'],
+      ['阀1 · 开度', -2.5, '单侧差分（已在上限）'],
+    ],
+  );
+  assert.ok(Math.abs(row.cells[0].derivative! - 14.4) < 1e-9, 'm³/h per unit speed');
+  assert.equal(row.strongest, 1);
+  assert.equal(strongestText(row), '影响最大：阀1 · 开度（弹性 -2.5：参数增加 1%，约减少 2.5%）');
+});
+
+test('undetermined or missing elasticities are never ranked as strongest', () => {
+  const result = {
+    fluid: { density_kg_m3: 1000 },
+    observables: [{ scope: 'edge', id: 'T1', field: 'flow_m3_s' }],
+    base_values: [0],
+    parameters: [
+      {
+        id: 'PU1',
+        field: 'speed',
+        method: 'central',
+        status: 'ok',
+        derivatives: [0.004],
+        elasticities: [null],
+      },
+      {
+        id: 'V1',
+        field: 'opening',
+        method: 'central',
+        status: 'undetermined',
+        derivatives: [null],
+        elasticities: [null],
+      },
+    ],
+  };
+  const [row] = sensitivityRows(result, withDesign, 'm3/h');
+  assert.equal(row.strongest, -1);
+  assert.equal(row.cells[1].method, '未确定（差分点未收敛）');
+  assert.equal(strongestText(row), '基准值为 0 或差分未完成，无法按弹性排序');
+});

@@ -133,6 +133,35 @@ const inPanelView = (locator) =>
       'cancel sent DELETE',
     );
     assert.equal(await page.getByTestId('scan-table').count(), 0);
+    // ---- T-004: sensitivity matrix ----
+    await page.getByRole('button', { name: '敏感性', exact: true }).click();
+    const sens = page.getByTestId('sensitivity-view');
+    const runSens = sens.getByRole('button', { name: /计算敏感性/ });
+    assert.equal(await runSens.innerText(), '计算敏感性（7 次计算）');
+    await sens.getByLabel('参与分析 调节阀 1 · 开度').uncheck();
+    assert.equal(await runSens.innerText(), '计算敏感性（5 次计算）');
+    await sens.getByLabel('参与分析 调节阀 1 · 开度').check();
+    await runSens.click();
+    const summary = page.getByTestId('sensitivity-summary');
+    await summary.waitFor({ timeout: 60000 });
+    const lines = await summary.locator('li').allInnerTexts();
+    assert.equal(lines.length, 2);
+    assert.match(
+      lines[1],
+      /^用户末端 2 流量 \[m³\/h\]：影响最大：循环泵 · 虚构示例 · 相对转速（弹性 1\.0\d*：参数增加 1%，约增加/,
+    );
+    const sensRows = page.getByTestId('sensitivity-table').locator('tbody tr');
+    assert.equal(await sensRows.count(), 2);
+    // Pump column (3rd cell) is the strongest for both terminals.
+    assert.equal(await sensRows.nth(1).locator('td.strongest').count(), 1);
+    assert.equal(await sensRows.nth(1).locator('td').nth(2).getAttribute('class'), 'strongest');
+    assert.equal(
+      await sensRows.nth(1).locator('td').nth(3).getAttribute('title'),
+      '单侧差分（已在上限）',
+    );
+    assert.ok(await inPanelView(summary), 'summary in view');
+    await page.screenshot({ path: path.join(out, '02b-sensitivity.png') });
+
     // ---- T-005: accessibility constraints and fixed check ----
     await page.getByRole('button', { name: '计算结果', exact: true }).click();
     await page.getByTestId('select-PU1').click();
