@@ -102,36 +102,29 @@ def _check_adjustable(model, v):
     return limits
 
 
+def _is_number(x):
+    """A finite real number (bool excluded)."""
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
 def check_request(request):
     """Validate and normalise a desktop analysis request; raises ValueError with a Chinese message.
 
-    scan: {kind, model, variables:[{id, field, values:[...]}] (1–2), observables:[{scope, id, field}]}
+    Common fields: {kind, model}; per-kind fields are documented on ``_check_<kind>``. The normalised
+    request carries ``total`` = expected number of solves, used for progress.
     """
-    if not isinstance(request, dict) or request.get("kind") not in ("scan", "accessibility", "sensitivity"):
+    checker = {"scan": _check_scan, "sensitivity": _check_sensitivity,
+               "accessibility": _check_accessibility}.get(request.get("kind") if isinstance(request, dict) else None)
+    if checker is None:
         raise ValueError("不支持的分析类型")
     model = request.get("model")
     if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
         raise ValueError("分析请求缺少模型")
-    if request["kind"] == "sensitivity":
-        parameters = request.get("parameters")
-        if not isinstance(parameters, list) or not parameters:
-            raise ValueError("请至少选择一个参数")
-        clean, seen = [], set()
-        for p in parameters:
-            if not isinstance(p, dict): raise ValueError("参数格式无效")
-            _check_adjustable(model, p)
-            if (p["id"], p["field"]) in seen: raise ValueError(f"参数重复：{p['id']}")
-            seen.add((p["id"], p["field"]))
-            clean.append(dict(id=p["id"], field=p["field"]))
-        step = request.get("step", DEFAULT_DIFF_STEP)
-        if not isinstance(step, (int, float)) or isinstance(step, bool) or not math.isfinite(step) or not 0 < step <= .1:
-            raise ValueError("差分步长须大于 0 且不超过 0.1")
-        return dict(kind="sensitivity", model=model, parameters=clean, step=float(step),
-                    observables=_check_observables(model, request.get("observables")), total=1+2*len(clean))
-    if request["kind"] == "accessibility":
-        variables = _check_search_variables(model, request.get("variables") or [], DEFAULT_STEP)
-        return dict(kind="accessibility", model=model, constraints=_check_constraints(model, request.get("constraints")),
-                    variables=variables, total=MAX_SEARCH_EVALUATIONS if variables else 1)
+    return dict(checker(model, request), kind=request["kind"], model=model)
+
+
+def _check_scan(model, request):
+    """scan: variables [{id, field, values}] (1–2, Cartesian, ≤1000 points), observables [{scope, id, field}]."""
     variables = request.get("variables")
     if not isinstance(variables, list) or not 1 <= len(variables) <= 2:
         raise ValueError("扫描参数为 1–2 个")
@@ -144,7 +137,7 @@ def check_request(request):
         values = v.get("values")
         if not isinstance(values, list) or not values:
             raise ValueError("扫描取值不能为空")
-        if any(not isinstance(x, (int, float)) or isinstance(x, bool) or not math.isfinite(x) for x in values):
+        if not all(_is_number(x) for x in values):
             raise ValueError("扫描取值必须是有限数值")
         if any(not low <= x <= high for x in values):
             raise ValueError(f"扫描取值超出允许范围 {low}–{high}")
@@ -152,8 +145,33 @@ def check_request(request):
         clean.append(dict(id=v["id"], field=v["field"], values=[float(x) for x in values]))
     if size > MAX_SCAN_POINTS:
         raise ValueError("单批扫描限 1000 点；请拆分批次")
-    return dict(kind="scan", model=model, variables=clean,
-                observables=_check_observables(model, request.get("observables")), total=size)
+    return dict(variables=clean, observables=_check_observables(model, request.get("observables")), total=size)
+
+
+def _check_sensitivity(model, request):
+    """sensitivity: parameters [{id, field}] (≥1), step (0 < step ≤ 0.1, default 0.005), observables."""
+    parameters = request.get("parameters")
+    if not isinstance(parameters, list) or not parameters:
+        raise ValueError("请至少选择一个参数")
+    clean, seen = [], set()
+    for p in parameters:
+        if not isinstance(p, dict): raise ValueError("参数格式无效")
+        _check_adjustable(model, p)
+        if (p["id"], p["field"]) in seen: raise ValueError(f"参数重复：{p['id']}")
+        seen.add((p["id"], p["field"]))
+        clean.append(dict(id=p["id"], field=p["field"]))
+    step = request.get("step", DEFAULT_DIFF_STEP)
+    if not _is_number(step) or not 0 < step <= .1:
+        raise ValueError("差分步长须大于 0 且不超过 0.1")
+    return dict(parameters=clean, step=float(step), observables=_check_observables(model, request.get("observables")),
+                total=1+2*len(clean))
+
+
+def _check_accessibility(model, request):
+    """accessibility: constraints [{id, min_flow|max_flow|min_head}], optional variables [{id, field, lower, upper, step}]."""
+    variables = _check_search_variables(model, request.get("variables") or [], DEFAULT_STEP)
+    return dict(constraints=_check_constraints(model, request.get("constraints")), variables=variables,
+                total=MAX_SEARCH_EVALUATIONS if variables else 1)
 
 
 def _check_search_variables(model, variables, default_step=None):
@@ -172,14 +190,12 @@ def _check_search_variables(model, variables, default_step=None):
             raise ValueError(f"调节量重复：{v['id']}")
         seen.add((v["id"], v["field"]))
         lower, upper = v.get("lower"), v.get("upper")
-        if not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in (lower, upper)) \
-                or not low <= lower < upper <= high:
+        if not (_is_number(lower) and _is_number(upper)) or not low <= lower < upper <= high:
             raise ValueError(f"{v['id']} 的调节上下界无效：须满足 {low:g} ≤ 下界 < 上界 ≤ {high:g}")
         item = dict(id=v["id"], field=v["field"], lower=float(lower), upper=float(upper))
         step = v.get("step", default_step)
         if step is not None:
-            if not isinstance(step, (int, float)) or isinstance(step, bool) or not math.isfinite(step) \
-                    or not 0 < step <= upper - lower:
+            if not _is_number(step) or not 0 < step <= upper - lower:
                 raise ValueError(f"{v['id']} 的设定精度无效：须大于 0 且不超过上下界宽度")
             item["step"] = float(step)
         clean.append(item)
@@ -201,7 +217,7 @@ def _check_constraints(model, constraints):
         item = {"id": c["id"]}
         for key in sorted(keys):
             value = c[key]
-            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+            if not _is_number(value):
                 raise ValueError("约束值必须是有限数值")
             if value < 0:
                 raise ValueError("约束值不能为负")
@@ -223,16 +239,24 @@ def _check_constraints(model, constraints):
 def run_request(request, progress=None):
     """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
     req = check_request(request)
-    if req["kind"] == "sensitivity":
-        return sensitivity_matrix(req["model"], req["parameters"], req["observables"], req["step"], progress)
-    if req["kind"] == "accessibility":
-        result = accessibility(req["model"], req["constraints"], req["variables"], progress=progress)
-        if progress and not req["variables"]: progress(1, 1)
-        result.update(kind="accessibility", constraints=req["constraints"], fluid=result["result"].get("fluid"),
-                      checks=constraint_checks(result["result"], req["constraints"]))
-        return result
+    return {"scan": _run_scan, "sensitivity": _run_sensitivity, "accessibility": _run_accessibility}[req["kind"]](req, progress)
+
+
+def _run_scan(req, progress):
     result = scan(req["model"], req["variables"], req["observables"], progress)
     result.update(kind="scan", variables=req["variables"], observables=req["observables"])
+    return result
+
+
+def _run_sensitivity(req, progress):
+    return sensitivity_matrix(req["model"], req["parameters"], req["observables"], req["step"], progress)
+
+
+def _run_accessibility(req, progress):
+    result = accessibility(req["model"], req["constraints"], req["variables"], progress=progress)
+    if progress and not req["variables"]: progress(1, 1)
+    result.update(kind="accessibility", constraints=req["constraints"], fluid=result["result"].get("fluid"),
+                  checks=constraint_checks(result["result"], req["constraints"]))
     return result
 
 

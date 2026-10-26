@@ -1,6 +1,6 @@
 // Analysis job lifecycle: start, poll progress, cancel. Late replies from a superseded run are ignored
 // (same run-intent rule as the solve job); unmounting cancels the running process.
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api } from './api';
 
 export type AnalysisState = {
@@ -75,4 +75,29 @@ export function useAnalysisJob() {
   }, []);
 
   return { state, start, cancel };
+}
+
+/**
+ * An analysis job together with the model it ran on (SPEC-001: results always describe the frozen copy).
+ * ``modelChanged`` is true for a completed result whose model differs from the current ``model``.
+ */
+export function useFrozenAnalysis(model: any) {
+  const job = useAnalysisJob();
+  const { state } = job;
+  const frozenModel = useMemo(
+    () => (state.modelSignature ? JSON.parse(state.modelSignature) : model),
+    [state.modelSignature, model],
+  );
+  const currentSignature = useMemo(() => JSON.stringify(model), [model]);
+  return {
+    ...job,
+    running: state.status === 'starting' || state.status === 'running',
+    result: state.status === 'completed' ? state.result : null,
+    frozenModel,
+    currentSignature,
+    modelChanged:
+      state.status === 'completed' &&
+      !!state.modelSignature &&
+      state.modelSignature !== currentSignature,
+  };
 }

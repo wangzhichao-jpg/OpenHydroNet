@@ -12,7 +12,8 @@ import {
   DEFAULT_DIFF_STEP,
   fmt,
 } from './analysis';
-import { useAnalysisJob } from './useAnalysisJob';
+import { useFrozenAnalysis } from './useAnalysisJob';
+import AnalysisStatus, { ProgressCount } from './AnalysisStatus';
 
 export default function SensitivityView({ model, flowUnit }: { model: any; flowUnit: string }) {
   const params = useMemo(() => adjustableParams(model), [model]);
@@ -21,17 +22,8 @@ export default function SensitivityView({ model, flowUnit }: { model: any; flowU
   const chosen = params.filter((p) => !excluded.includes(p.id + ':' + p.field));
   const [observables, setObservables] = useState<Observable[]>(() => defaultObservables(model));
   const [step, setStep] = useState(DEFAULT_DIFF_STEP);
-  const { state, start, cancel } = useAnalysisJob();
-  const running = state.status === 'starting' || state.status === 'running';
-  const frozenModel = useMemo(
-    () => (state.modelSignature ? JSON.parse(state.modelSignature) : model),
-    [state.modelSignature, model],
-  );
-  const stale =
-    state.status === 'completed' &&
-    !!state.modelSignature &&
-    state.modelSignature !== JSON.stringify(model);
-  const result = state.status === 'completed' ? state.result : null;
+  const { state, start, cancel, running, result, frozenModel, modelChanged } =
+    useFrozenAnalysis(model);
   const rows = useMemo(
     () => (result ? sensitivityRows(result, frozenModel, flowUnit) : []),
     [result, frozenModel, flowUnit],
@@ -104,22 +96,21 @@ export default function SensitivityView({ model, flowUnit }: { model: any; flowU
         </div>
       </div>
       <div className="analysis-output" role="status" aria-live="polite">
-        {running && (
-          <div className="analysis-progress">
-            正在计算差分点 {state.progress?.done ?? 0} /{' '}
-            {state.progress?.total ?? 1 + 2 * chosen.length}
-            <progress value={state.progress?.done ?? 0} max={state.progress?.total || 1} />
-          </div>
-        )}
-        {state.status === 'cancelled' && <div className="tip">已取消。</div>}
-        {(state.status === 'failed' || state.status === 'timeout') && (
-          <div className="field-error">{state.error}</div>
-        )}
-        {stale && (
-          <div className="stale-banner" data-testid="sensitivity-stale">
-            敏感性结果对应运行时的模型；模型已修改，结果仅供参考，请重新计算。
-          </div>
-        )}
+        <AnalysisStatus
+          state={state}
+          running={running}
+          progress={
+            <ProgressCount
+              label="正在计算差分点"
+              progress={state.progress}
+              fallbackTotal={1 + 2 * chosen.length}
+            />
+          }
+          cancelledText="已取消。"
+          stale={modelChanged}
+          staleTestId="sensitivity-stale"
+          staleText="敏感性结果对应运行时的模型；模型已修改，结果仅供参考，请重新计算。"
+        />
         {result && (
           <>
             <ul className="sensitivity-summary" data-testid="sensitivity-summary">

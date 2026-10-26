@@ -570,3 +570,13 @@ export function gridSeries(rows: ScanRow[], observableIndex: number, secondLabel
     })),
   };
 }
+
+/** JSON of the model at a found accessibility point (frozen model + adjustments), or null. */
+export function foundPointSignature(result: any, frozenModel: any): string | null {
+  if (!result?.changes || result.conclusion !== 'feasible_point_found') return null;
+  try {
+    return JSON.stringify(applyAdjustments(frozenModel, result.changes));
+  } catch {
+    return null;
+  }
+}

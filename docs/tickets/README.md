@@ -16,6 +16,6 @@
 | [T-007](T-007.md) | 可行点保存为工况 / 应用到工程 | T-006 | AccessibilityView.tsx, App.tsx | done |
 | [T-009](T-009.md) | 可及性改进：尽量少调整与设定精度 | T-007 | analysis.py, AccessibilityView.tsx | done |
 | [T-008](T-008.md) | 文档、覆盖矩阵、CI 收尾 | T-002..T-007 | docs/, ci.yml | done |
-| [T-010](T-010.md) | 分析模块整理（深模块化，纯重构） | T-008 | AnalysisPanel 相关、analysis.py | todo |
+| [T-010](T-010.md) | 分析模块整理（深模块化，纯重构） | T-008 | AnalysisPanel 相关、analysis.py | done |
 
-SPEC-001 已完成（2026-10-26）。T-010 为后续纯重构。
+SPEC-001 及后续重构 T-010 已完成（2026-10-26）。

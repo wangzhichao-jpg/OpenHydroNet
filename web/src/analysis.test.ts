@@ -513,3 +513,20 @@ test('two-parameter rows become one line per second-parameter value over the fir
   );
   assert.deepEqual(gridSeries(rows, 1, 'x').series[1].ys, [20, 40]);
 });
+
+// ---- T-010 extracted helper ----
+import { foundPointSignature } from './analysis';
+
+test('found point signature identifies the applied model, and only for a found point', () => {
+  const changes = [{ id: 'PU1', field: 'speed', value: 1.06 }];
+  const sig = foundPointSignature({ conclusion: 'feasible_point_found', changes }, withDesign);
+  assert.equal(sig, JSON.stringify(applyAdjustments(withDesign, changes)));
+  assert.equal(foundPointSignature({ conclusion: 'undetermined', changes }, withDesign), null);
+  assert.equal(
+    foundPointSignature(
+      { conclusion: 'feasible_point_found', changes: [{ id: 'gone', field: 'speed', value: 1 }] },
+      withDesign,
+    ),
+    null,
+  );
+});

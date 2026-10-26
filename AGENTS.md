@@ -19,6 +19,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 ## 目录
 - `src/openhydronet/`：SI 内核。`solver.py` 求解，`analysis.py` 扫描/敏感性/可及性，`server.py` 本机协议，`cli.py` 子进程入口。
 - `web/src/`：界面。`App.tsx` 是历史单体（约 2100 行）——**新功能写成独立模块/组件**，只在 App 中挂载，不要继续加大它。
+- 分析页（SPEC-001）：`analysis.ts` 纯函数（换算/请求/表格/CSV，均有单元测试）；`useAnalysisJob.ts` 的 `useFrozenAnalysis`（任务 + 冻结模型 + 过期）；`AnalysisStatus.tsx`（进度/取消/错误/过期）；子页 `ScanView`+`ScanResult`+`RangeFields`、`SensitivityView`、`AccessibilityView`+`ConstraintEditor`+`SearchVariablesEditor`+`AccessibilityResult`。内核入口 `analysis.check_request` / `run_request` 按 kind 分派到 `_check_*` / `_run_*`。
 - `tests/`：`test_*.py` 内核，`*.test.cjs`/`web/src/*.test.ts` 单元，`ui.*.cjs` 真实 Electron E2E。
 - `docs/specs/` 规范，`docs/tickets/` 任务卡（本地任务跟踪），`docs/DECISIONS.md` ADR。
 
