@@ -66,9 +66,11 @@ class Jobs:
         def read_errors():
             for line in process.stderr:
                 try:
-                    progress=json.loads(line)['progress']
+                    message=json.loads(line)
+                    if 'error' in message:errors.append(('known',str(message['error'])));continue
+                    progress=message['progress']
                     with self.lock:job['progress']={'done':int(progress['done']),'total':int(progress['total'])}
-                except (ValueError,KeyError,TypeError):errors.append(line.strip())
+                except (ValueError,KeyError,TypeError):errors.append(('raw',line.strip()))
         def expire():
             expired.set()
             try:process.kill()
@@ -86,7 +88,10 @@ class Jobs:
             if expired.is_set():
                 job.update(status='timeout',error=f'分析超过 {timeout:g} 秒，进程已终止；请减少扫描点数');return
             try:
-                if process.returncode!=0:raise ValueError((errors[-1] if errors else '')[-300:] or f'退出码 {process.returncode}')
+                known=[text for kind,text in errors if kind=='known']
+                if process.returncode!=0 and known:
+                    job.update(status='failed',error=known[-1][:300]);return
+                if process.returncode!=0:raise ValueError((errors[-1][1] if errors else '')[-300:] or f'退出码 {process.returncode}')
                 result=json.loads(out);result.update(job_id=job['id'],request_owner=job['owner'])
                 job.update(status='completed',result=result)
             except ValueError as exc:

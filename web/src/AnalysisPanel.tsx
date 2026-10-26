@@ -1,8 +1,12 @@
 // SPEC-001 分析页外壳。子页始终挂载、只切换显示，避免切换时丢失结果或取消正在运行的任务。
 import React, { useState } from 'react';
 import ScanView from './ScanView';
+import AccessibilityView from './AccessibilityView';
 
-const MODES = [['scan', '参数扫描']] as const;
+const MODES = [
+  ['scan', '参数扫描'],
+  ['accessibility', '可及性'],
+] as const;
 
 export default function AnalysisPanel({ model, flowUnit }: { model: any; flowUnit: string }) {
   const [mode, setMode] = useState<string>('scan');
@@ -18,6 +22,9 @@ export default function AnalysisPanel({ model, flowUnit }: { model: any; flowUni
       </nav>
       <div className="analysis-mode" hidden={mode !== 'scan'}>
         <ScanView model={model} flowUnit={flowUnit} />
+      </div>
+      <div className="analysis-mode" hidden={mode !== 'accessibility'}>
+        <AccessibilityView model={model} flowUnit={flowUnit} />
       </div>
     </div>
   );

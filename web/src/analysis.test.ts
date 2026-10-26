@@ -110,3 +110,105 @@ test('scan rows convert each record and keep failed points visible', () => {
   assert.equal(rows[1].status, '残差未达标');
   assert.deepEqual(rows[1].values, [undefined]);
 });
+
+// ---- T-005 accessibility ----
+import {
+  defaultConstraintRows,
+  constraintsToSI,
+  constraintToDisplay,
+  constraintFromDisplay,
+  buildAccessibilityRequest,
+  checkRows,
+  conclusionText,
+  constraintProblems,
+} from './analysis';
+
+const withDesign: any = structuredClone(model);
+withDesign.edges.find((e: any) => e.id === 'T1').design_flow = 0.004;
+withDesign.edges.push({ id: 'T9', name: '无设计流量', kind: 'terminal', source: 'a', target: 'b' });
+
+test('default constraints are terminal design flows, stored in SI so unit switches cannot change them', () => {
+  const rows = defaultConstraintRows(withDesign);
+  assert.deepEqual(
+    rows.map((r) => [r.id, r.kind, r.si]),
+    [['T1', 'min_flow', 0.004]],
+  );
+  assert.equal(new Set(rows.map((r) => r.key)).size, rows.length);
+  assert.equal(constraintToDisplay(rows[0], 'm3/h', 998), 14.4);
+});
+
+test('constraint display ↔ SI round trip for every flow unit; heads stay in metres', () => {
+  for (const unit of ['m3/h', 'kg/h', 't/h', 'L/s']) {
+    const shown = constraintToDisplay(
+      { key: 'k', id: 'T1', kind: 'min_flow', si: 0.004 },
+      unit,
+      990,
+    );
+    assert.ok(Math.abs(constraintFromDisplay('min_flow', shown!, unit, 990) - 0.004) < 1e-15, unit);
+  }
+  assert.equal(constraintFromDisplay('min_head', 8, 'kg/h', NaN), 8);
+  assert.equal(
+    constraintToDisplay({ key: 'k', id: 'T1', kind: 'min_flow', si: 0.004 }, 'kg/h', NaN),
+    undefined,
+  );
+  assert.throws(() => constraintFromDisplay('min_flow', 1, 'kg/h', NaN), /密度/);
+  assert.deepEqual(constraintsToSI([{ key: 'k', id: 'T1', kind: 'min_head', si: 8 }]), [
+    { id: 'T1', min_head: 8 },
+  ]);
+});
+
+test('accessibility request is a frozen fixed check', () => {
+  const req = buildAccessibilityRequest(withDesign, defaultConstraintRows(withDesign));
+  assert.equal(req.kind, 'accessibility');
+  assert.notEqual(req.model, withDesign);
+  assert.deepEqual(req.constraints, [{ id: 'T1', min_flow: 0.004 }]);
+  assert.deepEqual(req.variables, []);
+});
+
+test('check rows use the result density and name objects; conclusions never say infeasible', () => {
+  const result = {
+    fluid: { density_kg_m3: 1000 },
+    checks: [
+      {
+        id: 'T1',
+        kind: 'min_flow',
+        actual: 0.0038,
+        required: 0.004,
+        violation: 0.05,
+        satisfied: false,
+      },
+      { id: 'T1', kind: 'min_head', actual: 9, required: 8, violation: 0, satisfied: true },
+    ],
+  };
+  const rows = checkRows(result, withDesign, 'kg/h');
+  assert.equal(rows[0].object, '末端1');
+  assert.equal(rows[0].kind, '最小流量 [kg/h]');
+  assert.ok(Math.abs(rows[0].required! - 14400) < 1e-9 && Math.abs(rows[0].actual! - 13680) < 1e-9);
+  assert.equal(rows[0].satisfied, false);
+  assert.equal(rows[0].shortfall, '5.0%');
+  assert.equal(rows[1].kind, '最小压降（资用压头） [m]');
+  for (const c of [
+    'feasible_at_this_point',
+    'not_satisfied_at_this_point',
+    'feasible_point_found',
+    'undetermined',
+  ])
+    assert.doesNotMatch(conclusionText[c], /不可行/);
+  assert.match(conclusionText.undetermined, /未确定/);
+});
+
+test('constraint problems are found before running, mirroring kernel validation', () => {
+  const row = (id: string, kind: any, si: number) => ({ key: id + kind + si, id, kind, si });
+  assert.deepEqual(constraintProblems([], withDesign), ['请至少设置一条约束']);
+  assert.deepEqual(constraintProblems([row('T1', 'min_flow', 0.004)], withDesign), []);
+  assert.match(
+    constraintProblems([row('T1', 'min_flow', 0.004), row('T1', 'min_flow', 0.005)], withDesign)[0],
+    /重复/,
+  );
+  assert.match(
+    constraintProblems([row('T1', 'min_flow', 0.005), row('T1', 'max_flow', 0.004)], withDesign)[0],
+    /下限大于上限/,
+  );
+  assert.match(constraintProblems([row('gone', 'min_flow', 0.004)], withDesign)[0], /已不存在/);
+  assert.match(constraintProblems([row('T1', 'min_head', -1)], withDesign)[0], /不能为负/);
+});

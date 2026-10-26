@@ -104,11 +104,16 @@ def check_request(request):
 
     scan: {kind, model, variables:[{id, field, values:[...]}] (1–2), observables:[{scope, id, field}]}
     """
-    if not isinstance(request, dict) or request.get("kind") not in ("scan",):
+    if not isinstance(request, dict) or request.get("kind") not in ("scan", "accessibility"):
         raise ValueError("不支持的分析类型")
     model = request.get("model")
     if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
         raise ValueError("分析请求缺少模型")
+    if request["kind"] == "accessibility":
+        if request.get("variables"):
+            raise ValueError("调节量搜索尚未开放；当前只做固定工作点检查")
+        return dict(kind="accessibility", model=model, constraints=_check_constraints(model, request.get("constraints")),
+                    variables=[], total=1)
     variables = request.get("variables")
     if not isinstance(variables, list) or not 1 <= len(variables) <= 2:
         raise ValueError("扫描参数为 1–2 个")
@@ -133,32 +138,87 @@ def check_request(request):
                 observables=_check_observables(model, request.get("observables")), total=size)
 
 
+def _check_constraints(model, constraints):
+    """Constraints on edge results (SI): min_flow/max_flow [m³/s], min_head [m] head drop; non-negative."""
+    if not isinstance(constraints, list) or not constraints:
+        raise ValueError("请至少设置一条约束")
+    edges = {e["id"] for e in model["edges"]}
+    clean, seen = [], set()
+    for c in constraints:
+        if not isinstance(c, dict) or c.get("id") not in edges:
+            raise ValueError(f"约束对象不存在或不是支路：{(c or {}).get('id') if isinstance(c, dict) else c}")
+        keys = set(c) - {"id"}
+        if not keys or not keys <= set(CONSTRAINT_KINDS):
+            raise ValueError("约束仅支持 min_flow、max_flow、min_head，且至少一项")
+        item = {"id": c["id"]}
+        for key in sorted(keys):
+            value = c[key]
+            if not isinstance(value, (int, float)) or isinstance(value, bool) or not math.isfinite(value):
+                raise ValueError("约束值必须是有限数值")
+            if value < 0:
+                raise ValueError("约束值不能为负")
+            if (c["id"], key) in seen:
+                raise ValueError(f"同一支路的同类约束重复：{c['id']} {key}")
+            seen.add((c["id"], key))
+            item[key] = float(value)
+        clean.append(item)
+    bounds = {}
+    for c in clean:
+        for key in ("min_flow", "max_flow"):
+            if key in c: bounds.setdefault(c["id"], {})[key] = c[key]
+    for oid, b in bounds.items():
+        if "min_flow" in b and "max_flow" in b and b["min_flow"] > b["max_flow"]:
+            raise ValueError(f"{oid} 的流量下限大于上限")
+    return clean
+
+
 def run_request(request, progress=None):
     """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
     req = check_request(request)
+    if req["kind"] == "accessibility":
+        result = accessibility(req["model"], req["constraints"])
+        if progress: progress(1, 1)
+        result.update(kind="accessibility", constraints=req["constraints"], fluid=result["result"].get("fluid"),
+                      checks=constraint_checks(result["result"], req["constraints"]))
+        return result
     result = scan(req["model"], req["variables"], req["observables"], progress)
     result.update(kind="scan", variables=req["variables"], observables=req["observables"])
     return result
 
 
-def constraint_violations(result, constraints):
-    violations=[]
+CONSTRAINT_KINDS = {"min_flow": "flow_m3_s", "min_head": "head_drop_m", "max_flow": "flow_m3_s"}
+
+
+def constraint_checks(result, constraints):
+    """Every constraint with actual/required values; ``satisfied`` False carries a relative violation.
+
+    Returns None when the point has no qualified hydraulic solution (nothing can be checked).
+    """
     if result["status"] != "converged":
-        return [{"id":None, "kind":"solver", "violation":1e6, "message":"该点评估未获得合格水力解"}]
+        return None
+    checks=[]
     for c in constraints:
         r = result["edges"].get(c["id"])
         if r is None:
             raise ValueError(f"约束引用失效：{c['id']}")
-        for key, field in (("min_flow","flow_m3_s"),("min_head","head_drop_m")):
-            if key in c:
-                margin=r[field]-c[key]
-                if margin < -1e-7*max(1,abs(c[key])):
-                    violations.append({"id":c["id"],"kind":key,"actual":r[field],"required":c[key],"violation":-margin/max(abs(c[key]),1e-6)})
-        if "max_flow" in c:
-            margin=c["max_flow"]-r["flow_m3_s"]
-            if margin < -1e-9:
-                violations.append({"id":c["id"],"kind":"max_flow","actual":r["flow_m3_s"],"required":c["max_flow"],"violation":-margin/max(abs(c["max_flow"]),1e-6)})
-    return violations
+        for key in ("min_flow","min_head","max_flow"):
+            if key not in c: continue
+            actual, required = r[CONSTRAINT_KINDS[key]], c[key]
+            if key == "max_flow":
+                margin, tolerance = required-actual, 1e-9
+            else:
+                margin, tolerance = actual-required, 1e-7*max(1,abs(required))
+            satisfied = margin >= -tolerance
+            checks.append({"id":c["id"],"kind":key,"actual":actual,"required":required,
+                           "violation":0 if satisfied else -margin/max(abs(required),1e-6),"satisfied":satisfied})
+    return checks
+
+
+def constraint_violations(result, constraints):
+    checks = constraint_checks(result, constraints)
+    if checks is None:
+        return [{"id":None, "kind":"solver", "violation":1e6, "message":"该点评估未获得合格水力解"}]
+    return [{k:v for k,v in c.items() if k != "satisfied"} for c in checks if not c["satisfied"]]
 
 
 def accessibility(model, constraints, variables=None, *, max_iterations=50):

@@ -40,7 +40,12 @@ def main():
         request=json.load(sys.stdin) if args.input=="-" else json.loads(Path(args.input).read_text(encoding="utf-8"))
         def progress(done,total):
             sys.stderr.write(json.dumps({"progress":{"done":done,"total":total}})+"\n");sys.stderr.flush()
-        emit(run_request(request,progress),args.output);return
+        try: data=run_request(request,progress)
+        except ModelError as exc:
+            sys.stderr.write(json.dumps({"error":"模型检查未通过（"+str(len(exc.issues))+" 个问题），请先在问题列表中修正"},ensure_ascii=False)+"\n");sys.exit(2)
+        except ValueError as exc:
+            sys.stderr.write(json.dumps({"error":str(exc)},ensure_ascii=False)+"\n");sys.exit(2)
+        emit(data,args.output);return
     if args.command=="scan":
         from .analysis import scan
         emit(scan(load_project(args.input)["model"],json.loads(Path(args.settings).read_text(encoding="utf-8"))),args.output);return

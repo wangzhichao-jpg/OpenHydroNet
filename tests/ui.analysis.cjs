@@ -100,6 +100,69 @@ const inPanelView = (locator) =>
       'cancel sent DELETE',
     );
     assert.equal(await page.getByTestId('scan-table').count(), 0);
+    // ---- T-005: accessibility constraints and fixed check ----
+    await page.getByRole('button', { name: '计算结果', exact: true }).click();
+    await page.getByTestId('select-PU1').click();
+    await page.getByLabel('相对转速 n/n₀').fill('1');
+    await page.getByLabel('相对转速 n/n₀').press('Enter');
+    await page.getByRole('button', { name: '分析', exact: true }).click();
+    await page.getByRole('button', { name: '可及性', exact: true }).click();
+    const acc = page.getByTestId('accessibility-view');
+    const t1Field = acc.getByLabel('用户末端 1 最小流量 [m³/h]', { exact: true });
+    assert.equal(await t1Field.inputValue(), '14.4');
+    assert.equal(
+      await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).inputValue(),
+      '14.4',
+    );
+    // Constraints are stored in SI: a unit round trip must not change them.
+    await page.getByLabel('流量单位').selectOption('kg/h');
+    const kg = Number(
+      await acc.getByLabel('用户末端 1 最小流量 [kg/h]', { exact: true }).inputValue(),
+    );
+    assert.ok(Math.abs(kg - 14.4 * 998.2336) < 0.5, 'kg/h display uses current density: ' + kg);
+    await page.getByLabel('流量单位').selectOption('m3/h');
+    assert.equal(await t1Field.inputValue(), '14.4');
+    // Duplicate constraint is caught before running.
+    const check = acc.getByRole('button', { name: '检查当前工作点' });
+    await acc.getByRole('button', { name: '＋ 添加约束' }).click();
+    await acc.getByText(/最小流量约束重复/).waitFor();
+    assert.equal(await check.isDisabled(), true);
+    await acc
+      .getByRole('button', { name: /^删除约束/ })
+      .last()
+      .click();
+    assert.equal(await check.isDisabled(), false);
+    await check.click();
+    const conclusion = page.getByTestId('accessibility-conclusion');
+    await conclusion.waitFor({ timeout: 60000 });
+    assert.equal(await conclusion.innerText(), '当前工作点不满足约束');
+    const accRows = await page
+      .getByTestId('accessibility-table')
+      .locator('tbody tr')
+      .allInnerTexts();
+    assert.equal(accRows.length, 2);
+    assert.match(accRows[0], /用户末端 1.*满足/);
+    assert.match(accRows[1], /用户末端 2.*14\.4.*13\.679.*不满足.*5\.0%/s);
+    assert.ok(await inPanelView(conclusion), 'conclusion in view');
+    assert.ok(await inPanelView(check), 'check button in view');
+    await page.screenshot({ path: path.join(out, '03-accessibility-fixed.png') });
+    // Relaxing T2 makes the point satisfy every constraint.
+    await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).fill('13');
+    await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).press('Enter');
+    await check.click();
+    await page
+      .getByTestId('accessibility-conclusion')
+      .filter({ hasText: '当前工作点满足全部约束' })
+      .waitFor();
+    // Editing the model afterwards marks the check stale.
+    await page.getByTestId('select-PU1').click();
+    await page.getByLabel('相对转速 n/n₀').fill('1.1');
+    await page.getByLabel('相对转速 n/n₀').press('Enter');
+    await page.getByTestId('accessibility-stale').waitFor();
+    assert.ok(
+      await inPanelView(page.getByTestId('accessibility-stale')),
+      'accessibility stale banner in view',
+    );
     assert.deepEqual(errors, []);
     console.log('analysis UI passed');
   } finally {

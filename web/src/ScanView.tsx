@@ -12,13 +12,9 @@ import {
   scanRows,
   Observable,
   MAX_SCAN_POINTS,
+  fmt,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
-
-const fmt = (v: number | undefined, d = 4) =>
-  typeof v === 'number' && Number.isFinite(v)
-    ? Number(v.toPrecision(d)).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
-    : '—';
 
 export default function ScanView({ model, flowUnit }: { model: any; flowUnit: string }) {
   const params = useMemo(() => adjustableParams(model), [model]);
