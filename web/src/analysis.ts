@@ -227,12 +227,18 @@ export function constraintsToSI(rows: ConstraintRow[]) {
   }[];
 }
 
-export function buildAccessibilityRequest(model: any, rows: ConstraintRow[]) {
+export function buildAccessibilityRequest(
+  model: any,
+  rows: ConstraintRow[],
+  variables: SearchVariable[] = [],
+) {
   return {
     kind: 'accessibility' as const,
     model: structuredClone(model),
     constraints: constraintsToSI(rows),
-    variables: [] as any[],
+    variables: variables
+      .filter((v) => v.enabled)
+      .map(({ id, field, lower, upper }) => ({ id, field, lower, upper })),
   };
 }
 
@@ -284,4 +290,43 @@ export function constraintProblems(rows: ConstraintRow[], model: any): string[] 
     if (f.min_flow !== undefined && f.max_flow !== undefined && f.min_flow > f.max_flow)
       problems.push(`${nameOf(model, 'edge', id)} 的流量下限大于上限`);
   return problems;
+}
+
+// ---- 有界局部搜索（T-006）----
+export type SearchVariable = AdjustableParam & { lower: number; upper: number; enabled: boolean };
+
+const round2 = (v: number) => Math.round(v * 100) / 100;
+
+/** All adjustable parameters, unselected. Pump: current speed ±0.4; valve: 0.1–1 (both within physical limits). */
+export function searchVariables(model: any): SearchVariable[] {
+  return adjustableParams(model).map((p) => ({
+    ...p,
+    lower: p.field === 'speed' ? Math.max(p.min, round2(p.value - 0.4)) : 0.1,
+    upper: p.field === 'speed' ? Math.min(p.max, round2(p.value + 0.4)) : 1,
+    enabled: false,
+  }));
+}
+
+export function searchProblems(vars: SearchVariable[]): string[] {
+  return vars
+    .filter((v) => v.enabled)
+    .flatMap((v) => {
+      if (!(Number.isFinite(v.lower) && Number.isFinite(v.upper) && v.lower < v.upper))
+        return [`${v.label}：下界必须小于上界`];
+      if (v.lower < v.min || v.upper > v.max)
+        return [`${v.label}：范围须在 ${v.min}–${v.max} 之内`];
+      return [];
+    });
+}
+
+export type AdjustmentRow = { label: string; from: number; to: number; delta: number };
+
+/** Found adjustment versus the model the search ran on. */
+export function adjustmentRows(result: any, frozenModel: any): AdjustmentRow[] {
+  const params = adjustableParams(frozenModel);
+  return (result?.changes || []).map((c: any) => {
+    const p = params.find((x) => x.id === c.id && x.field === c.field);
+    const from = p ? p.value : NaN;
+    return { label: p?.label || c.id, from, to: c.value, delta: +(c.value - from).toPrecision(12) };
+  });
 }

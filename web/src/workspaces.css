@@ -336,3 +336,34 @@
 .analysis-output tr.violated td {
   color: #a3410c;
 }
+.search-variable {
+  padding: 4px 0;
+  border-bottom: 1px solid #e2e9f0;
+}
+.search-variable label.check {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.search-bounds {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 4px;
+}
+.search-bounds .field small {
+  display: none;
+}
+.search-bounds .field small.field-error {
+  display: block;
+}
+.analysis-output h4 {
+  margin: 10px 0 4px;
+  font-size: 0.82rem;
+}
+.search-variable input[type='checkbox'] {
+  width: auto;
+  flex: none;
+  margin: 0;
+}

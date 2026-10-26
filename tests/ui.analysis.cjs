@@ -159,10 +159,62 @@ const inPanelView = (locator) =>
     await page.getByLabel('相对转速 n/n₀').fill('1.1');
     await page.getByLabel('相对转速 n/n₀').press('Enter');
     await page.getByTestId('accessibility-stale').waitFor();
+    // Search variables follow the live model, not the value at mount time.
+    await acc.getByText('循环泵 · 虚构示例 · 相对转速（当前 1.1）').waitFor();
     assert.ok(
       await inPanelView(page.getByTestId('accessibility-stale')),
       'accessibility stale banner in view',
     );
+    // ---- T-006: bounded local search ----
+    await page.getByLabel('相对转速 n/n₀').fill('1');
+    await page.getByLabel('相对转速 n/n₀').press('Enter');
+    await acc.getByRole('button', { name: '恢复为末端设计流量' }).click();
+    const pump = '循环泵 · 虚构示例 · 相对转速';
+    await acc.getByLabel('参与调节 ' + pump).check();
+    await acc.getByLabel(pump + ' 上界', { exact: true }).fill('1.3');
+    await acc.getByLabel(pump + ' 上界', { exact: true }).press('Enter');
+    await acc.getByLabel('参与调节 调节阀 1 · 开度').check();
+    await acc.getByLabel('参与调节 调节阀 2 · 开度').check();
+    const search = acc.getByRole('button', { name: '搜索可行调节（局部）' });
+    // Invalid bounds are caught before running.
+    await acc.getByLabel(pump + ' 下界', { exact: true }).fill('1.3');
+    await acc.getByLabel(pump + ' 下界', { exact: true }).press('Enter');
+    await acc.getByText(/下界必须小于上界/).waitFor();
+    assert.equal(await search.isDisabled(), true);
+    await acc.getByLabel(pump + ' 下界', { exact: true }).fill('0.6');
+    await acc.getByLabel(pump + ' 下界', { exact: true }).press('Enter');
+    await search.click();
+    await page
+      .getByTestId('accessibility-conclusion')
+      .filter({ hasText: '在给定调节范围内找到满足全部约束的工作点' })
+      .waitFor({ timeout: 120000 });
+    const plan = await page.getByTestId('adjustment-table').locator('tbody tr').allInnerTexts();
+    assert.equal(plan.length, 3);
+    const found = Number(plan[0].split('\t')[2]);
+    assert.ok(found > 1.12 && found < 1.16, 'pump speed found ≈1.13: ' + plan[0]);
+    const after = await page.getByTestId('accessibility-table').locator('tbody tr').allInnerTexts();
+    assert.ok(
+      after.every((r) => /\t满足\t/.test(r)),
+      'all constraints satisfied: ' + after,
+    );
+    await page.screenshot({ path: path.join(out, '04-accessibility-found.png') });
+    // Unreachable target: undetermined + closest point, never an infeasibility claim.
+    await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).fill('36');
+    await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).press('Enter');
+    await search.click();
+    await page
+      .getByTestId('accessibility-conclusion')
+      .filter({ hasText: '未确定' })
+      .waitFor({ timeout: 120000 });
+    await acc.getByText('最接近满足的点（仍不满足约束）').waitFor();
+    const output = await acc.locator('.analysis-output').innerText();
+    assert.match(output, /已评估 \d+ 次/);
+    assert.doesNotMatch(output, /不可行/);
+    assert.ok(
+      await inPanelView(page.getByTestId('accessibility-conclusion')),
+      'conclusion in view',
+    );
+    await page.screenshot({ path: path.join(out, '05-accessibility-undetermined.png') });
     assert.deepEqual(errors, []);
     console.log('analysis UI passed');
   } finally {

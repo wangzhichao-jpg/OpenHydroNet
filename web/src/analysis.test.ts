@@ -212,3 +212,45 @@ test('constraint problems are found before running, mirroring kernel validation'
   assert.match(constraintProblems([row('gone', 'min_flow', 0.004)], withDesign)[0], /已不存在/);
   assert.match(constraintProblems([row('T1', 'min_head', -1)], withDesign)[0], /不能为负/);
 });
+
+// ---- T-006 bounded local search ----
+import { searchVariables, searchProblems, adjustmentRows } from './analysis';
+
+test('search variables list every adjustable parameter, off by default, with bounds inside limits', () => {
+  const vars = searchVariables(withDesign);
+  assert.deepEqual(
+    vars.map((v) => [v.id, v.field, v.lower, v.upper, v.enabled]),
+    [
+      ['PU1', 'speed', 0.6, 1.4, false],
+      ['V1', 'opening', 0.1, 1, false],
+    ],
+  );
+  const fast = structuredClone(withDesign);
+  fast.edges[0].speed = 1.9;
+  assert.deepEqual([searchVariables(fast)[0].lower, searchVariables(fast)[0].upper], [1.5, 2]);
+});
+
+test('only enabled variables are sent; bad bounds are caught before running', () => {
+  const vars = searchVariables(withDesign).map((v, i) => ({ ...v, enabled: i === 0 }));
+  const req = buildAccessibilityRequest(withDesign, defaultConstraintRows(withDesign), vars);
+  assert.deepEqual(req.variables, [{ id: 'PU1', field: 'speed', lower: 0.6, upper: 1.4 }]);
+  assert.deepEqual(searchProblems(vars), []);
+  assert.match(searchProblems([{ ...vars[0], lower: 1.4, upper: 1.4 }])[0], /下界必须小于上界/);
+  assert.match(searchProblems([{ ...vars[0], upper: 2.5 }])[0], /0–2/);
+  assert.deepEqual(searchProblems([{ ...vars[0], upper: 2.5, enabled: false }]), []);
+});
+
+test('adjustment rows compare found values with the frozen model', () => {
+  const result = {
+    changes: [
+      { id: 'PU1', field: 'speed', value: 1.1348 },
+      { id: 'V1', field: 'opening', value: 0.5 },
+    ],
+  };
+  const rows = adjustmentRows(result, withDesign);
+  assert.equal(rows[0].label, '循环泵 · 相对转速');
+  assert.deepEqual([rows[0].from, rows[0].to], [1, 1.1348]);
+  assert.ok(Math.abs(rows[0].delta - 0.1348) < 1e-12);
+  assert.equal(rows[1].delta, 0);
+  assert.deepEqual(adjustmentRows({ changes: null }, withDesign), []);
+});

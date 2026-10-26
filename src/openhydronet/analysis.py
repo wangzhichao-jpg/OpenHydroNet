@@ -19,6 +19,7 @@ def patched_model(model, changes):
 
 
 MAX_SCAN_POINTS = 1000
+MAX_SEARCH_EVALUATIONS = 800
 # Operating adjustments only (SPEC-001 D3): design parameters are not scanned.
 ADJUSTABLE = {"pump": {"speed": (0.0, 2.0)}, "valve": {"opening": (0.0, 1.0)}}
 OBSERVABLE_FIELDS = {
@@ -110,10 +111,9 @@ def check_request(request):
     if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
         raise ValueError("分析请求缺少模型")
     if request["kind"] == "accessibility":
-        if request.get("variables"):
-            raise ValueError("调节量搜索尚未开放；当前只做固定工作点检查")
+        variables = _check_search_variables(model, request.get("variables") or [])
         return dict(kind="accessibility", model=model, constraints=_check_constraints(model, request.get("constraints")),
-                    variables=[], total=1)
+                    variables=variables, total=MAX_SEARCH_EVALUATIONS if variables else 1)
     variables = request.get("variables")
     if not isinstance(variables, list) or not 1 <= len(variables) <= 2:
         raise ValueError("扫描参数为 1–2 个")
@@ -136,6 +136,26 @@ def check_request(request):
         raise ValueError("单批扫描限 1000 点；请拆分批次")
     return dict(kind="scan", model=model, variables=clean,
                 observables=_check_observables(model, request.get("observables")), total=size)
+
+
+def _check_search_variables(model, variables):
+    """Adjustable operating parameters with bounds inside their physical limits (SPEC-001 D3)."""
+    if not isinstance(variables, list):
+        raise ValueError("调节量格式无效")
+    clean, seen = [], set()
+    for v in variables:
+        if not isinstance(v, dict):
+            raise ValueError("调节量格式无效")
+        low, high = _check_adjustable(model, v)
+        if (v["id"], v["field"]) in seen:
+            raise ValueError(f"调节量重复：{v['id']}")
+        seen.add((v["id"], v["field"]))
+        lower, upper = v.get("lower"), v.get("upper")
+        if not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in (lower, upper)) \
+                or not low <= lower < upper <= high:
+            raise ValueError(f"{v['id']} 的调节上下界无效：须满足 {low:g} ≤ 下界 < 上界 ≤ {high:g}")
+        clean.append(dict(id=v["id"], field=v["field"], lower=float(lower), upper=float(upper)))
+    return clean
 
 
 def _check_constraints(model, constraints):
@@ -176,8 +196,8 @@ def run_request(request, progress=None):
     """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
     req = check_request(request)
     if req["kind"] == "accessibility":
-        result = accessibility(req["model"], req["constraints"])
-        if progress: progress(1, 1)
+        result = accessibility(req["model"], req["constraints"], req["variables"], progress=progress)
+        if progress and not req["variables"]: progress(1, 1)
         result.update(kind="accessibility", constraints=req["constraints"], fluid=result["result"].get("fluid"),
                       checks=constraint_checks(result["result"], req["constraints"]))
         return result
@@ -221,44 +241,57 @@ def constraint_violations(result, constraints):
     return [{k:v for k,v in c.items() if k != "satisfied"} for c in checks if not c["satisfied"]]
 
 
-def accessibility(model, constraints, variables=None, *, max_iterations=50):
-    """Fixed check or bounded LOCAL feasibility search; never a global no-solution claim."""
+class _BudgetExhausted(Exception):
+    pass
+
+
+def accessibility(model, constraints, variables=None, *, max_iterations=50, max_evaluations=MAX_SEARCH_EVALUATIONS,
+                  progress=None):
+    """Fixed check or bounded LOCAL feasibility search; never a global no-solution claim.
+
+    The search stops after ``max_evaluations`` solves (``budget_exhausted``); ``progress(done, max_evaluations)``
+    is called per solve.
+    """
     variables = variables or []
     base = solve(model)
     violations = constraint_violations(base,constraints)
     if not variables:
         return {"mode":"fixed_operating_point", "conclusion":"feasible_at_this_point" if not violations else "not_satisfied_at_this_point", "violations":violations, "result":base, "global_guarantee":False}
+    variables=_check_search_variables(model,variables)
     ids={e["id"]:e for e in model["edges"]}
-    allowed={"pump":{"speed"}, "valve":{"opening"}}
-    for v in variables:
-        e=ids.get(v["id"])
-        if not e or v["field"] not in allowed.get(e["kind"],set()):
-            raise ValueError("可调变量仅限泵速和阀开度；不修改设计需求")
-        absolute=(0,2) if v["field"]=="speed" else (0,1)
-        if not absolute[0] <= v["lower"] < v["upper"] <= absolute[1]:
-            raise ValueError("变量上下界无效")
     best = {"penalty":float("inf"),"result":base,"violations":violations,"values":None}
+    evaluations = [0]
     def evaluate(x):
+        if evaluations[0] >= max_evaluations:
+            raise _BudgetExhausted
+        evaluations[0] += 1
         changes=[dict(id=v["id"],field=v["field"],value=float(value)) for v,value in zip(variables,x)]
         try:
             r=solve(patched_model(model,changes))
             viol=constraint_violations(r,constraints)
             penalty=sum(c["violation"]**2 for c in viol)
         except ModelError:
-            return 1e12
-        if penalty < best["penalty"]:
-            best.update(penalty=penalty,result=r,violations=viol,values=changes)
+            penalty=1e12
+        else:
+            if penalty < best["penalty"]:
+                best.update(penalty=penalty,result=r,violations=viol,values=changes)
+        if progress: progress(evaluations[0], max_evaluations)
         return penalty
     bounds=[(v["lower"],v["upper"]) for v in variables]
     x0=[min(v["upper"],max(v["lower"],ids[v["id"]].get(v["field"],1))) for v in variables]
-    evaluate(x0)
-    # A deterministic midpoint and upper-bound start reduce, but do not remove,
-    # dependence on the local solver. No claim of global optimization is made.
-    for start in (x0,[(a+b)/2 for a,b in bounds],[b for a,b in bounds]):
-        minimize(evaluate,start,method="Powell",bounds=bounds,options={"maxiter":max_iterations,"xtol":1e-5,"ftol":1e-8})
-        if not best["violations"]: break
+    exhausted = False
+    try:
+        evaluate(x0)
+        # A deterministic midpoint and upper-bound start reduce, but do not remove,
+        # dependence on the local solver. No claim of global optimization is made.
+        for start in (x0,[(a+b)/2 for a,b in bounds],[b for a,b in bounds]):
+            minimize(evaluate,start,method="Powell",bounds=bounds,options={"maxiter":max_iterations,"xtol":1e-5,"ftol":1e-8})
+            if not best["violations"]: break
+    except _BudgetExhausted:
+        exhausted = True
     return {"mode":"bounded_local_feasibility_search", "conclusion":"feasible_point_found" if not best["violations"] else "undetermined", "global_guarantee":False,
             "variables":variables,"changes":best["values"],"violations":best["violations"],"result":best["result"],
+            "evaluations":evaluations[0],"max_evaluations":max_evaluations,"budget_exhausted":exhausted,
             "note":"局部搜索未找到可行点不代表全局不可行；建议检查最不利末端、扩大真实可用调节范围或复核泵阀数据"}
 
 
