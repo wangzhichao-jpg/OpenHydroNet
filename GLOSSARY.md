@@ -33,6 +33,8 @@
   - **固定检查**：不给调节量，只检查当前工作点。结论 `feasible_at_this_point` / `not_satisfied_at_this_point`。
   - **有界局部搜索**：结论 `feasible_point_found` 或 `undetermined`（**未确定，不等于不可行**）。`global_guarantee` 恒为 false。
 - **违反度**（violation）：约束不满足的相对量，0 为满足。
+- **尽量少调整**（min_change_local）：找到可行点后，在保持约束满足的前提下把各调节量向当前值收回（按上下界宽度归一化）；局部改进，不声称最小。
+- **设定精度**（step）：调节量可实际设定的最小间隔（默认 0.01）。取整后重新验算：`rounded_feasible` 满足 / `rounded_infeasible` 不满足（保留未取整值）/ `exact` 已在网格上。
 
 ## 工程与界面
 - **工程**（project）：`.ohn.json`，schema v1，含模型、布局、工况、设备库、偏好。

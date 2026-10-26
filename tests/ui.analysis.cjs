@@ -191,7 +191,16 @@ const inPanelView = (locator) =>
     const plan = await page.getByTestId('adjustment-table').locator('tbody tr').allInnerTexts();
     assert.equal(plan.length, 3);
     const found = Number(plan[0].split('\t')[2]);
-    assert.ok(found > 1.12 && found < 1.16, 'pump speed found ≈1.13: ' + plan[0]);
+    // T-009: first feasible ≈1.135 → least adjustment ≈1.051 → rounded to the 0.01 step: 1.06.
+    assert.equal(found, 1.06, 'suggested pump speed: ' + plan[0]);
+    const notes = await page.getByTestId('refinement-notes').locator('li').allInnerTexts();
+    assert.match(notes[0], /^首个可行点：循环泵 · 虚构示例 · 相对转速 1\.13/);
+    assert.match(notes[1], /^尽量少调整（局部，不保证最小）：循环泵 · 虚构示例 · 相对转速 1\.05/);
+    assert.equal(
+      notes[2],
+      '按设定精度取整：循环泵 · 虚构示例 · 相对转速 1.06，已重新验算，满足全部约束',
+    );
+    assert.ok(plan[1].includes('不变') && plan[2].includes('不变'), 'valves untouched: ' + plan);
     const after = await page.getByTestId('accessibility-table').locator('tbody tr').allInnerTexts();
     assert.ok(
       after.every((r) => /\t满足\t/.test(r)),
@@ -213,11 +222,11 @@ const inPanelView = (locator) =>
     await page.getByRole('button', { name: '分析', exact: true }).click();
     await actions.getByRole('button', { name: '应用到当前工程' }).click();
     const applied = Number(await speedField.inputValue());
-    assert.ok(applied > 1.12 && applied < 1.16, 'applied pump speed: ' + applied);
+    assert.equal(applied, 1.06, 'applied pump speed is the settable value');
     // The current model is exactly the found point: shown as applied, not stale.
     const note = page.getByTestId('found-actions-note');
     await note
-      .filter({ hasText: '已应用到当前工程：循环泵 · 虚构示例 · 相对转速 1 → 1.13' })
+      .filter({ hasText: '已应用到当前工程：循环泵 · 虚构示例 · 相对转速 1 → 1.06' })
       .waitFor();
     assert.equal(await actions.getByRole('button', { name: '已应用' }).isDisabled(), true);
     assert.equal(await page.getByTestId('accessibility-stale').count(), 0);

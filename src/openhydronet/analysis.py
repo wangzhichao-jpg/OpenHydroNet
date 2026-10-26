@@ -20,6 +20,7 @@ def patched_model(model, changes):
 
 MAX_SCAN_POINTS = 1000
 MAX_SEARCH_EVALUATIONS = 800
+DEFAULT_STEP = 0.01  # settable precision of pump speed and valve opening (SPEC-001 D8)
 # Operating adjustments only (SPEC-001 D3): design parameters are not scanned.
 ADJUSTABLE = {"pump": {"speed": (0.0, 2.0)}, "valve": {"opening": (0.0, 1.0)}}
 OBSERVABLE_FIELDS = {
@@ -111,7 +112,7 @@ def check_request(request):
     if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
         raise ValueError("分析请求缺少模型")
     if request["kind"] == "accessibility":
-        variables = _check_search_variables(model, request.get("variables") or [])
+        variables = _check_search_variables(model, request.get("variables") or [], DEFAULT_STEP)
         return dict(kind="accessibility", model=model, constraints=_check_constraints(model, request.get("constraints")),
                     variables=variables, total=MAX_SEARCH_EVALUATIONS if variables else 1)
     variables = request.get("variables")
@@ -138,8 +139,11 @@ def check_request(request):
                 observables=_check_observables(model, request.get("observables")), total=size)
 
 
-def _check_search_variables(model, variables):
-    """Adjustable operating parameters with bounds inside their physical limits (SPEC-001 D3)."""
+def _check_search_variables(model, variables, default_step=None):
+    """Adjustable operating parameters with bounds inside their physical limits (SPEC-001 D3).
+
+    ``step`` is the settable precision (SPEC-001 D8); without it the result is not rounded.
+    """
     if not isinstance(variables, list):
         raise ValueError("调节量格式无效")
     clean, seen = [], set()
@@ -154,7 +158,14 @@ def _check_search_variables(model, variables):
         if not all(isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x) for x in (lower, upper)) \
                 or not low <= lower < upper <= high:
             raise ValueError(f"{v['id']} 的调节上下界无效：须满足 {low:g} ≤ 下界 < 上界 ≤ {high:g}")
-        clean.append(dict(id=v["id"], field=v["field"], lower=float(lower), upper=float(upper)))
+        item = dict(id=v["id"], field=v["field"], lower=float(lower), upper=float(upper))
+        step = v.get("step", default_step)
+        if step is not None:
+            if not isinstance(step, (int, float)) or isinstance(step, bool) or not math.isfinite(step) \
+                    or not 0 < step <= upper - lower:
+                raise ValueError(f"{v['id']} 的设定精度无效：须大于 0 且不超过上下界宽度")
+            item["step"] = float(step)
+        clean.append(item)
     return clean
 
 
@@ -259,9 +270,10 @@ def accessibility(model, constraints, variables=None, *, max_iterations=50, max_
         return {"mode":"fixed_operating_point", "conclusion":"feasible_at_this_point" if not violations else "not_satisfied_at_this_point", "violations":violations, "result":base, "global_guarantee":False}
     variables=_check_search_variables(model,variables)
     ids={e["id"]:e for e in model["edges"]}
-    best = {"penalty":float("inf"),"result":base,"violations":violations,"values":None}
     evaluations = [0]
-    def evaluate(x):
+
+    def point(x):
+        """One counted solve at adjustment vector ``x``; a failed model gives result None."""
         if evaluations[0] >= max_evaluations:
             raise _BudgetExhausted
         evaluations[0] += 1
@@ -271,12 +283,20 @@ def accessibility(model, constraints, variables=None, *, max_iterations=50, max_
             viol=constraint_violations(r,constraints)
             penalty=sum(c["violation"]**2 for c in viol)
         except ModelError:
-            penalty=1e12
-        else:
-            if penalty < best["penalty"]:
-                best.update(penalty=penalty,result=r,violations=viol,values=changes)
+            r, viol, penalty = None, None, 1e12
         if progress: progress(evaluations[0], max_evaluations)
-        return penalty
+        return dict(x=[float(v) for v in x], changes=changes, result=r, violations=viol, penalty=penalty)
+
+    def feasible(p):
+        return p["result"] is not None and not p["violations"]
+
+    best = {"penalty":float("inf"), "point":None}
+    def evaluate(x):
+        p=point(x)
+        if p["result"] is not None and p["penalty"] < best["penalty"]:
+            best.update(penalty=p["penalty"], point=p)
+        return p["penalty"]
+
     bounds=[(v["lower"],v["upper"]) for v in variables]
     x0=[min(v["upper"],max(v["lower"],ids[v["id"]].get(v["field"],1))) for v in variables]
     exhausted = False
@@ -286,13 +306,98 @@ def accessibility(model, constraints, variables=None, *, max_iterations=50, max_
         # dependence on the local solver. No claim of global optimization is made.
         for start in (x0,[(a+b)/2 for a,b in bounds],[b for a,b in bounds]):
             minimize(evaluate,start,method="Powell",bounds=bounds,options={"maxiter":max_iterations,"xtol":1e-5,"ftol":1e-8})
-            if not best["violations"]: break
+            if best["point"] and feasible(best["point"]): break
     except _BudgetExhausted:
         exhausted = True
-    return {"mode":"bounded_local_feasibility_search", "conclusion":"feasible_point_found" if not best["violations"] else "undetermined", "global_guarantee":False,
-            "variables":variables,"changes":best["values"],"violations":best["violations"],"result":best["result"],
-            "evaluations":evaluations[0],"max_evaluations":max_evaluations,"budget_exhausted":exhausted,
-            "note":"局部搜索未找到可行点不代表全局不可行；建议检查最不利末端、扩大真实可用调节范围或复核泵阀数据"}
+    found = best["point"]
+    out = {"mode":"bounded_local_feasibility_search", "global_guarantee":False, "variables":variables,
+           "max_evaluations":max_evaluations,
+           "note":"局部搜索未找到可行点不代表全局不可行；建议检查最不利末端、扩大真实可用调节范围或复核泵阀数据"}
+    if found is None or not feasible(found):
+        out.update(conclusion="undetermined", objective="feasibility", first_feasible_changes=None, refinement=None,
+                   changes=found and found["changes"], unrounded_changes=found and found["changes"],
+                   violations=found["violations"] if found else constraint_violations(base,constraints),
+                   result=found["result"] if found else base, rounding={"status":"not_applicable"},
+                   evaluations=evaluations[0], budget_exhausted=exhausted)
+        return out
+    # SPEC-001 D7/D8: adjust as little as possible, then round to the settable step. Every accepted
+    # point is re-solved and must satisfy all constraints, so the returned point is always verified.
+    state = {"cur": found}
+    started = evaluations[0]
+    rounding = {"status": "not_verified"}
+    try:
+        _pull_back(point, feasible, x0, state)
+        rounding = _round_to_steps(point, feasible, x0, variables, state)
+    except _BudgetExhausted:
+        exhausted = True
+    final = state.get("final", state["cur"])
+    out.update(conclusion="feasible_point_found", objective="min_change_local",
+               first_feasible_changes=found["changes"], unrounded_changes=state["cur"]["changes"],
+               changes=final["changes"], violations=final["violations"], result=final["result"], rounding=rounding,
+               refinement={"started_at":started, "evaluations":evaluations[0]-started},
+               evaluations=evaluations[0], budget_exhausted=exhausted)
+    return out
+
+
+def _pull_back(point, feasible, x0, state, line_steps=12, coordinate_steps=10, rounds=2):
+    """Move the feasible point ``state['cur']`` back towards the current values ``x0`` while it stays feasible.
+
+    Bisection on the segment x0→cur, then on each coordinate. Local improvement only, not a proven minimum.
+    """
+    cur = state["cur"]
+    if all(abs(a-b) < 1e-12 for a, b in zip(cur["x"], x0)):
+        return
+    lo, hi, end = 0.0, 1.0, cur["x"]
+    for _ in range(line_steps):
+        t = (lo+hi)/2
+        p = point([a+t*(b-a) for a, b in zip(x0, end)])
+        if feasible(p): hi, state["cur"] = t, p
+        else: lo = t
+    for _ in range(rounds):
+        for i in range(len(x0)):
+            base = state["cur"]["x"]
+            if abs(base[i]-x0[i]) < 1e-12: continue
+            lo, hi = 0.0, 1.0
+            for _ in range(coordinate_steps):
+                s = (lo+hi)/2
+                x = list(base); x[i] = x0[i]+s*(base[i]-x0[i])
+                p = point(x)
+                if feasible(p): hi, state["cur"] = s, p
+                else: lo = s
+
+
+def _round_to_steps(point, feasible, x0, variables, state):
+    """Round ``state['cur']`` to each variable's step inside its bounds; verify; set ``state['final']``."""
+    steps = [v.get("step") for v in variables]
+    if all(s is None for s in steps):
+        return {"status": "skipped"}
+    cur = state["cur"]["x"]
+    def grid(i, value, away):
+        step, v = steps[i], variables[i]
+        if step is None: return value
+        first, last = math.ceil(v["lower"]/step - 1e-9), math.floor(v["upper"]/step + 1e-9)
+        if first > last: return value          # no settable value inside the bounds
+        k = value/step
+        if away and value > x0[i] + 1e-12: k = math.ceil(k - 1e-9)
+        elif away and value < x0[i] - 1e-12: k = math.floor(k + 1e-9)
+        else: k = round(k)
+        return round(min(max(k, first), last)*step, 10)
+    candidates = []
+    for away in (False, True):
+        c = [grid(i, value, away) for i, value in enumerate(cur)]
+        if c not in candidates: candidates.append(c)
+    info = {"steps": steps}
+    if all(abs(a-b) < 1e-12 for a, b in zip(candidates[0], cur)):
+        return dict(info, status="exact")
+    tried = []
+    for c in candidates:
+        p = point(c)
+        tried.append(p)
+        if feasible(p):
+            state["final"] = p
+            return dict(info, status="rounded_feasible")
+    return dict(info, status="rounded_infeasible", rounded_changes=tried[0]["changes"],
+                rounded_violations=tried[0]["violations"] or [])
 
 
 def sensitivity(model, edge_id, field, step, observable_edge, observable_field="flow_m3_s"):

@@ -238,7 +238,7 @@ export function buildAccessibilityRequest(
     constraints: constraintsToSI(rows),
     variables: variables
       .filter((v) => v.enabled)
-      .map(({ id, field, lower, upper }) => ({ id, field, lower, upper })),
+      .map(({ id, field, lower, upper, step }) => ({ id, field, lower, upper, step })),
   };
 }
 
@@ -293,7 +293,14 @@ export function constraintProblems(rows: ConstraintRow[], model: any): string[] 
 }
 
 // ---- 有界局部搜索（T-006）----
-export type SearchVariable = AdjustableParam & { lower: number; upper: number; enabled: boolean };
+/** ``step``: settable precision (SPEC-001 D8, default 0.01); the kernel rounds the found point to it. */
+export type SearchVariable = AdjustableParam & {
+  lower: number;
+  upper: number;
+  step: number;
+  enabled: boolean;
+};
+export const DEFAULT_STEP = 0.01;
 
 const round2 = (v: number) => Math.round(v * 100) / 100;
 
@@ -303,6 +310,7 @@ export function searchVariables(model: any): SearchVariable[] {
     ...p,
     lower: p.field === 'speed' ? Math.max(p.min, round2(p.value - 0.4)) : 0.1,
     upper: p.field === 'speed' ? Math.min(p.max, round2(p.value + 0.4)) : 1,
+    step: DEFAULT_STEP,
     enabled: false,
   }));
 }
@@ -315,6 +323,8 @@ export function searchProblems(vars: SearchVariable[]): string[] {
         return [`${v.label}：下界必须小于上界`];
       if (v.lower < v.min || v.upper > v.max)
         return [`${v.label}：范围须在 ${v.min}–${v.max} 之内`];
+      if (!(Number.isFinite(v.step) && v.step > 0 && v.step <= v.upper - v.lower))
+        return [`${v.label}：设定精度须大于 0 且不超过上下界宽度`];
       return [];
     });
 }
@@ -354,4 +364,36 @@ export function adjustmentSummary(result: any, frozenModel: any) {
     .filter((a) => Math.abs(a.delta) >= 1e-5)
     .map((a) => `${a.label} ${fmt(a.from)} → ${fmt(a.to)}`)
     .join('；');
+}
+
+// ---- 尽量少调整与设定精度（T-009）----
+/** "label value" for each change that differs from the frozen model (|Δ| ≥ 1e-5). */
+function describeChanges(changes: any[] | null | undefined, frozenModel: any) {
+  const rows = adjustmentRows({ changes }, frozenModel).filter((a) => Math.abs(a.delta) >= 1e-5);
+  return rows.length ? rows.map((a) => `${a.label} ${fmt(a.to)}`).join('；') : '与当前值相同';
+}
+
+/** Plain-language account of how the suggested point was obtained; empty unless a point was found. */
+export function refinementNotes(result: any, frozenModel: any): string[] {
+  if (result?.conclusion !== 'feasible_point_found' || result.objective !== 'min_change_local')
+    return [];
+  const notes = [
+    '首个可行点：' + describeChanges(result.first_feasible_changes, frozenModel),
+    '尽量少调整（局部，不保证最小）：' + describeChanges(result.unrounded_changes, frozenModel),
+  ];
+  const r = result.rounding || {};
+  if (r.status === 'rounded_feasible')
+    notes.push(
+      `按设定精度取整：${describeChanges(result.changes, frozenModel)}，已重新验算，满足全部约束`,
+    );
+  else if (r.status === 'rounded_infeasible') {
+    const names = [
+      ...new Set((r.rounded_violations || []).map((v: any) => nameOf(frozenModel, 'edge', v.id))),
+    ];
+    notes.push(
+      `按设定精度取整为 ${describeChanges(r.rounded_changes, frozenModel)} 时不满足约束（${names.join('、')}），以下保留未取整值`,
+    );
+  } else if (r.status === 'exact') notes.push('已在设定精度上，无需取整');
+  else if (r.status === 'not_verified') notes.push('已达评估上限，未完成取整验算，以下为未取整值');
+  return notes;
 }

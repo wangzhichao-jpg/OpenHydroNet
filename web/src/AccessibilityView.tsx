@@ -22,6 +22,7 @@ import {
   adjustmentRows,
   adjustmentSummary,
   applyAdjustments,
+  refinementNotes,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
 import type { AnalysisActions } from './AnalysisPanel';
@@ -77,6 +78,7 @@ export default function AccessibilityView({
       return null;
     }
   }, [result, frozenModel]);
+  const notes = useMemo(() => refinementNotes(result, frozenModel), [result, frozenModel]);
   const currentSignature = JSON.stringify(model);
   const applied =
     !!foundSignature &&
@@ -192,6 +194,9 @@ export default function AccessibilityView({
               </label>
               {v.enabled && (
                 <div className="search-bounds">
+                  <small aria-hidden="true">下界</small>
+                  <small aria-hidden="true">上界</small>
+                  <small aria-hidden="true">设定精度</small>
                   <NumberField
                     label={v.label + ' 下界'}
                     value={v.lower}
@@ -205,6 +210,14 @@ export default function AccessibilityView({
                     min={v.min}
                     max={v.max}
                     onApply={(x: number) => setVar(v, { upper: x })}
+                  />
+                  <NumberField
+                    label={v.label + ' 设定精度'}
+                    value={v.step}
+                    min={0}
+                    strict
+                    max={v.max}
+                    onApply={(x: number) => setVar(v, { step: x })}
                   />
                 </div>
               )}
@@ -273,15 +286,26 @@ export default function AccessibilityView({
                   {result.conclusion === 'undetermined' &&
                     ' 建议：检查最不利末端、在真实允许的范围内放宽调节上下界，或复核泵阀数据。'}
                 </p>
+                {notes.length > 0 && (
+                  <ol className="refinement-notes" data-testid="refinement-notes">
+                    {notes.map((n) => (
+                      <li key={n}>{n}</li>
+                    ))}
+                  </ol>
+                )}
                 {result.changes && (
                   <>
-                    <h4>{satisfied ? '调节方案' : '最接近满足的点（仍不满足约束）'}</h4>
+                    <h4>
+                      {satisfied
+                        ? '调节方案（建议值已尽量少调整，并按设定精度处理）'
+                        : '最接近满足的点（仍不满足约束）'}
+                    </h4>
                     <table data-testid="adjustment-table">
                       <thead>
                         <tr>
                           <th>调节量</th>
                           <th>当前值</th>
-                          <th>搜索结果</th>
+                          <th>{satisfied ? '建议值' : '搜索结果'}</th>
                           <th>变化</th>
                         </tr>
                       </thead>

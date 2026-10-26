@@ -219,10 +219,10 @@ import { searchVariables, searchProblems, adjustmentRows } from './analysis';
 test('search variables list every adjustable parameter, off by default, with bounds inside limits', () => {
   const vars = searchVariables(withDesign);
   assert.deepEqual(
-    vars.map((v) => [v.id, v.field, v.lower, v.upper, v.enabled]),
+    vars.map((v) => [v.id, v.field, v.lower, v.upper, v.step, v.enabled]),
     [
-      ['PU1', 'speed', 0.6, 1.4, false],
-      ['V1', 'opening', 0.1, 1, false],
+      ['PU1', 'speed', 0.6, 1.4, 0.01, false],
+      ['V1', 'opening', 0.1, 1, 0.01, false],
     ],
   );
   const fast = structuredClone(withDesign);
@@ -233,11 +233,15 @@ test('search variables list every adjustable parameter, off by default, with bou
 test('only enabled variables are sent; bad bounds are caught before running', () => {
   const vars = searchVariables(withDesign).map((v, i) => ({ ...v, enabled: i === 0 }));
   const req = buildAccessibilityRequest(withDesign, defaultConstraintRows(withDesign), vars);
-  assert.deepEqual(req.variables, [{ id: 'PU1', field: 'speed', lower: 0.6, upper: 1.4 }]);
+  assert.deepEqual(req.variables, [
+    { id: 'PU1', field: 'speed', lower: 0.6, upper: 1.4, step: 0.01 },
+  ]);
   assert.deepEqual(searchProblems(vars), []);
   assert.match(searchProblems([{ ...vars[0], lower: 1.4, upper: 1.4 }])[0], /下界必须小于上界/);
   assert.match(searchProblems([{ ...vars[0], upper: 2.5 }])[0], /0–2/);
   assert.deepEqual(searchProblems([{ ...vars[0], upper: 2.5, enabled: false }]), []);
+  assert.match(searchProblems([{ ...vars[0], step: 0 }])[0], /设定精度/);
+  assert.match(searchProblems([{ ...vars[0], step: 0.9 }])[0], /设定精度/);
 });
 
 test('adjustment rows compare found values with the frozen model', () => {
@@ -256,7 +260,7 @@ test('adjustment rows compare found values with the frozen model', () => {
 });
 
 // ---- T-007 apply / save found point ----
-import { applyAdjustments, adjustmentSummary } from './analysis';
+import { applyAdjustments, adjustmentSummary, refinementNotes } from './analysis';
 
 test('found adjustments patch a copy of the model and only touch speed/opening', () => {
   const patched = applyAdjustments(withDesign, [
@@ -290,4 +294,51 @@ test('adjustment summary names only real changes', () => {
     },
   );
   assert.equal(s, '循环泵 · 相对转速 1 → 1.135');
+});
+
+// ---- T-009 min change + settable precision ----
+test('refinement notes explain first point → least adjustment → rounding, honestly', () => {
+  const base = {
+    conclusion: 'feasible_point_found',
+    objective: 'min_change_local',
+    first_feasible_changes: [{ id: 'PU1', field: 'speed', value: 1.1348 }],
+    unrounded_changes: [{ id: 'PU1', field: 'speed', value: 1.05141 }],
+    changes: [{ id: 'PU1', field: 'speed', value: 1.06 }],
+  };
+  assert.deepEqual(
+    refinementNotes(
+      { ...base, rounding: { status: 'rounded_feasible', steps: [0.01] } },
+      withDesign,
+    ),
+    [
+      '首个可行点：循环泵 · 相对转速 1.135',
+      '尽量少调整（局部，不保证最小）：循环泵 · 相对转速 1.051',
+      '按设定精度取整：循环泵 · 相对转速 1.06，已重新验算，满足全部约束',
+    ],
+  );
+  const bad = refinementNotes(
+    {
+      ...base,
+      changes: base.unrounded_changes,
+      rounding: {
+        status: 'rounded_infeasible',
+        rounded_changes: [{ id: 'PU1', field: 'speed', value: 1.05 }],
+        rounded_violations: [{ id: 'T1', kind: 'min_flow' }],
+      },
+    },
+    withDesign,
+  );
+  assert.equal(
+    bad[2],
+    '按设定精度取整为 循环泵 · 相对转速 1.05 时不满足约束（末端1），以下保留未取整值',
+  );
+  assert.deepEqual(refinementNotes({ conclusion: 'undetermined' }, withDesign), []);
+  assert.match(
+    refinementNotes({ ...base, rounding: { status: 'exact' } }, withDesign)[2],
+    /无需取整/,
+  );
+  assert.match(
+    refinementNotes({ ...base, rounding: { status: 'not_verified' } }, withDesign)[2],
+    /评估上限/,
+  );
 });

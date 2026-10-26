@@ -14,8 +14,8 @@ def test_search_finds_documented_pump_speed_and_reports_progress():
     r = run_request(request(DESIGN, variables=VARS), progress=lambda d, t: calls.append((d, t)))
     assert r['mode'] == 'bounded_local_feasibility_search' and r['conclusion'] == 'feasible_point_found'
     assert r['global_guarantee'] is False
-    speed = next(c['value'] for c in r['changes'] if c['id'] == 'PU1')
-    assert 1.12 < speed < 1.16
+    first = next(c['value'] for c in r['first_feasible_changes'] if c['id'] == 'PU1')
+    assert 1.12 < first < 1.16  # plain feasibility search; T-009 then pulls it back (see test_accessibility_refine)
     assert all(c['satisfied'] for c in r['checks']) and r['violations'] == []
     assert r['result']['edges']['T2']['flow_m3_s'] >= .004 * (1 - 1e-6)
     assert calls and all(t == r['max_evaluations'] for _, t in calls)
