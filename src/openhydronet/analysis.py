@@ -114,7 +114,7 @@ def check_request(request):
     request carries ``total`` = expected number of solves, used for progress.
     """
     checker = {"scan": _check_scan, "sensitivity": _check_sensitivity,
-               "accessibility": _check_accessibility}.get(request.get("kind") if isinstance(request, dict) else None)
+               "accessibility": _check_accessibility, "balance": _check_balance}.get(request.get("kind") if isinstance(request, dict) else None)
     if checker is None:
         raise ValueError("不支持的分析类型")
     model = request.get("model")
@@ -165,6 +165,37 @@ def _check_sensitivity(model, request):
         raise ValueError("差分步长须大于 0 且不超过 0.1")
     return dict(parameters=clean, step=float(step), observables=_check_observables(model, request.get("observables")),
                 total=1+2*len(clean))
+
+
+def _check_balance(model, request):
+    """balance (SPEC-002): mode 'variable'|'fixed', pump (variable: the pump whose speed is adjusted),
+    lower/upper speed bounds, speed (fixed mode, optional), step (settable precision), tolerance (verification)."""
+    mode = request.get("mode", "variable")
+    if mode not in ("variable", "fixed"):
+        raise ValueError("平衡模式只能是 variable（泵速参与）或 fixed（泵速固定）")
+    pumps = [e["id"] for e in model["edges"] if e["kind"] == "pump"]
+    pump = request.get("pump")
+    if pump is None and len(pumps) == 1:
+        pump = pumps[0]
+    if pump is not None and pump not in pumps:
+        raise ValueError(f"调速对象必须是泵：{pump}")
+    if mode == "variable" and pump is None:
+        raise ValueError("请选择参与调速的泵")
+    lower, upper = request.get("lower", .5), request.get("upper", 1.5)
+    if not (_is_number(lower) and _is_number(upper)) or not 0 < lower < upper <= 2:
+        raise ValueError("泵速范围无效：须满足 0 < 下限 < 上限 ≤ 2")
+    speed = request.get("speed")
+    if speed is not None and (not _is_number(speed) or not 0 < speed <= 2):
+        raise ValueError("固定泵速须大于 0 且不超过 2")
+    step = request.get("step", DEFAULT_STEP)
+    if step is not None and (not _is_number(step) or not 0 < step <= .1):
+        raise ValueError("设定精度须大于 0 且不超过 0.1")
+    tolerance = request.get("tolerance", .05)
+    if not _is_number(tolerance) or not 0 < tolerance <= .5:
+        raise ValueError("验证容差须大于 0 且不超过 50%")
+    from .balancing import BISECTION_STEPS
+    return dict(mode=mode, pump=pump, lower=float(lower), upper=float(upper), speed=speed, step=step,
+                tolerance=float(tolerance), total=3 + (2 + BISECTION_STEPS if mode == "variable" else 0))
 
 
 def _check_accessibility(model, request):
@@ -239,7 +270,14 @@ def _check_constraints(model, constraints):
 def run_request(request, progress=None):
     """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
     req = check_request(request)
-    return {"scan": _run_scan, "sensitivity": _run_sensitivity, "accessibility": _run_accessibility}[req["kind"]](req, progress)
+    return {"scan": _run_scan, "sensitivity": _run_sensitivity, "accessibility": _run_accessibility,
+            "balance": _run_balance}[req["kind"]](req, progress)
+
+
+def _run_balance(req, progress):
+    from .balancing import balance
+    params = {k: req[k] for k in ("mode", "pump", "lower", "upper", "speed", "step", "tolerance")}
+    return dict(balance(req["model"], progress=progress, **params), kind="balance")
 
 
 def _run_scan(req, progress):
