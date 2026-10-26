@@ -226,7 +226,7 @@ export default function DeviceLibrary({ project, selectedDevices, onMutate, onAp
           }}
         />
         {entries.length === 0 && (
-          <div className="tip">暂无条目。新增后填写数据，示例不冒充厂家库。</div>
+          <div className="tip">暂无条目。新增后填写数据，可自定义保存为工程库。</div>
         )}
         {entries.map((e: any) => (
           <button

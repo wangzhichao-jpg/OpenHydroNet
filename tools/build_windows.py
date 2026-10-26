@@ -42,7 +42,7 @@ def main():
     (runtime/'python312._pth').write_text('python312.zip\n.\nLib/site-packages\n../src\nimport site\n',encoding='utf-8')
     # A double-clickable console smoke test uses exactly the bundled interpreter.
     (destination/'验证计算.cmd').write_bytes(('@echo off\r\ncd /d "%~dp0"\r\nresources\\app\\runtime\\python.exe -m openhydronet.cli solve resources\\app\\examples\\closed-loop.ohn.json -o smoke-result.json\r\nif errorlevel 1 (echo FAILED & pause & exit /b 1)\r\necho SUCCESS: see smoke-result.json\r\npause\r\n').encode('utf-8'))
-    (destination/'开始使用.txt').write_text('OpenHydroNet '+VERSION+'\n\n解压到可写目录后启动 OpenHydroNet.exe。不需要联网，不需要额外安装 Python。\n软件为开发预览，尚未完整覆盖 HACNet。\n本包在 Linux 上组装，未在 Windows 上实际运行验收，不可视作正式发行版。\n先运行 验证计算.cmd 检查内核，再使用公开示例完成桌面流程验收。\n用户手册：resources/app/docs/USER_MANUAL.md\n已知限制：resources/app/docs/KNOWN_LIMITATIONS.md\n开源许可：resources/app/LICENSE；Electron/Chromium 许可在本目录 LICENSE 与 LICENSES.chromium.html。\n',encoding='utf-8')
+    (destination/'开始使用.txt').write_text('OpenHydroNet '+VERSION+'\n\n解压到可写目录后启动 OpenHydroNet.exe。不需要联网，不需要额外安装 Python。\n软件为开源预览版本，适合方案比选与工程辅助计算。\n先运行 验证计算.cmd 检查内核，再使用公开示例完成桌面流程验收。\n用户手册：resources/app/docs/USER_MANUAL.md\n已知限制：resources/app/docs/KNOWN_LIMITATIONS.md\n开源许可：resources/app/LICENSE；Electron/Chromium 许可在本目录 LICENSE 与 LICENSES.chromium.html。\n',encoding='utf-8')
     build=dict(version=VERSION,commit=commit,platform='win32-x64',assembly_host=sys.platform,windows_executed=False,inputs=manifest,protocol=1,format_version=1)
     (destination/'BUILD_MANIFEST.json').write_text(json.dumps(build,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     artifacts=ROOT/'artifacts';archive=artifacts/(destination.name+'.zip')
