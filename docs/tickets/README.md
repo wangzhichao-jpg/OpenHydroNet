@@ -9,7 +9,7 @@
 |---|---|---|---|---|
 | [T-001](T-001.md) | 单参数扫描端到端（任务通道 + 分析页 + 结果表） | — | analysis.py, cli.py, server.py, analysis.ts, AnalysisPanel.tsx, ScanView.tsx | done |
 | [T-002](T-002.md) | 扫描曲线图与 CSV 导出 | T-001 | ScanView.tsx, LineChart.tsx, analysis.ts | done |
-| [T-003](T-003.md) | 双参数扫描 | T-002 | ScanView.tsx | todo |
+| [T-003](T-003.md) | 双参数扫描 | T-002 | ScanView.tsx | done |
 | [T-004](T-004.md) | 敏感性分析（调节量 × 观测量矩阵） | T-001 | analysis.py, SensitivityView.tsx | done |
 | [T-005](T-005.md) | 可及性：约束编辑与固定检查 | T-001 | AccessibilityView.tsx | done |
 | [T-006](T-006.md) | 可及性：有界局部搜索 | T-005 | AccessibilityView.tsx, analysis.py | done |

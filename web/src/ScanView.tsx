@@ -14,6 +14,7 @@ import {
   fmt,
   unitGroups,
   scanCsv,
+  gridSeries,
 } from './analysis';
 import { useAnalysisJob } from './useAnalysisJob';
 import ObservablePicker from './ObservablePicker';
@@ -37,13 +38,19 @@ export default function ScanView({
   const [range, setRange] = useState<
     Record<string, { start: number; stop: number; count: number }>
   >({});
-  const r = (param && range[param.id + ':' + param.field]) || {
-    start: param?.field === 'speed' ? 0.6 : 0.1,
-    stop: param?.field === 'speed' ? 1.4 : 1,
-    count: 5,
-  };
-  const setR = (patch: Partial<typeof r>) =>
-    param && setRange((all) => ({ ...all, [param.id + ':' + param.field]: { ...r, ...patch } }));
+  type Range = { start: number; stop: number; count: number };
+  const rangeOf = (p: any): Range =>
+    range[p.id + ':' + p.field] || {
+      start: p.field === 'speed' ? 0.6 : 0.1,
+      stop: p.field === 'speed' ? 1.4 : 1,
+      count: 5,
+    };
+  const setRangeOf = (p: any, patch: Partial<Range>) =>
+    setRange((all) => ({ ...all, [p.id + ':' + p.field]: { ...rangeOf(p), ...patch } }));
+  const r = param ? rangeOf(param) : { start: 0, stop: 1, count: 1 };
+  // Optional second parameter (T-003): Cartesian product, first parameter outer.
+  const [secondKey, setSecondKey] = useState('');
+  const second = params.find((x) => x.id + ':' + x.field === secondKey && x !== param);
   const [observables, setObservables] = useState<Observable[]>(() => defaultObservables(model));
   const { state, start, cancel } = useAnalysisJob();
   // Labels and names come from the model the scan actually ran on, not the edited one.
@@ -55,6 +62,7 @@ export default function ScanView({
   const [hidden, setHidden] = useState<string[]>([]);
   const [unitIndex, setUnitIndex] = useState(0);
   const [exportNote, setExportNote] = useState('');
+  const [gridObservable, setGridObservable] = useState(0);
   const currentSignature = JSON.stringify(model);
   const stale =
     !!state.modelSignature &&
@@ -63,12 +71,18 @@ export default function ScanView({
   const running = state.status === 'starting' || state.status === 'running';
 
   let values: number[] = [],
+    values2: number[] = [],
     rangeError = '';
   try {
     values = linspace(r.start, r.stop, r.count);
+    if (second)
+      values2 = linspace(rangeOf(second).start, rangeOf(second).stop, rangeOf(second).count);
   } catch (e: any) {
     rangeError = e.message;
   }
+  const total = values.length * (second ? values2.length : 1);
+  if (!rangeError && total > MAX_SCAN_POINTS)
+    rangeError = `共 ${total} 点，单批扫描限 ${MAX_SCAN_POINTS} 点；请减少点数`;
 
   if (!params.length) return <div className="tip">当前模型没有泵或阀，无可扫描的调节量。</div>;
 
@@ -96,10 +110,17 @@ export default function ScanView({
       setExportNote('导出失败：' + e.message);
     }
   }
-  const resultParam = state.result?.variables?.[0];
-  const resultParamLabel =
-    frozenParams.find((x) => x.id === resultParam?.id && x.field === resultParam?.field)?.label ||
-    resultParam?.id;
+  const labelOf = (v: any) =>
+    frozenParams.find((x) => x.id === v?.id && x.field === v?.field)?.label || v?.id;
+  const resultParamLabel = labelOf(state.result?.variables?.[0]);
+  const twoD = state.result?.variables?.length === 2;
+  const grid = twoD
+    ? gridSeries(
+        rows,
+        Math.min(gridObservable, resultObservables.length - 1),
+        labelOf(state.result.variables[1]),
+      )
+    : null;
 
   return (
     <div className="analysis-view" data-testid="scan-view">
@@ -118,30 +139,32 @@ export default function ScanView({
             ))}
           </select>
         </label>
-        <div className="analysis-range">
-          <NumberField
-            label="起点"
-            value={r.start}
-            min={param.min}
-            max={param.max}
-            onApply={(v: number) => setR({ start: v })}
+        <RangeFields param={param} range={r} onChange={(patch) => setRangeOf(param, patch)} />
+        <label className="field">
+          <span>第二参数（可选）</span>
+          <select
+            aria-label="第二参数"
+            value={second ? second.id + ':' + second.field : ''}
+            onChange={(e) => setSecondKey(e.target.value)}
+          >
+            <option value="">无（单参数扫描）</option>
+            {params
+              .filter((x) => x !== param)
+              .map((x) => (
+                <option key={x.id + x.field} value={x.id + ':' + x.field}>
+                  {x.label}（当前 {fmt(x.value)}）
+                </option>
+              ))}
+          </select>
+        </label>
+        {second && (
+          <RangeFields
+            param={second}
+            range={rangeOf(second)}
+            prefix="第二参数 "
+            onChange={(patch) => setRangeOf(second, patch)}
           />
-          <NumberField
-            label="终点"
-            value={r.stop}
-            min={param.min}
-            max={param.max}
-            onApply={(v: number) => setR({ stop: v })}
-          />
-          <NumberField
-            label="点数"
-            value={r.count}
-            min={1}
-            max={MAX_SCAN_POINTS}
-            integer
-            onApply={(v: number) => setR({ count: v })}
-          />
-        </div>
+        )}
         <ObservablePicker
           model={model}
           flowUnit={flowUnit}
@@ -159,13 +182,16 @@ export default function ScanView({
                 start(
                   buildScanRequest(
                     model,
-                    [{ id: param.id, field: param.field, values }],
+                    [
+                      { id: param.id, field: param.field, values },
+                      ...(second ? [{ id: second.id, field: second.field, values: values2 }] : []),
+                    ],
                     observables,
                   ),
                 )
               }
             >
-              运行扫描（{values.length || 0} 点）
+              运行扫描（{rangeError ? 0 : total} 点）
             </button>
           )}
           <small>每点独立稳态计算，不是时间动态。</small>
@@ -175,7 +201,7 @@ export default function ScanView({
       <div className="analysis-output" role="status" aria-live="polite">
         {running && (
           <div className="analysis-progress" data-testid="scan-progress">
-            正在扫描 {state.progress?.done ?? 0} / {state.progress?.total ?? values.length}
+            正在扫描 {state.progress?.done ?? 0} / {state.progress?.total ?? total}
             <progress value={state.progress?.done ?? 0} max={state.progress?.total || 1} />
           </div>
         )}
@@ -190,7 +216,20 @@ export default function ScanView({
         )}
         {state.status === 'completed' && (
           <div className="scan-toolbar">
-            {groups.length > 1 && (
+            {twoD && (
+              <select
+                aria-label="曲线观测量"
+                value={Math.min(gridObservable, resultObservables.length - 1)}
+                onChange={(e) => setGridObservable(Number(e.target.value))}
+              >
+                {resultObservables.map((o, i) => (
+                  <option key={observableKey(o)} value={i}>
+                    曲线：{observableLabel(o, frozenModel, flowUnit)}
+                  </option>
+                ))}
+              </select>
+            )}
+            {!twoD && groups.length > 1 && (
               <select
                 aria-label="纵轴单位"
                 value={groups.indexOf(group)}
@@ -204,33 +243,41 @@ export default function ScanView({
               </select>
             )}
             <div className="scan-legend">
-              {group?.indexes.map((i) => {
-                const key = observableKey(resultObservables[i]);
-                const shown = !hidden.includes(key);
-                return (
-                  <button
-                    key={key}
-                    className="legend-item"
-                    aria-pressed={shown}
-                    onClick={() =>
-                      setHidden((all) => (shown ? [...all, key] : all.filter((k) => k !== key)))
-                    }
-                  >
-                    <i
-                      style={{
-                        background: shown ? SERIES_COLORS[i % SERIES_COLORS.length] : '#ccd6df',
-                      }}
-                    />
-                    {observableLabel(resultObservables[i], frozenModel, flowUnit)}
-                  </button>
-                );
-              })}
+              {twoD &&
+                grid!.series.map((s, i) => (
+                  <span key={s.key} className="legend-item">
+                    <i style={{ background: SERIES_COLORS[i % SERIES_COLORS.length] }} />
+                    {s.label}
+                  </span>
+                ))}
+              {!twoD &&
+                group?.indexes.map((i) => {
+                  const key = observableKey(resultObservables[i]);
+                  const shown = !hidden.includes(key);
+                  return (
+                    <button
+                      key={key}
+                      className="legend-item"
+                      aria-pressed={shown}
+                      onClick={() =>
+                        setHidden((all) => (shown ? [...all, key] : all.filter((k) => k !== key)))
+                      }
+                    >
+                      <i
+                        style={{
+                          background: shown ? SERIES_COLORS[i % SERIES_COLORS.length] : '#ccd6df',
+                        }}
+                      />
+                      {observableLabel(resultObservables[i], frozenModel, flowUnit)}
+                    </button>
+                  );
+                })}
             </div>
             <button onClick={exportCsv}>导出 CSV</button>
             {exportNote && <small>{exportNote}</small>}
           </div>
         )}
-        {state.status === 'completed' && rows.length > 1 && (
+        {state.status === 'completed' && !twoD && rows.length > 1 && (
           <LineChart
             xs={rows.map((row) => row.params[0])}
             series={chartSeries}
@@ -239,11 +286,29 @@ export default function ScanView({
             title={`参数扫描曲线：${resultParamLabel}`}
           />
         )}
+        {state.status === 'completed' && twoD && grid!.xs.length > 1 && (
+          <LineChart
+            xs={grid!.xs}
+            series={grid!.series.map((x, i) => ({
+              ...x,
+              color: SERIES_COLORS[i % SERIES_COLORS.length],
+            }))}
+            xLabel={resultParamLabel}
+            yLabel={observableLabel(
+              resultObservables[Math.min(gridObservable, resultObservables.length - 1)],
+              frozenModel,
+              flowUnit,
+            )}
+            title={`双参数扫描曲线：${resultParamLabel}`}
+          />
+        )}
         {state.status === 'completed' && (
           <table data-testid="scan-table">
             <thead>
               <tr>
-                <th>{resultParamLabel}</th>
+                {state.result.variables.map((v: any) => (
+                  <th key={v.id + v.field}>{labelOf(v)}</th>
+                ))}
                 {resultObservables.map((o) => (
                   <th key={observableKey(o)}>{observableLabel(o, frozenModel, flowUnit)}</th>
                 ))}
@@ -253,7 +318,9 @@ export default function ScanView({
             <tbody>
               {rows.map((row, i) => (
                 <tr key={i}>
-                  <td>{fmt(row.params[0])}</td>
+                  {row.params.map((v, k) => (
+                    <td key={'p' + k}>{fmt(v)}</td>
+                  ))}
                   {row.values.map((v, j) => (
                     <td key={j}>{fmt(v, 5)}</td>
                   ))}
@@ -267,6 +334,46 @@ export default function ScanView({
           </table>
         )}
       </div>
+    </div>
+  );
+}
+
+/** Start / stop / point count for one scanned parameter. */
+function RangeFields({
+  param,
+  range,
+  prefix = '',
+  onChange,
+}: {
+  param: { min: number; max: number };
+  range: { start: number; stop: number; count: number };
+  prefix?: string;
+  onChange: (patch: Partial<{ start: number; stop: number; count: number }>) => void;
+}) {
+  return (
+    <div className="analysis-range">
+      <NumberField
+        label={prefix + '起点'}
+        value={range.start}
+        min={param.min}
+        max={param.max}
+        onApply={(v: number) => onChange({ start: v })}
+      />
+      <NumberField
+        label={prefix + '终点'}
+        value={range.stop}
+        min={param.min}
+        max={param.max}
+        onApply={(v: number) => onChange({ stop: v })}
+      />
+      <NumberField
+        label={prefix + '点数'}
+        value={range.count}
+        min={1}
+        max={MAX_SCAN_POINTS}
+        integer
+        onApply={(v: number) => onChange({ count: v })}
+      />
     </div>
   );
 }

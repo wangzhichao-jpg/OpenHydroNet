@@ -133,6 +133,48 @@ const inPanelView = (locator) =>
       'cancel sent DELETE',
     );
     assert.equal(await page.getByTestId('scan-table').count(), 0);
+    // ---- T-003: two-parameter scan (pump speed × V2 opening, 3 × 3) ----
+    await page.getByRole('button', { name: '参数扫描', exact: true }).click();
+    await scan.getByLabel('点数', { exact: true }).fill('3');
+    await scan.getByLabel('点数', { exact: true }).press('Enter');
+    await scan.getByLabel('第二参数', { exact: true }).selectOption({ value: 'V2:opening' });
+    for (const [label, value] of [
+      ['第二参数 起点', '0.5'],
+      ['第二参数 终点', '1'],
+      ['第二参数 点数', '400'],
+    ]) {
+      await scan.getByLabel(label, { exact: true }).fill(value);
+      await scan.getByLabel(label, { exact: true }).press('Enter');
+    }
+    await scan.getByText('共 1200 点，单批扫描限 1000 点；请减少点数').waitFor();
+    assert.equal(await scan.getByRole('button', { name: /运行扫描/ }).isDisabled(), true);
+    await scan.getByLabel('第二参数 点数', { exact: true }).fill('3');
+    await scan.getByLabel('第二参数 点数', { exact: true }).press('Enter');
+    await scan.getByRole('button', { name: '运行扫描（9 点）' }).click();
+    const grid2 = page.getByRole('img', { name: /双参数扫描曲线/ });
+    await grid2.waitFor({ timeout: 60000 });
+    const rows2 = await page.getByTestId('scan-table').locator('tbody tr').allInnerTexts();
+    assert.equal(rows2.length, 9);
+    assert.match(rows2[0], /^0\.6\t0\.5\t/);
+    assert.match(rows2[1], /^0\.6\t0\.75\t/, 'first parameter is the outer loop');
+    assert.equal(
+      (await page.getByTestId('scan-table').locator('thead th').allInnerTexts()).length,
+      5,
+      'two parameter columns + two observables + status',
+    );
+    assert.equal(await grid2.locator('polyline').count(), 3, 'one line per V2 opening');
+    assert.equal(await grid2.locator('circle').count(), 9);
+    await scan.getByLabel('曲线观测量').selectOption({ index: 1 });
+    assert.match(await grid2.getAttribute('aria-label'), /双参数扫描曲线/);
+    assert.equal(await grid2.locator('circle').count(), 9);
+    assert.ok(
+      await inPanelView(
+        scan.locator('.scan-legend').getByText('调节阀 2 · 开度 = 0.75', { exact: true }),
+      ),
+      'grid legend in view',
+    );
+    await page.screenshot({ path: path.join(out, '01c-scan-two-parameters.png') });
+
     // ---- T-004: sensitivity matrix ----
     await page.getByRole('button', { name: '敏感性', exact: true }).click();
     const sens = page.getByTestId('sensitivity-view');

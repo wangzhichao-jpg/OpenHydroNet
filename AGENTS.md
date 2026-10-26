@@ -41,6 +41,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - README 双语：`README.md` 英文（GitHub 默认），`README.zh-CN.md` 中文；改动功能说明时两份同步。
 
 ## 复盘记录（持续追加）
+- 2026-10-26 T-003：Playwright `getByText` 也会匹配 SVG `<title>` 提示文字，导致多重匹配 → 在具体容器内定位并用 `{ exact: true }`。
 - 2026-10-26 T-002：新组件的 CSS 类名 `.legend` 与已有画布色标重名，图例跑到窗口右上角且测试未发现 → 新样式类名用功能前缀（如 `scan-`、`analysis-`），新增可见元素都加 `inPanelView` 位置断言。
 - 2026-10-26 T-006：用脚本按字符串替换代码时，prettier 已改过换行，导致匹配失败、补丁未生效，但后续测试仍通过（跑的是旧代码），已发生两次 → 改代码优先用精确编辑工具；脚本替换必须在失败时中止后续命令（`set -e` / `&&`）。
 - 2026-10-26 T-005：Playwright `getByLabel` 默认子串匹配，会同时命中“删除约束 …”按钮 → 输入框定位用 `{ exact: true }`。显示单位下的可编辑值一律按 SI 存储。

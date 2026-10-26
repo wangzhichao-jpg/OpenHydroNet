@@ -491,3 +491,25 @@ test('undetermined or missing elasticities are never ranked as strongest', () =>
   assert.equal(row.cells[1].method, '未确定（差分点未收敛）');
   assert.equal(strongestText(row), '基准值为 0 或差分未完成，无法按弹性排序');
 });
+
+// ---- T-003 two-parameter scan ----
+import { gridSeries } from './analysis';
+
+test('two-parameter rows become one line per second-parameter value over the first parameter', () => {
+  const rows: any = [
+    { params: [0.8, 0.5], values: [1, 10], status: '', issues: [] },
+    { params: [0.8, 1], values: [2, 20], status: '', issues: [] },
+    { params: [1, 0.5], values: [3, 30], status: '', issues: [] },
+    { params: [1, 1], values: [undefined, 40], status: '', issues: [] },
+  ];
+  const g = gridSeries(rows, 0, '阀2 · 开度');
+  assert.deepEqual(g.xs, [0.8, 1]);
+  assert.deepEqual(
+    g.series.map((s) => [s.label, s.ys]),
+    [
+      ['阀2 · 开度 = 0.5', [1, 3]],
+      ['阀2 · 开度 = 1', [2, undefined]],
+    ],
+  );
+  assert.deepEqual(gridSeries(rows, 1, 'x').series[1].ys, [20, 40]);
+});

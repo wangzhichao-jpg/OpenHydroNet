@@ -549,3 +549,24 @@ export function strongestText(row: SensitivityRow) {
     e = c.elasticity!;
   return `影响最大：${c.param}（弹性 ${fmt(e, 3)}：参数增加 1%，约${e >= 0 ? '增加' : '减少'} ${fmt(Math.abs(e), 3)}%）`;
 }
+
+// ---- 双参数扫描（T-003）----
+/** Two-parameter rows → x = first parameter, one series per second-parameter value (SPEC-001 D6). */
+export function gridSeries(rows: ScanRow[], observableIndex: number, secondLabel: string) {
+  const xs: number[] = [],
+    seconds: number[] = [];
+  for (const r of rows) {
+    if (!xs.includes(r.params[0])) xs.push(r.params[0]);
+    if (!seconds.includes(r.params[1])) seconds.push(r.params[1]);
+  }
+  return {
+    xs,
+    series: seconds.map((b) => ({
+      key: 'second:' + b,
+      label: `${secondLabel} = ${fmt(b)}`,
+      ys: xs.map(
+        (a) => rows.find((r) => r.params[0] === a && r.params[1] === b)?.values[observableIndex],
+      ),
+    })),
+  };
+}

@@ -137,3 +137,24 @@ def test_analysis_job_cancel_timeout_and_shared_limit():
     finally:
         jobs.shutdown()
     assert all(j['process'].poll() is not None for j in jobs.items.values())
+
+
+def test_two_parameter_scan_is_cartesian_with_first_parameter_outer():
+    m = example()
+    r = run_request(dict(kind='scan', model=m,
+                         variables=[dict(id='PU1', field='speed', values=[.8, 1, 1.2]),
+                                    dict(id='V2', field='opening', values=[.5, 1])],
+                         observables=[dict(scope='edge', id='T2', field='flow_m3_s')]))
+    assert [[c['value'] for c in x['changes']] for x in r['records']] == [
+        [.8, .5], [.8, 1], [1, .5], [1, 1], [1.2, .5], [1.2, 1]]
+    t2 = [x['values'][0] for x in r['records']]
+    assert t2[1] > t2[0] and t2[3] > t2[2]  # opening V2 raises T2 at each speed
+    assert t2[3] * 3600 == pytest.approx(13.679, abs=1e-3)
+
+
+def test_two_parameter_scan_point_limit_uses_the_product():
+    with pytest.raises(ValueError, match='1000'):
+        check_request(dict(kind='scan', model=example(),
+                           variables=[dict(id='PU1', field='speed', values=[1 + i / 1000 for i in range(40)]),
+                                      dict(id='V2', field='opening', values=[i / 30 for i in range(30)])],
+                           observables=[dict(scope='edge', id='T2', field='flow_m3_s')]))
