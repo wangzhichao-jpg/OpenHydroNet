@@ -15,6 +15,7 @@
 | [T-006](T-006.md) | 可及性：有界局部搜索 | T-005 | AccessibilityView.tsx, analysis.py | done |
 | [T-007](T-007.md) | 可行点保存为工况 / 应用到工程 | T-006 | AccessibilityView.tsx, App.tsx | done |
 | [T-009](T-009.md) | 可及性改进：尽量少调整与设定精度 | T-007 | analysis.py, AccessibilityView.tsx | done |
-| [T-008](T-008.md) | 文档、覆盖矩阵、CI 收尾 | T-002..T-007 | docs/, ci.yml | todo |
+| [T-008](T-008.md) | 文档、覆盖矩阵、CI 收尾 | T-002..T-007 | docs/, ci.yml | done |
+| [T-010](T-010.md) | 分析模块整理（深模块化，纯重构） | T-008 | AnalysisPanel 相关、analysis.py | todo |
 
-T-001 完成后，T-002、T-004、T-005 可由不同 agent 在独立 worktree 并行（文件不重叠）。
+SPEC-001 已完成（2026-10-26）。T-010 为后续纯重构。

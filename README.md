@@ -25,6 +25,7 @@ Repositories: [GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet) · [Gite
 - **Multi-Scenario Comparison**: Adjust pump speeds and valve authority on the fly, take scenario snapshots, and analyze absolute values, deltas, and percentage deviations against baseline conditions.
 - **Integrated Equipment Library**: Built-in pump and valve catalog supporting discrete OEM test-point entry, quadratic/cubic $Q-H$ characteristic curve fitting with RMSE reporting, and bounded operational ranges.
 - **Tabular Data Mapping & Interoperability**: Bi-directional CSV/Excel mapping for existing nodes and branches with difference preview and rollback. Supports export to open JSON projects, CSV datasets, SVG/PNG schematics, PDF calculation reports, and multi-tab XLSX workbooks.
+- **Analysis Workspace** *(main branch, not yet released)*: One- and two-parameter steady sweeps with charts and CSV export, a sensitivity matrix ranking which pump/valve adjustment matters most, and hydraulic accessibility — constraint checks plus a bounded local search that adjusts as little as possible and rounds to settable precision. Local results carry no global guarantee.
 - **Scriptable Python Core & CLI**: Automated single-line expansion, batch parameter sweeps, bounded local feasibility searches, and finite-difference sensitivity analysis.
 - **Privacy-First & Fully Offline**: No telemetry, no mandatory cloud accounts, and no license servers. Computations run entirely on your local machine with communication strictly bound to authenticated loopback sockets.
 

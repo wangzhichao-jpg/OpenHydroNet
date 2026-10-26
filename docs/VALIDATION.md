@@ -89,6 +89,10 @@
 |单线展开|test_analysis.py|独立合成两侧总阻力解析解+稳定映射|
 |单位/局阻/拟合|test_physics.py|量纲关系、加法关系、人工已知多项式|
 |可及性/扫描/敏感性|test_analysis.py|固定可行/不足、局部搜索不确定、解析速度导数|
+|分析任务与扫描|test_analysis_jobs.py|请求校验、精简记录、笛卡尔积顺序、CLI 进度行、任务取消/超时/并发上限|
+|敏感性矩阵|test_sensitivity_request.py|解析环路导数 √(36/300000) 与弹性 1、单侧差分、零基准无弹性|
+|可及性（桌面）|test_accessibility_request.py、test_accessibility_search.py、test_accessibility_refine.py|逐条约束检查与旧 API 一致、评估预算、尽量少调整与取整验算（示例 1.135→1.051→1.06）|
+|分析界面|tests/ui.analysis.cjs|真实 Electron：三个子页、曲线/CSV、可视区域、取消、过期、存为工况与应用/撤销|
 |文件/格式/CLI|test_project.py|原子文件往返、未知版本拒绝、非有限输入拒绝、命令行实际子进程|
 |协议/取消/过期导出|test_protocol.py|401 拒绝无令牌、任务归属、取消、未知任务、输入哈希不匹配拒绝|
 |图编辑|web/src/commands.test.ts|稳定 ID/引用、长度和 ζ 守恒、布局不改物理模型、历史分叉|
