@@ -37,7 +37,10 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - 不提交 `.local/`、`artifacts/`、参考说明书原文、CNKI 全文、凭据。
 - 下载优先国内镜像（pip 清华、npm npmmirror），保持 TLS 校验；长任务用 systemd 用户任务 + `.local/*.lock`。
 - 远程：`origin`=GitHub（HTTPS），`gitee`=Gitee（SSH 别名 `gitee-ohn`）。两端保持同一提交。
+- **不改写已推送的历史**（禁止对 main 变基、改作者后强推）。PC 与 SER8 开工前先 `git pull --ff-only`，只做快进推送；作者统一为 `wangzhichao-jpg <wangzhichao@chinaibee.com>`。
+- README 双语：`README.md` 英文（GitHub 默认），`README.zh-CN.md` 中文；改动功能说明时两份同步。
 
 ## 复盘记录（持续追加）
+- 2026-10-26 推送：PC 端两次改写已推送历史（改作者），SER8 新提交两次需变基 → 增加“不改写已推送历史”约定。公开仓库上用 `git ls-remote` 不能验证凭据，改用带 token 的 API 请求。
 - 2026-10-26 T-001：Playwright 的“可见”不检查滚动位置，界面溢出曾漏检 → E2E 用 `inPanelView` 断言关键元素在面板视口内，并查看截图。
 - 2026-10-26：媒体/交付收据曾占用约一半提交，产品缺口停滞 → 已移交 PC 端。大提交（>3000 行）难审查 → 一卡一提交。
