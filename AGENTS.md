@@ -39,4 +39,5 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - 远程：`origin`=GitHub（HTTPS），`gitee`=Gitee（SSH 别名 `gitee-ohn`）。两端保持同一提交。
 
 ## 复盘记录（持续追加）
+- 2026-10-26 T-001：Playwright 的“可见”不检查滚动位置，界面溢出曾漏检 → E2E 用 `inPanelView` 断言关键元素在面板视口内，并查看截图。
 - 2026-10-26：媒体/交付收据曾占用约一半提交，产品缺口停滞 → 已移交 PC 端。大提交（>3000 行）难审查 → 一卡一提交。

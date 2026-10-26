@@ -16,6 +16,8 @@ import NumberField from './NumberField';
 import DeviceLibrary from './DeviceLibrary';
 import './workspaces.css';
 import TableImport from './TableImport';
+import AnalysisPanel from './AnalysisPanel';
+import { statusText } from './status';
 import { applyLibrary } from './library';
 import { persistable } from './document';
 import {
@@ -63,14 +65,8 @@ const fmt = (v: any, d = 3) =>
   typeof v === 'number' && Number.isFinite(v)
     ? Number(v.toPrecision(d)).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
     : '—';
-const statusText: Record<string, string> = {
-  converged: '计算通过',
-  numerical_failure: '残差未达标',
-  invalid_model: '模型需修正',
-  boundary_conflict: '边界冲突',
-  demand_unsatisfied: '控制需求不满足',
-  timeout: '计算超时',
-};
+// Editors inside the analysis panel do not belong to the project document.
+const INVALID_EDITOR = '.workspace [aria-invalid="true"]:not(.analysis-panel *)';
 
 function Workbench() {
   const [history, setHistory] = useState<History>({
@@ -195,7 +191,7 @@ function Workbench() {
   }, [fontScale]);
   useEffect(() => {
     if (!window.desktop) return;
-    const valid = !document.querySelector('.workspace [aria-invalid="true"]');
+    const valid = !document.querySelector(INVALID_EDITOR);
     window.desktop
       .documentState({ project: persistable(p, result, resultSig), dirty: dirty || !valid, valid })
       .catch(() => {});
@@ -204,7 +200,7 @@ function Workbench() {
     if (window.desktop)
       return window.desktop.onFlushEditor(async () => {
         flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
-        const valid = !document.querySelector('.workspace [aria-invalid="true"]');
+        const valid = !document.querySelector(INVALID_EDITOR);
         await window.desktop!.documentState({
           project: persistable(pRef.current, resultRef.current, resultSigRef.current),
           dirty: JSON.stringify(pRef.current) !== savedRef.current || !valid,
@@ -215,7 +211,7 @@ function Workbench() {
       flushSync(() => (document.activeElement as HTMLElement)?.blur?.());
       if (
         JSON.stringify(pRef.current) !== savedRef.current ||
-        document.querySelector('.workspace [aria-invalid="true"]')
+        document.querySelector(INVALID_EDITOR)
       ) {
         event.preventDefault();
         event.returnValue = '';
@@ -225,7 +221,7 @@ function Workbench() {
     return () => window.removeEventListener('beforeunload', handler);
   }, []);
   function rejectInvalidEditor() {
-    const invalid = document.querySelector('.workspace [aria-invalid="true"]') as HTMLElement;
+    const invalid = document.querySelector(INVALID_EDITOR) as HTMLElement;
     if (!invalid) return false;
     invalid.focus();
     setMessage('请先修正未提交的无效参数；没有使用旧值冒充本次输入。');
@@ -240,7 +236,7 @@ function Workbench() {
   async function allowReplacement() {
     if (
       JSON.stringify(pRef.current) === savedRef.current &&
-      !document.querySelector('.workspace [aria-invalid="true"]')
+      !document.querySelector(INVALID_EDITOR)
     )
       return true;
     const choice = window.desktop
@@ -370,7 +366,7 @@ function Workbench() {
           setResultSig(sig);
           setIssues(j.result.issues || []);
           setTab((current) =>
-            current === 'library'
+            current === 'library' || current === 'analysis'
               ? current
               : j.result.status === 'invalid_model'
                 ? 'issues'
@@ -1056,7 +1052,11 @@ function Workbench() {
               </div>
             )}
           </div>
-          <section className={'bottom-panel' + (tab === 'library' ? ' library-panel' : '')}>
+          <section
+            className={
+              'bottom-panel' + (tab === 'library' || tab === 'analysis' ? ' library-panel' : '')
+            }
+          >
             <div className="tabbar">
               {[
                 ['results', '计算结果'],
@@ -1064,6 +1064,7 @@ function Workbench() {
                 ['issues', `问题列表 ${issues.length || ''}`],
                 ['compare', '工况对比'],
                 ['library', '设备库 / 曲线'],
+                ['analysis', '分析'],
               ].map(([id, label]) => (
                 <button
                   key={id}
@@ -1084,12 +1085,15 @@ function Workbench() {
                 )}
               </div>
             </div>
-            {stale && (
+            {stale && tab !== 'analysis' && (
               <div className="stale-banner">
                 旧计算结果仅供参考，不再代表当前输入；请重新计算后导出。
               </div>
             )}
             <div className="bottom-content">
+              <div className="analysis-host" hidden={tab !== 'analysis'}>
+                <AnalysisPanel key={epoch} model={p.model} flowUnit={flowUnit} />
+              </div>
               {tab === 'library' && (
                 <DeviceLibrary
                   key={epoch}

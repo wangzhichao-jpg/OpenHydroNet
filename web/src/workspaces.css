@@ -199,3 +199,95 @@
     grid-template-columns: 1fr;
   }
 }
+/* SPEC-001 分析页 */
+.analysis-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.analysis-modes {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e2e9f0;
+}
+.analysis-modes button.active {
+  border-color: #16919d;
+  background: #eaf7f7;
+}
+.analysis-modes small {
+  margin-left: auto;
+  color: #5b6f80;
+}
+.analysis-view {
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  min-height: 0;
+}
+.analysis-form {
+  overflow: auto;
+  padding: 10px;
+  background: #f5f8fb;
+  border-right: 1px solid #d9e3ec;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.analysis-form select {
+  width: 100%;
+}
+.analysis-output {
+  overflow: auto;
+  min-width: 0;
+  padding: 8px 10px;
+}
+.analysis-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.analysis-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.chip {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+.analysis-host {
+  height: 100%;
+}
+.analysis-mode {
+  flex: 1;
+  min-height: 0;
+}
+.analysis-mode > .analysis-view {
+  height: 100%;
+}
+.analysis-range {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.analysis-range .field small {
+  display: none;
+}
+.analysis-range .field small.field-error {
+  display: block;
+  grid-column: 1 / -1;
+}
+.analysis-output thead th {
+  position: sticky;
+  top: 0;
+  background: #fff;
+}

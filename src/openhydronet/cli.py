@@ -14,6 +14,7 @@ def main():
     s=sub.add_parser("solve");s.add_argument("input");s.add_argument("-o","--output");s.add_argument("--timeout",type=float,default=30)
     b=sub.add_parser("batch");b.add_argument("inputs",nargs="+");b.add_argument("--output-dir",required=True)
     a=sub.add_parser("scan");a.add_argument("input");a.add_argument("settings");a.add_argument("-o","--output")
+    n=sub.add_parser("analyze",help="桌面分析请求；stdin 或文件输入，进度以 JSON 行写入 stderr");n.add_argument("input");n.add_argument("-o","--output")
     e=sub.add_parser("expand");e.add_argument("input");e.add_argument("-o","--output",required=True)
     v=sub.add_parser("serve");v.add_argument("--port",type=int,default=0)
     args=p.parse_args()
@@ -34,6 +35,12 @@ def main():
     if args.command=="expand":
         from .expansion import expand_single_line
         emit(expand_single_line(json.loads(Path(args.input).read_text(encoding="utf-8"))),args.output);return
+    if args.command=="analyze":
+        from .analysis import run_request
+        request=json.load(sys.stdin) if args.input=="-" else json.loads(Path(args.input).read_text(encoding="utf-8"))
+        def progress(done,total):
+            sys.stderr.write(json.dumps({"progress":{"done":done,"total":total}})+"\n");sys.stderr.flush()
+        emit(run_request(request,progress),args.output);return
     if args.command=="scan":
         from .analysis import scan
         emit(scan(load_project(args.input)["model"],json.loads(Path(args.settings).read_text(encoding="utf-8"))),args.output);return

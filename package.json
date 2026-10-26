@@ -16,6 +16,7 @@
     "test:lifecycle": "node tests/ui.lifecycle.cjs",
     "test:features": "node tests/ui.features.cjs",
     "test:jobs": "node tests/ui.jobs.cjs",
+    "test:analysis": "node tests/ui.analysis.cjs",
     "format:check": "prettier --check web/src desktop tests/*.cjs tools/*.cjs"
   },
   "dependencies": {

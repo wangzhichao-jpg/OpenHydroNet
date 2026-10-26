@@ -1,6 +1,7 @@
 """Steady scenarios and bounded local feasibility search, not transients."""
 import copy
 import itertools
+import math
 from scipy.optimize import minimize
 from .solver import solve, model_hash
 from .validation import ModelError
@@ -17,13 +18,42 @@ def patched_model(model, changes):
     return result
 
 
-def scan(model, variables):
-    """Independent steady solves at Cartesian grid. No temporal state."""
+MAX_SCAN_POINTS = 1000
+# Operating adjustments only (SPEC-001 D3): design parameters are not scanned.
+ADJUSTABLE = {"pump": {"speed": (0.0, 2.0)}, "valve": {"opening": (0.0, 1.0)}}
+OBSERVABLE_FIELDS = {
+    "edge": {"flow_m3_s", "head_drop_m", "velocity_m_s", "pressure_drop_pa"},
+    "node": {"head_m", "pressure_pa_gauge"},
+}
+
+
+def observe(result, observables):
+    """Extract scalar observables (SI) from one solve; missing values are None, never guessed."""
+    values = []
+    for o in observables:
+        item = (result.get(o["scope"] + "s") or {}).get(o["id"]) or {}
+        value = item.get(o["field"])
+        values.append(float(value) if isinstance(value, (int, float)) and math.isfinite(value) else None)
+    return values
+
+
+def issue_refs(result):
+    """Distinct (code, object) pairs of one solve, sorted; messages stay with the full solve result."""
+    pairs = sorted({(i.get("code", ""), i.get("object_id") or "") for i in result.get("issues") or []})
+    return [dict(code=code, object_id=oid or None) for code, oid in pairs]
+
+
+def scan(model, variables, observables=None, progress=None):
+    """Independent steady solves at Cartesian grid. No temporal state.
+
+    With ``observables`` each record keeps only those values (compact form for the desktop);
+    without, the full result is kept (historic API/CLI behaviour).
+    """
     size = 1
     for v in variables: size *= len(v["values"])
-    if size > 1000:
+    if size > MAX_SCAN_POINTS:
         raise ValueError("单批扫描限 1000 点；请拆分批次")
-    records = []
+    records, fluid = [], None
     for combination in itertools.product(*(v["values"] for v in variables)):
         changes = [dict(id=v["id"], field=v["field"], value=float(value)) for v,value in zip(variables, combination)]
         m = patched_model(model, changes)
@@ -31,8 +61,84 @@ def scan(model, variables):
             r = solve(m)
         except ModelError as exc:
             r = {"status":"invalid_model", "issues":exc.issues, "input_hash":model_hash(m)}
-        records.append({"changes":changes, "result":r})
-    return {"analysis":"independent_steady_scan", "base_input_hash":model_hash(model), "records":records}
+        if observables is None:
+            records.append({"changes":changes, "result":r})
+        else:
+            fluid = fluid or r.get("fluid")
+            converged = r["status"] in ("converged", "demand_unsatisfied")
+            records.append({"changes":changes, "status":r["status"],
+                            "values":observe(r, observables) if converged else [None]*len(observables),
+                            "issues":issue_refs(r)})
+        if progress: progress(len(records), size)
+    out = {"analysis":"independent_steady_scan", "base_input_hash":model_hash(model), "records":records}
+    if observables is not None: out["fluid"] = fluid  # scans never change temperature
+    return out
+
+
+def _check_observables(model, observables):
+    if not isinstance(observables, list) or not observables:
+        raise ValueError("请至少选择一个观测量")
+    ids = {"edge": {e["id"] for e in model["edges"]}, "node": {n["id"] for n in model["nodes"]}}
+    clean = []
+    for o in observables:
+        scope, oid, field = (o or {}).get("scope"), (o or {}).get("id"), (o or {}).get("field")
+        if scope not in OBSERVABLE_FIELDS or oid not in ids[scope] or field not in OBSERVABLE_FIELDS[scope]:
+            raise ValueError(f"观测量无效：{scope}/{oid}/{field}")
+        clean.append(dict(scope=scope, id=oid, field=field))
+    return clean
+
+
+def _check_adjustable(model, v):
+    edges = {e["id"]: e for e in model["edges"]}
+    e = edges.get(v.get("id"))
+    if e is None:
+        raise ValueError(f"参数对象不存在：{v.get('id')}")
+    limits = ADJUSTABLE.get(e["kind"], {}).get(v.get("field"))
+    if limits is None:
+        raise ValueError("可调参数仅限泵相对转速和阀开度；不修改设计参数")
+    return limits
+
+
+def check_request(request):
+    """Validate and normalise a desktop analysis request; raises ValueError with a Chinese message.
+
+    scan: {kind, model, variables:[{id, field, values:[...]}] (1–2), observables:[{scope, id, field}]}
+    """
+    if not isinstance(request, dict) or request.get("kind") not in ("scan",):
+        raise ValueError("不支持的分析类型")
+    model = request.get("model")
+    if not isinstance(model, dict) or not isinstance(model.get("edges"), list) or not isinstance(model.get("nodes"), list):
+        raise ValueError("分析请求缺少模型")
+    variables = request.get("variables")
+    if not isinstance(variables, list) or not 1 <= len(variables) <= 2:
+        raise ValueError("扫描参数为 1–2 个")
+    clean, size, seen = [], 1, set()
+    for v in variables:
+        low, high = _check_adjustable(model, v)
+        key = (v["id"], v["field"])
+        if key in seen: raise ValueError("同一参数不能重复扫描")
+        seen.add(key)
+        values = v.get("values")
+        if not isinstance(values, list) or not values:
+            raise ValueError("扫描取值不能为空")
+        if any(not isinstance(x, (int, float)) or isinstance(x, bool) or not math.isfinite(x) for x in values):
+            raise ValueError("扫描取值必须是有限数值")
+        if any(not low <= x <= high for x in values):
+            raise ValueError(f"扫描取值超出允许范围 {low}–{high}")
+        size *= len(values)
+        clean.append(dict(id=v["id"], field=v["field"], values=[float(x) for x in values]))
+    if size > MAX_SCAN_POINTS:
+        raise ValueError("单批扫描限 1000 点；请拆分批次")
+    return dict(kind="scan", model=model, variables=clean,
+                observables=_check_observables(model, request.get("observables")), total=size)
+
+
+def run_request(request, progress=None):
+    """Run a validated desktop analysis request. ``progress(done, total)`` is called per solve."""
+    req = check_request(request)
+    result = scan(req["model"], req["variables"], req["observables"], progress)
+    result.update(kind="scan", variables=req["variables"], observables=req["observables"])
+    return result
 
 
 def constraint_violations(result, constraints):

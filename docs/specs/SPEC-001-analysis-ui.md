@@ -40,7 +40,7 @@
 ## 模块边界（便于并行开发）
 - 内核：`analysis.py`（请求校验 `run_request` + 精简扫描 + 多观测量敏感性）。
 - 服务：`server.py` 中 `Jobs` 泛化为可配置命令/超时/进度。
-- 前端：`web/src/analysis.ts`（纯函数：取值生成、请求组装、单位换算、CSV），`web/src/analysis/AnalysisPanel.tsx`（外壳与任务生命周期），`ScanView.tsx`、`SensitivityView.tsx`、`AccessibilityView.tsx` 各自独立。`App.tsx` 只增加挂载与两个回调。
+- 前端：`web/src/analysis.ts`（纯函数：取值生成、请求组装、单位换算、CSV），`web/src/AnalysisPanel.tsx`（外壳）、`web/src/useAnalysisJob.ts`（任务生命周期），`ScanView.tsx`、`SensitivityView.tsx`、`AccessibilityView.tsx` 各自独立。`App.tsx` 只增加挂载与两个回调。
 
 ## 完成标准
 - 每张任务卡的验收标准均有自动测试；`tests/ui.analysis.cjs` 在真实 Electron 中走通三个子页并已加入 CI。

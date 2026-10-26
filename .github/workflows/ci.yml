@@ -48,6 +48,7 @@ jobs:
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:lifecycle
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:features
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:jobs
+          xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:analysis
       - name: Windows真实界面
         if: runner.os == 'Windows'
         shell: pwsh
@@ -58,6 +59,7 @@ jobs:
           npm run test:lifecycle
           npm run test:features
           npm run test:jobs
+          npm run test:analysis
       - uses: actions/upload-artifact@v4
         if: always()
         with:
