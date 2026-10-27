@@ -27,10 +27,13 @@
 **说明**：两处组装的 ZIP 字节不会完全相同——源文件因 `.gitattributes` 一致，但 `BUILD_MANIFEST.json` 记录组装主机（`linux` / `win32`）。**Release 附件请用 CI 在 Windows 上组装并做过随包求解的那份**，以它自带的 `.sha256` 为准；SER8 本地包仅作对照。
 
 ## PC 待办
-### 1. 获取候选包（方案待用户选定）
-- **方案 A（推荐）**：附件用 SER8 本地组装的标签包（构建清单 commit = 标签 `fe88778`）。应用代码与 CI 在 Windows 上实测过的包逐字节相同。由 SER8 建草稿 Release 并上传，PC 核对 SHA-256 `53cb1563…12ebe8` 后发布。
-- **方案 B**：作废 preview.4 标签，以修复后的 main 发 preview.5，全程用 CI 包。
-- 不要再重跑标签 `v0.1.0-preview.4` 的 CI：标签提交含已修复的构建 bug，重跑必然失败。
+### 1. 获取候选包（用户已选方案 A，2026-10-27）
+SER8 已在 GitHub 创建**草稿 + 预发布** Release（ID 425335032，绑定已有标签 `v0.1.0-preview.4`，未登录不可见），并上传、核对 3 个附件（GitHub 记录的 SHA-256 与本地一致）：
+- `OpenHydroNet-0.1.0-preview.4-win-x64.zip`，220,399,409 字节，SHA-256 `53cb156364a931392cace7297f305a77e2d51b9f409e37f668cfeedd4d12ebe8`
+- `OpenHydroNet-0.1.0-preview.4-win-x64.zip.sha256`
+- `WINDOWS_BUILD_MANIFEST-0.1.0-preview.4.json`（commit = `fe88778…`）
+
+PC：登录 GitHub → 仓库 Releases → 草稿 “OpenHydroNet 0.1.0-preview.4 — 分析工作区与水力平衡” → 下载 ZIP，核对 SHA-256 后用于第 2 步验收。不要再重跑标签的 CI（标签提交含已修复的构建 bug）。
 
 ### 2. Windows 真机验收（新版，不继承旧结论）
 在中文路径下解压，记录 Windows 版本、显示缩放、是否断网。每项记“通过 / 失败（截图）/ 跳过（原因）”。
@@ -54,7 +57,7 @@
 现有 preview.3 视频不包含分析与水力平衡。建议新增一条 2–3 分钟演示：扫描曲线 → 可及性“1.135 → 1.051 → 1.06”的三步说明 → 水力平衡降速节能并保存为方案。媒体按版本目录存放，不覆盖旧版。
 
 ### 4. 发布
-1. GitHub：Releases → Draft new release → 选择已存在标签 `v0.1.0-preview.4`（不要新建标签）→ 勾选 **Pre-release** → 正文粘贴发布说明 → 上传 ZIP、`.sha256`、`WINDOWS_BUILD_MANIFEST-0.1.0-preview.4.json`。
+1. GitHub：**编辑 SER8 建好的草稿**（不要另建 Release、不要新建或移动标签）→ 把正文顶部“Windows 真机人工验收：未完成”改为实际结果（通过 / 部分通过及失败项）→ 确认 **Set as a pre-release** 已勾选 → **Publish release**。验收出现 P0 失败时不要发布，先回传 SER8。
 2. Gitee：发行版 → 同一标签 → 同一正文。上传前查看附件大小上限；ZIP 约 220 MB，超限时正文中给出 GitHub 下载地址与 SHA-256，不另行改包。
 3. 下载两端附件并重新核对 SHA-256；在正文末尾注明 Windows 真机验收状态（完成/部分/未做）。
 4. 视频与网盘按原流程。
