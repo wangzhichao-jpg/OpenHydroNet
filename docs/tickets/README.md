@@ -33,7 +33,7 @@ SPEC-001 及后续重构 T-010 已完成（2026-10-26）。
 
 | 卡 | 标题 | blocked_by | 主要文件 | 状态 |
 |---|---|---|---|---|
-| [T-022](T-022.md) | 记录 preview.4 Windows 验收结果 | — | docs/ | todo |
+| [T-022](T-022.md) | 记录 preview.4 Windows 验收结果 | — | docs/ | done |
 | [T-015](T-015.md) | W4-06 首次冷启动超时（阻断） | — | desktop/main.cjs, backend-launcher.cjs, startup.html | todo |
 | [T-016](T-016.md) | W4-07 中文对话框标题与窗口图标 | T-015 | desktop/ | todo |
 | [T-017](T-017.md) | W4-05 运行按钮不可见 | — | workspaces.css | todo |

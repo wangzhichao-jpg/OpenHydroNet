@@ -6,7 +6,8 @@
 
 - 求解内核算法未改（`sparse-head-flow-newton-trf-v2`），preview.3 的数值基线继续有效。新增分析能力的验证见下方“分析任务与扫描”“敏感性矩阵”“可及性（桌面）”“水力平衡”“分析界面”各行。
 - 发版前（2026-10-27）在 SER8 实际执行：Python 180 项、前端单元 52 项 + Node 11 项、6 套真实 Electron 入口（Linux/Xvfb）；GitHub CI 在 ubuntu-latest 与 windows-latest 上对同一提交运行全部测试（含真实 Electron）。npm audit 与 pip-audit（OSV）均无已知漏洞。
-- 仍未执行：新版 Windows 真机人工验收（PC 端），真人新手测试，外部独立工具交叉验证。
+- Windows（2026-10-27，PC 端自动驱动的真机验收）：Windows 11 26H2 x64、150% 缩放、中文路径，未改动的草稿包（SHA-256 `53cb1563…`）。P0-1～P0-8 通过，数值与 Linux 一致（T2 13.679；可及性 1.135→1.051→1.06；平衡 末端 2 / 0.98 / 0.22 / −4.1%）；取消与关窗后无残留进程；P1 缩放与断网通过；Windows 10 跳过。界面由 Playwright 驱动，原生对话框在 P0 中由脚本代答、在抽查中真实操作。抽查发现首次冷启动超时（W4-06），preview.4 不发布。详见 [验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。
+- 仍未执行：真人逐项人工验收、Windows 10、真人新手测试、外部独立工具交叉验证。
 
 ## preview.3 高阻比修复与 Windows 回执
 

@@ -43,6 +43,6 @@
 |X04|新增：API/批处理|原文未描述|CLI/API/哈希/版本/残差/任务|A/C|基础 API/CLI/协议已验证，后续设备接口待扩充|tests/test_project.py、tests/test_protocol.py|
 |X05|新增：映射导入/图像导出|原文未描述|导入预览校验，SVG/PNG|B|部分：已有设备 CSV/XLSX 字段/单位预览与原子应用/撤销、PNG/SVG 真正导出已验；整网创建导入/施工图待补|tests/ui.features.cjs、tests/ui.graph.cjs|
 
-Windows 补充：preview.2 已收到 Windows 11 中文路径、150% 系统缩放的条件验收回执，10 项 P0/5 项 P1 通过；其余子项和新版复测仍待补，不能把矩阵全部升级为完成。详见 [回执与边界](WINDOWS_FEEDBACK_PREVIEW2.md)。
+Windows 补充：preview.4 由 PC 端在 Windows 11 实机自动驱动验收，P0-1～P0-8 与缩放/断网 P1 通过，但首次冷启动超时（W4-06）阻断发布，修复进入 preview.5；不据此把任何 H/X 项升级为完成。详见 [验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。preview.2 已收到 Windows 11 中文路径、150% 系统缩放的条件验收回执，10 项 P0/5 项 P1 通过；其余子项和新版复测仍待补，不能把矩阵全部升级为完成。详见 [回执与边界](WINDOWS_FEEDBACK_PREVIEW2.md)。
 
 **全面超过的判据**：H01–H31 全部有可重复验收记录，且 X01–X05 公开承诺完成，A/B/C 总验收还包含 Windows 实际运行、双平台同提交同标签及两条实际视频。当前不满足，禁止称为完整替代品或正式成品。
