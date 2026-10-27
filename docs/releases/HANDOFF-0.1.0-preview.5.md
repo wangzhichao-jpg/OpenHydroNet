@@ -10,8 +10,15 @@
 | 发布说明 | [`v0.1.0-preview.5.md`](v0.1.0-preview.5.md)（中英；preview.4 功能首次随本版发布） |
 | 候选包 | 标签触发 CI `windows-candidate`：Windows 上组装、随包 Python 求解公开示例、结构/隐私审计。**草稿 Release 附件即该 CI 包**（以其 `.sha256` 为准） |
 
-## 候选包与草稿记录
-（标签 CI 完成、草稿创建后由 SER8 填写，见本文件后续提交）
+## 候选包与草稿记录（2026-10-27）
+| 项目 | 值 |
+|---|---|
+| 标签 | `v0.1.0-preview.5` → `743db0e`（GitHub、Gitee 均已核对） |
+| 打标签前预检 | main 同一提交手动触发运行 [40519881514](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40519881514)：两平台测试与 `windows-candidate` 通过（第一次预检在同版本更早提交上抓到 E2E 竞态，已修复，未产生废标签） |
+| 标签 CI | [40521227487](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40521227487)：Ubuntu/Windows 测试（Windows 上启动等待单元测试 8 项运行，`ui.startup` 按设计 SKIP）与 `windows-candidate` 全部通过 |
+| 候选包 | `OpenHydroNet-0.1.0-preview.5-win-x64.zip`，220,465,515 字节，2,890 个文件，SHA-256 `6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7`；构建清单 commit = `743db0e`、assembly_host = `win32`；审计零问题；Windows 随包求解公开示例 converged，T2 13.679 m³/h、扬程 18.499 m。包内含启动窗口、图标与新版 `开始使用.txt`（已抽查）。 |
+| GitHub 草稿 | Release ID 425619943（草稿 + 预发布，未登录不可见），附件 5 个：ZIP、`.sha256`、构建清单、`windows-smoke-result-0.1.0-preview.5.json`、`release-audit-0.1.0-preview.5.json`；GitHub 记录的 SHA-256 与 CI 产物逐个一致 |
+| preview.4 草稿 | Release ID 425335032 保持草稿，未改动 |
 
 ## 对 PC 驱动脚本的影响（必读）
 - 启动时可能先出现**启动窗口**（`desktop/startup.html`，后端 0.7 s 内未就绪才显示）。`app.firstWindow()` 可能返回它，而不是工作台。请按地址找主窗口：URL 以 `http://127.0.0.1:` 开头（可参考 `tests/e2e-util.cjs` 的 `mainWindow(app)`）；启动窗口 URL 以 `/startup.html` 结尾。
