@@ -1,0 +1,5 @@
+# Same bytes on every checkout (Windows runners included) so release assembly is reproducible.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.zip binary

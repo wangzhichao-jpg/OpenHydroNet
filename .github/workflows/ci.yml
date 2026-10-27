@@ -71,7 +71,8 @@ jobs:
             artifacts/features/
             artifacts/jobs/
   windows-candidate:
-    if: github.event_name == 'workflow_dispatch'
+    # Release tags (v*) and manual runs assemble the portable candidate on a real Windows runner.
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     needs: test
     runs-on: windows-latest
     steps:
@@ -94,6 +95,8 @@ jobs:
           $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
           & "./build/OpenHydroNet-$v-win-x64/resources/app/runtime/python.exe" -m openhydronet.cli solve examples/closed-loop.ohn.json -o artifacts/windows-smoke-result.json
           if ($LASTEXITCODE -ne 0) { throw 'Windows runtime smoke failed' }
+      - name: 结构与隐私审计（文件齐全、PE 头、CRC、许可、无私有资料）
+        run: python tools/release_audit.py
       - uses: actions/upload-artifact@v4
         with:
           name: Windows-portable-candidate
@@ -102,4 +105,5 @@ jobs:
             artifacts/*.sha256
             artifacts/*MANIFEST*.json
             artifacts/windows-smoke-result.json
+            artifacts/release-audit.json
 # 此流程只验证和生成候选，不自动发布到任何未经确认的账号/仓库。

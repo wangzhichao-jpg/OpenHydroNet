@@ -1,6 +1,6 @@
 # SPEC-001：扫描、敏感性、可及性桌面界面
 
-状态：完成（2026-10-26，main 未发版） · 覆盖矩阵：H14、X02 · 任务卡：[docs/tickets/](../tickets/README.md)
+状态：完成（2026-10-26，随 0.1.0-preview.4 发布） · 覆盖矩阵：H14、X02 · 任务卡：[docs/tickets/](../tickets/README.md)
 
 ## 背景
 `analysis.py` 已有经过测试的 `scan` / `sensitivity` / `accessibility` API，但没有通过本机服务暴露，桌面用户用不到。本规范把它们变成可取消、有进度、结论表述诚实的桌面工作流。

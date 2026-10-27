@@ -1,6 +1,12 @@
 # 验证与性能记录
 
-当前源码版本：0.1.0-preview.3。历史版本解析/性能基线保持原归属。记录真实执行，不把编译、Linux UI 或另端自动化等同于全项 Windows/工程验收；没有真人新手测试。
+当前源码版本：0.1.0-preview.4。历史版本解析/性能基线保持原归属。记录真实执行，不把编译、Linux UI 或另端自动化等同于全项 Windows/工程验收；没有真人新手测试。
+
+## preview.4 分析工作区与水力平衡
+
+- 求解内核算法未改（`sparse-head-flow-newton-trf-v2`），preview.3 的数值基线继续有效。新增分析能力的验证见下方“分析任务与扫描”“敏感性矩阵”“可及性（桌面）”“水力平衡”“分析界面”各行。
+- 发版前（2026-10-27）在 SER8 实际执行：Python 180 项、前端单元 52 项 + Node 11 项、6 套真实 Electron 入口（Linux/Xvfb）；GitHub CI 在 ubuntu-latest 与 windows-latest 上对同一提交运行全部测试（含真实 Electron）。npm audit 与 pip-audit（OSV）均无已知漏洞。
+- 仍未执行：新版 Windows 真机人工验收（PC 端），真人新手测试，外部独立工具交叉验证。
 
 ## preview.3 高阻比修复与 Windows 回执
 

@@ -2,7 +2,7 @@
 
 来源：用户提供《HACNet软件用户说明.docx》，SHA-256 见 [读取审计](REFERENCE_AUDIT.md)。P 为 document.xml/body 结构块序号，非页码；I 为嵌入 imageN.png。原文和截图不再分发。全部正文及 10 张图片已读取，没有独立 Word 表格。
 
-状态审计：0.1.0-preview.3；H14/X02 另含 main 分支 SPEC-001/002 进展（2026-10-26，尚未发版）。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
+状态审计：0.1.0-preview.4（含 SPEC-001 分析工作区与 SPEC-002 水力平衡）。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
 
 |ID|原功能及出处|原交互/限制或歧义|对应功能及改进验收|阶段|实现状态|测试/验收入口|
 |---|---|---|---|---|---|---|
@@ -19,7 +19,7 @@
 |H11|阀开度 P91–95,I7|开度及开阀阻力，特性未明确|Kv 线性/等百分比，关闭拓扑|A|部分：节流/关闭、线性/等百分比 Kv 基础库已实现；真实阀曲线库与复杂设备待补|tests/test_solver.py、tests/ui.features.cjs|
 |H12|用户末端 P96–99,I8|设计压降与设计流量|定阻/理想流控分开，需求提示|A/B|部分：内核及需求诊断通过，控制器饱和切换未实现|tests/test_solver.py、tests/ui.e2e.cjs|
 |H13|水力模拟/调节 P15,20,28|修改后反馈|任务 ID/取消/过期保护/残差诊断|A|基础已验证，含迟到启动回复/同哈希不同 owner/取消进程停止；长稳和极端压力仍待补|tests/test_jobs.py、tests/ui.jobs.cjs|
-|H14|水力可及性 P21,29|泵阀调节满足压头流量，算法未知|固定检查/有界局部搜索/优化分开|B/C|部分：桌面约束编辑、固定检查、有界局部搜索（尽量少调整、按设定精度取整并验算）、存为工况/应用已实现并经真实界面验收（main，未发版）；无全局保证，无能耗/平衡优化目标|tests/test_accessibility_request.py、tests/test_accessibility_search.py、tests/test_accessibility_refine.py、tests/ui.analysis.cjs|
+|H14|水力可及性 P21,29|泵阀调节满足压头流量，算法未知|固定检查/有界局部搜索/优化分开|B/C|部分：桌面约束编辑、固定检查、有界局部搜索（尽量少调整、按设定精度取整并验算）、存为工况/应用已实现并经真实界面验收（preview.4）；无全局保证，无能耗/平衡优化目标|tests/test_accessibility_request.py、tests/test_accessibility_search.py、tests/test_accessibility_refine.py、tests/ui.analysis.cjs|
 |H15|水压图 P23,30,I2|节点压力曲线|H/z/表压参考与完整供回路径|A|部分：真实图表已验收，多泵多源路径待补|tests/ui.e2e.cjs|
 |H16|图形结果 P13,22,I2|显示定制|流量/流速/水头差着色、数字、反向箭头|A|部分：基础结果截图已检查，所有着色/反向组合待扩测|tests/ui.e2e.cjs|
 |H17|数据文档 P31,I2|汇总文本|CSV/XLSX、完整计算报告|A/B|部分：CSV/PDF 和真实参数/结果 XLSX 通过；更完整报告定制待补|tests/test_library_table.py、tests/ui.features.cjs|
@@ -38,7 +38,7 @@
 |H30|动态过程仿真 I1,P10|状态/方程/步长未明确|分清稳态/扫描/控制热动态/水锤|C|时间状态未实现；没有把扫描冒充动态|docs/MODELS.md|
 |H31|参数赋值颜色 P81,95,98|颜色区分完成参数|文字/图标并行，不只靠颜色|A/B|部分：文字状态/数值/箭头已有，完整赋值状态图层待补|docs/ACCEPTANCE.md|
 |X01|新增：工况比较|原文未描述|快照/绝对值/差值/比例/归属|B|基础流程及跨温度各自密度/差值/比例已验证；批量方案待补|tests/ui.e2e.cjs、tests/ui.lifecycle.cjs|
-|X02|新增：优化/扫描/敏感性|原文未描述|变量上下界、逐项违反、结论性质|C|部分：扫描（1–2 参数、曲线、CSV）、敏感性矩阵、可及性、水力平衡（流量设定法、最低泵速、取整验证）已有桌面界面并经真实界面验收（main，未发版）；能耗优化未实现|tests/test_analysis.py、tests/test_analysis_jobs.py、tests/test_sensitivity_request.py、tests/test_balancing.py、tests/ui.analysis.cjs|
+|X02|新增：优化/扫描/敏感性|原文未描述|变量上下界、逐项违反、结论性质|C|部分：扫描（1–2 参数、曲线、CSV）、敏感性矩阵、可及性、水力平衡（流量设定法、最低泵速、取整验证）已有桌面界面并经真实界面验收（preview.4）；能耗优化未实现|tests/test_analysis.py、tests/test_analysis_jobs.py、tests/test_sensitivity_request.py、tests/test_balancing.py、tests/ui.analysis.cjs|
 |X03|新增：热输送/能耗|原文未给算法|水力功率和输入功率区分，有依据的效率|C|部分：水力功率/效率缺失处理已有；热/年耗能未实现|tests/test_solver.py、docs/MODELS.md|
 |X04|新增：API/批处理|原文未描述|CLI/API/哈希/版本/残差/任务|A/C|基础 API/CLI/协议已验证，后续设备接口待扩充|tests/test_project.py、tests/test_protocol.py|
 |X05|新增：映射导入/图像导出|原文未描述|导入预览校验，SVG/PNG|B|部分：已有设备 CSV/XLSX 字段/单位预览与原子应用/撤销、PNG/SVG 真正导出已验；整网创建导入/施工图待补|tests/ui.features.cjs、tests/ui.graph.cjs|

@@ -9,7 +9,7 @@
 
 **An offline, interpretable steady-state analysis workbench for district heating and HVAC hydronic networks.**
 
-> **Current Version**: `0.1.0-preview.3`. This open-source preview provides an out-of-the-box offline hydraulic solver, topology modeling canvas, and multi-scenario comparison tools for preliminary scheme design, academic research, and engineering calculations. For mission-critical or final construction documentation, independent engineering review against applicable codes is recommended.
+> **Current Version**: `0.1.0-preview.4`. This open-source preview provides an out-of-the-box offline hydraulic solver, topology modeling canvas, and multi-scenario comparison tools for preliminary scheme design, academic research, and engineering calculations. For mission-critical or final construction documentation, independent engineering review against applicable codes is recommended.
 
 OpenHydroNet is an open-source hydronic network engineering software designed for district heating distribution systems and central air-conditioning chilled/hot water loops. It combines a modern cross-platform desktop graphical user interface (Electron + React Flow) with a robust, physics-transparent Python numerical solver.
 
@@ -25,7 +25,7 @@ Repositories: [GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet) · [Gite
 - **Multi-Scenario Comparison**: Adjust pump speeds and valve authority on the fly, take scenario snapshots, and analyze absolute values, deltas, and percentage deviations against baseline conditions.
 - **Integrated Equipment Library**: Built-in pump and valve catalog supporting discrete OEM test-point entry, quadratic/cubic $Q-H$ characteristic curve fitting with RMSE reporting, and bounded operational ranges.
 - **Tabular Data Mapping & Interoperability**: Bi-directional CSV/Excel mapping for existing nodes and branches with difference preview and rollback. Supports export to open JSON projects, CSV datasets, SVG/PNG schematics, PDF calculation reports, and multi-tab XLSX workbooks.
-- **Analysis Workspace** *(main branch, not yet released)*: One- and two-parameter steady sweeps with charts and CSV export, a sensitivity matrix ranking which pump/valve adjustment matters most, and hydraulic accessibility — constraint checks plus a bounded local search that adjusts as little as possible and rounds to settable precision — and hydraulic balancing by the designated-flow method (balancing-valve openings, lowest pump speed, index circuit, verified by a real solve). Local search results carry no global guarantee.
+- **Analysis Workspace** *(since 0.1.0-preview.4)*: One- and two-parameter steady sweeps with charts and CSV export, a sensitivity matrix ranking which pump/valve adjustment matters most, and hydraulic accessibility — constraint checks plus a bounded local search that adjusts as little as possible and rounds to settable precision — and hydraulic balancing by the designated-flow method (balancing-valve openings, lowest pump speed, index circuit, verified by a real solve). Local search results carry no global guarantee.
 - **Scriptable Python Core & CLI**: Automated single-line expansion, batch parameter sweeps, bounded local feasibility searches, and finite-difference sensitivity analysis.
 - **Privacy-First & Fully Offline**: No telemetry, no mandatory cloud accounts, and no license servers. Computations run entirely on your local machine with communication strictly bound to authenticated loopback sockets.
 
