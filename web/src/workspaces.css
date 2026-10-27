@@ -475,3 +475,14 @@
 .balance-pair-list li.warn {
   color: #a3410c;
 }
+/* T-017 (W4-05): the run/cancel block stays visible at the bottom of the form column; the form scrolls above it. */
+.analysis-form > .analysis-actions {
+  position: sticky;
+  bottom: -10px; /* cancels the column's bottom padding so nothing shows below the block */
+  margin-top: auto;
+  padding: 8px 0 12px;
+  background: #f5f8fb;
+  border-top: 1px solid #d9e3ec;
+  box-shadow: 0 -6px 8px -6px #284d6033;
+  z-index: 2;
+}

@@ -14,6 +14,22 @@ const inPanelView = (locator) =>
       p = el.closest('.bottom-content').getBoundingClientRect();
     return r.height > 0 && r.top >= p.top - 1 && r.bottom <= p.bottom + 1;
   });
+// W4-05: with the form column scrolled to the top, the run button must be fully visible without scrolling.
+const visibleWithoutScrolling = (locator) =>
+  locator.evaluate((el) => {
+    const form = el.closest('.analysis-form');
+    form.scrollTop = 0;
+    const r = el.getBoundingClientRect(),
+      f = form.getBoundingClientRect(),
+      p = el.closest('.bottom-content').getBoundingClientRect();
+    const top = Math.max(f.top, p.top),
+      bottom = Math.min(f.bottom, p.bottom);
+    return {
+      ok: r.height > 0 && r.top >= top - 1 && r.bottom <= bottom + 1,
+      button: [r.top, r.bottom],
+      view: [top, bottom],
+    };
+  });
 (async () => {
   await fs.mkdir(out, { recursive: true });
   const errors = [];
@@ -34,6 +50,29 @@ const inPanelView = (locator) =>
     // T-001: PU1 speed 0.6–1.4, 5 points; T2 flow rises monotonically.
     await page.getByRole('button', { name: '分析', exact: true }).click();
     const scan = page.getByTestId('scan-view');
+    // ---- T-017 (W4-05): run buttons visible in the default window without scrolling ----
+    for (const [mode, testId, name] of [
+      ['参数扫描', 'scan-view', /运行扫描/],
+      ['敏感性', 'sensitivity-view', /计算敏感性/],
+      ['可及性', 'accessibility-view', '检查当前工作点'],
+      ['水力平衡', 'balance-view', '计算水力平衡'],
+    ]) {
+      await page.getByRole('button', { name: mode, exact: true }).click();
+      const v = await visibleWithoutScrolling(
+        page.getByTestId(testId).getByRole('button', { name }),
+      );
+      assert.ok(v.ok, `${mode} run button hidden: ${JSON.stringify(v)}`);
+    }
+    await page.getByRole('button', { name: '可及性', exact: true }).click();
+    const accView = page.getByTestId('accessibility-view');
+    const boxes = accView.getByLabel(/^参与调节 /);
+    for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).check();
+    const vs = await visibleWithoutScrolling(
+      accView.getByRole('button', { name: '搜索可行调节（局部）' }),
+    );
+    assert.ok(vs.ok, 'search button hidden with every variable enabled: ' + JSON.stringify(vs));
+    for (let i = 0; i < (await boxes.count()); i++) await boxes.nth(i).uncheck();
+    await page.getByRole('button', { name: '参数扫描', exact: true }).click();
     await scan.getByLabel('扫描参数').selectOption({ value: 'PU1:speed' });
     await scan.getByLabel('起点').fill('0.6');
     await scan.getByLabel('起点').press('Enter');
