@@ -461,6 +461,11 @@ const visibleWithoutScrolling = (locator) =>
       assert.ok(Math.abs(parseFloat(cells[5])) <= 5, 'within ±5 %: ' + cells);
     const cmp = await page.getByTestId('balance-compare').locator('tbody tr').allInnerTexts();
     assert.match(cmp[0], /^泵相对转速\t1\t0\.98\t-2\.0%$/);
+    assert.equal(
+      cmp[3].split('\t')[1],
+      '1,568',
+      'before-balancing power matches the results table (T-019)',
+    );
     assert.match(cmp[3], /^泵水力功率 \[W\]\t.*\t-4\.\d%$/);
     assert.equal(await page.getByTestId('balance-power-note').count(), 0);
     assert.ok(await inPanelView(balConclusion), 'balance conclusion in view');

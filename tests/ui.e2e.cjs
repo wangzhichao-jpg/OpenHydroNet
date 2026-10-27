@@ -31,6 +31,13 @@ const root = path.resolve(__dirname, '..'),
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
     await page.waitForTimeout(500);
     await shot(page, { path: path.join(out, '02-results.png') });
+    // T-019 (W4-02): pump hydraulic power uses the same 4 significant digits as the balancing table.
+    const pu1Cells = await page
+      .locator('.bottom-content > table tbody tr')
+      .filter({ hasText: '循环泵' })
+      .locator('td')
+      .allInnerTexts();
+    assert.equal(pu1Cells[4], '1,568', 'PU1 hydraulic power: ' + pu1Cells);
     // T-018 (W4-01): undoing back to the calculated input clears the stale status text as well.
     await page.getByTestId('select-PU1').click();
     await page.getByLabel('相对转速 n/n₀').fill('0.9');

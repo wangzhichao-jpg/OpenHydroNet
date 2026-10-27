@@ -66,6 +66,8 @@ const fmt = (v: any, d = 3) =>
   typeof v === 'number' && Number.isFinite(v)
     ? Number(v.toPrecision(d)).toLocaleString('zh-CN', { maximumFractionDigits: 6 })
     : '—';
+// T-019 (W4-02): power in W is shown with 4 significant digits everywhere (results, properties, balancing).
+const POWER_DIGITS = 4;
 // Editors inside the analysis panel do not belong to the project document.
 const INVALID_EDITOR = '.workspace [aria-invalid="true"]:not(.analysis-panel *)';
 
@@ -1208,7 +1210,7 @@ function Workbench() {
                               <td>{fmt(resultFlow(result, e.id, flowUnit), 5)}</td>
                               <td>{fmt(r?.velocity_m_s)}</td>
                               <td>{fmt(r?.head_drop_m, 5)}</td>
-                              <td>{fmt(r?.hydraulic_power_w)}</td>
+                              <td>{fmt(r?.hydraulic_power_w, POWER_DIGITS)}</td>
                               <td>
                                 {!r
                                   ? '无对应结果'
@@ -1790,10 +1792,14 @@ function Workbench() {
                         {item.kind === 'pump' && (
                           <>
                             <p>
-                              水力功率 <b>{fmt(result.edges?.[item.id]?.hydraulic_power_w)} W</b>
+                              水力功率{' '}
+                              <b>
+                                {fmt(result.edges?.[item.id]?.hydraulic_power_w, POWER_DIGITS)} W
+                              </b>
                             </p>
                             <p>
-                              估算输入功率 <b>{fmt(result.edges?.[item.id]?.input_power_w)} W</b>
+                              估算输入功率{' '}
+                              <b>{fmt(result.edges?.[item.id]?.input_power_w, POWER_DIGITS)} W</b>
                             </p>
                             <small>“—”表示没有效率数据，不推测电功率。</small>
                           </>

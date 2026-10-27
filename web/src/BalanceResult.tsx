@@ -10,6 +10,9 @@ import {
   indexText,
 } from './balance';
 import PointActions from './PointActions';
+
+// Same display precision as the results table (T-019); applies to every row of the pump comparison.
+const COMPARE_DIGITS = 4;
 import type { AnalysisActions } from './AnalysisPanel';
 
 export default function BalanceResult({
@@ -114,8 +117,8 @@ export default function BalanceResult({
               {compare.map((c) => (
                 <tr key={c.label}>
                   <td>{c.label}</td>
-                  <td>{fmt(c.before, 4)}</td>
-                  <td>{fmt(c.after, 4)}</td>
+                  <td>{fmt(c.before, COMPARE_DIGITS)}</td>
+                  <td>{fmt(c.after, COMPARE_DIGITS)}</td>
                   <td>{c.change}</td>
                 </tr>
               ))}
