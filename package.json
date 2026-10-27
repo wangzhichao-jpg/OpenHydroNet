@@ -1,6 +1,6 @@
 {
   "name": "openhydronet",
-  "version": "0.1.0-preview.4",
+  "version": "0.1.0-preview.5",
   "private": true,
   "description": "离线中文供热与空调水系统分析",
   "license": "Apache-2.0",

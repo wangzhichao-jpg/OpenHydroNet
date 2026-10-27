@@ -1,6 +1,6 @@
 # 公式、设备模型与适用范围
 
-版本：0.1.0-preview.4，算法 `sparse-head-flow-newton-trf-v2`。源实现见 `src/openhydronet/physics.py`、`solver.py`。本文件定义本项目独立构建的物理方程与数值求解算法。
+版本：0.1.0-preview.5，算法 `sparse-head-flow-newton-trf-v2`。源实现见 `src/openhydronet/physics.py`、`solver.py`。本文件定义本项目独立构建的物理方程与数值求解算法。
 
 ## 1. 符号、单位和守恒
 

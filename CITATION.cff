@@ -9,7 +9,7 @@ authors:
     affiliation: "Jianke Huanneng Technology Co., Ltd. (National Air-Conditioning Equipment Quality Inspection Center)"
     orcid: "https://orcid.org/0000-0001-6662-835X"
   - name: OpenHydroNet contributors
-version: 0.1.0-preview.4
+version: 0.1.0-preview.5
 license: Apache-2.0
 repository-code: "https://github.com/wangzhichao-jpg/OpenHydroNet"
 url: "https://gitee.com/bigtaurus/OpenHydroNet"

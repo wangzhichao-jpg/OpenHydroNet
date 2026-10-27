@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # Fast-forward-only push of main to GitHub (origin) and Gitee (gitee), then verify both remote heads.
 # Exits non-zero unless both remotes end up at the local HEAD. Never forces.
+# Optional argument: an existing local tag to push afterwards; its target is verified on both remotes.
+# A tag that already exists remotely with a different target is reported, never overwritten.
 set -euo pipefail
 export GIT_TERMINAL_PROMPT=0
 cd "$(git rev-parse --show-toplevel)"
@@ -19,3 +21,20 @@ for remote in origin gitee; do
   [ "$remote_head" = "$head" ] || { echo "$remote 远程 HEAD $remote_head ≠ 本地 $head" >&2; exit 1; }
   echo "$remote: ${head:0:7} 已核对"
 done
+tag="${1:-}"
+if [ -n "$tag" ]; then
+  target=$(git rev-parse "$tag^{commit}")
+  for remote in origin gitee; do
+    existing=$(timeout 60 git ls-remote "$remote" "refs/tags/$tag^{}" | cut -f1)
+    if [ -z "$existing" ]; then
+      for attempt in 1 2 3; do
+        if timeout 120 git push "$remote" "refs/tags/$tag"; then break; fi
+        [ "$attempt" = 3 ] && { echo "$remote 标签推送三次失败" >&2; exit 1; }
+        sleep 5
+      done
+      existing=$(timeout 60 git ls-remote "$remote" "refs/tags/$tag^{}" | cut -f1)
+    fi
+    [ "$existing" = "$target" ] || { echo "$remote 标签 $tag 指向 $existing ≠ 本地 $target（不覆盖）" >&2; exit 1; }
+    echo "$remote: 标签 $tag → ${target:0:7} 已核对"
+  done
+fi
