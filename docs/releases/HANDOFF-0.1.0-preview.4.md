@@ -20,14 +20,17 @@
 | 依赖历史扫描 | 全部 71 个可达提交无凭据/私钥/私人路径迹象（启发式） |
 | 标签 CI 运行 | [40480669800](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40480669800)：**失败，非代码问题**。Ubuntu 真实界面测试截欢迎页时托管显示器偶发报 “Unable to capture screenshot”，Windows 测试随之被取消，`windows-candidate` 未运行。同一提交在 main 上的运行 40480656811 全部通过。截图重试已在 main 修复（不影响标签）。 |
 
+| 构建流程修复后的 CI 验证 | 手动触发运行 [40486411710](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40486411710)（main `9e491ab`）：Ubuntu/Windows 测试与 `windows-candidate` 全部通过。修复两处：`artifacts/` 在全新检出中不存在（`build_windows.py` 首次在 CI 运行即失败）；境外机器访问清华镜像超时（改为国内源优先、官方源备用）。 |
+| Windows 上随包运行时实测 | 上述运行中，便携包内的 Python 在 Windows Server 上求解公开示例：converged，T2 = 13.679 m³/h，泵扬程 18.499 m，与 Linux 一致。CI 包 SHA-256 `f506fc510c89e66616cb0070b66fd0515f4f5b0ee27bbb3c4f2f2b01bfff86d4`，审计零问题。 |
+| CI 包与标签包对比 | 2,875 个文件中仅 4 个不同：`BUILD_MANIFEST.json`（commit、assembly_host）、本交接文档、`python312._pth` 与 `开始使用.txt`（仅 Windows 写出的 CRLF 换行）。`src/`、`web/`、`desktop/`、`examples/` 逐字节相同。 |
+
 **说明**：两处组装的 ZIP 字节不会完全相同——源文件因 `.gitattributes` 一致，但 `BUILD_MANIFEST.json` 记录组装主机（`linux` / `win32`）。**Release 附件请用 CI 在 Windows 上组装并做过随包求解的那份**，以它自带的 `.sha256` 为准；SER8 本地包仅作对照。
 
 ## PC 待办
-### 1. 获取候选包
-1. 打开上表中的标签 CI 运行 → 右上角 **Re-run jobs → Re-run failed jobs**（SER8 的 token 没有 Actions 权限，无法代点）。约 10 分钟后 `windows-candidate` 完成。
-2. 在该运行页面底部下载 artifact `Windows-portable-candidate`（需登录，保留 90 天），内含 ZIP、`.sha256`、构建清单、`windows-smoke-result.json`（随包 Python 在 Windows 上的实际求解结果）与 `release-audit.json`。
-3. 用 `.sha256` 核对 ZIP；`release-audit.json` 的 `issues` 应为空、`source_commit` 应为 `fe88778…`。
-4. 若重跑后仍失败，把运行链接告诉 SER8；不要在本地修改后重新打同名标签。
+### 1. 获取候选包（方案待用户选定）
+- **方案 A（推荐）**：附件用 SER8 本地组装的标签包（构建清单 commit = 标签 `fe88778`）。应用代码与 CI 在 Windows 上实测过的包逐字节相同。由 SER8 建草稿 Release 并上传，PC 核对 SHA-256 `53cb1563…12ebe8` 后发布。
+- **方案 B**：作废 preview.4 标签，以修复后的 main 发 preview.5，全程用 CI 包。
+- 不要再重跑标签 `v0.1.0-preview.4` 的 CI：标签提交含已修复的构建 bug，重跑必然失败。
 
 ### 2. Windows 真机验收（新版，不继承旧结论）
 在中文路径下解压，记录 Windows 版本、显示缩放、是否断网。每项记“通过 / 失败（截图）/ 跳过（原因）”。
