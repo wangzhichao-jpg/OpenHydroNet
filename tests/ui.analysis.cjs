@@ -435,6 +435,63 @@ const inPanelView = (locator) =>
     assert.equal((await balCells(1))[3], '0.4');
     assert.equal(await page.getByTestId('balance-index').count(), 0);
     await page.screenshot({ path: path.join(out, '08-balance-fixed.png') });
+
+    // ---- T-013: save the balanced point as a scenario / apply it (one undo step) ----
+    await bal.getByLabel('平衡方式').selectOption('variable');
+    await runBalance.click();
+    await page.getByTestId('balance-index').waitFor({ timeout: 60000 });
+    const verifiedT2 = num((await balCells(1))[4]);
+    const balActions = page.getByTestId('balance-actions');
+    await balActions.getByRole('button', { name: '保存为工况快照' }).click();
+    await page.locator('.statusbar').filter({ hasText: '平衡方案 1 已保存为工况快照' }).waitFor();
+    assert.equal(
+      await page.getByLabel('对比工况').locator('option:checked').innerText(),
+      '平衡方案 1',
+    );
+    await page.getByTestId('select-PU1').click();
+    const speed = page.getByLabel('相对转速 n/n₀');
+    assert.equal(
+      Number(await speed.inputValue()),
+      1,
+      'saving a scenario leaves the project unchanged',
+    );
+    await page.getByRole('button', { name: '分析', exact: true }).click();
+    await balActions.getByRole('button', { name: '应用到当前工程' }).click();
+    await page
+      .getByTestId('balance-actions-note')
+      .filter({ hasText: '已应用到当前工程' })
+      .waitFor();
+    assert.equal(await balActions.getByRole('button', { name: '已应用' }).isDisabled(), true);
+    assert.equal(await page.getByTestId('balance-stale').count(), 0);
+    assert.equal(Number(await speed.inputValue()), 0.98);
+    await page.getByTestId('select-V1').click();
+    const opening = page.getByLabel('阀门开度', { exact: true });
+    assert.equal(Number(await opening.inputValue()), 0.22);
+    // The main calculation reproduces the balance verification exactly (same model, same kernel).
+    await page.getByRole('button', { name: '计算', exact: true }).click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
+    await page.getByRole('button', { name: '计算结果', exact: true }).click();
+    const mainT2 = await page
+      .locator('.bottom-content > table tbody tr')
+      .filter({ hasText: '用户末端 2' })
+      .locator('td')
+      .nth(1)
+      .innerText();
+    assert.ok(
+      Math.abs(num(mainT2) - verifiedT2) < 1e-3,
+      `main ${mainT2} vs verified ${verifiedT2}`,
+    );
+    // One undo restores pump speed and both openings together.
+    await page.getByTitle('撤销 Ctrl+Z').click();
+    assert.equal(Number(await opening.inputValue()), 1);
+    await page.getByTestId('select-PU1').click();
+    assert.equal(Number(await speed.inputValue()), 1);
+    await page.getByRole('button', { name: '分析', exact: true }).click();
+    assert.equal(
+      await balActions.getByRole('button', { name: '应用到当前工程' }).isDisabled(),
+      false,
+    );
+    await page.screenshot({ path: path.join(out, '09-balance-actions.png') });
     assert.deepEqual(errors, []);
     console.log('analysis UI passed');
   } finally {

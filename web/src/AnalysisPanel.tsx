@@ -14,8 +14,9 @@ const MODES = [
 
 /** Ways an analysis result may change the project; both go through the document's undo history. */
 export type AnalysisActions = {
-  /** Add the found point (frozen model + adjustments, with its own result) as a scenario. */
-  onSaveScenario: (model: any, result: any, summary: string) => void;
+  /** Add a computed point (frozen model + adjustments, with its own result) as a scenario named
+   * "<label> N", e.g. 可及性方案 / 平衡方案. */
+  onSaveScenario: (model: any, result: any, summary: string, label: string) => void;
   /** Write the found adjustments into the current model. Returns false if the document refused. */
   onApply: (changes: { id: string; field: string; value: number }[], summary: string) => boolean;
 };

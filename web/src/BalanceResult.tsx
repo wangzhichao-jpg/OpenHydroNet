@@ -140,6 +140,7 @@ export default function BalanceResult({
               applyAdjustments(frozenModel, result.changes),
               result.result,
               summary,
+              '平衡方案',
             )
           }
           onApply={() => actions.onApply(result.changes, summary)}

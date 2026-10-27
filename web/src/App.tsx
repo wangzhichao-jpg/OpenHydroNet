@@ -1099,11 +1099,11 @@ function Workbench() {
                   flowUnit={flowUnit}
                   projectName={p.name}
                   actions={{
-                    onSaveScenario: (model, scenarioResult, summary) => {
+                    onSaveScenario: (model, scenarioResult, summary, label) => {
                       if (documentEpoch.current !== epoch || rejectInvalidEditor()) return;
                       const next = clone(pRef.current),
                         id = uid('S'),
-                        name = '可及性方案 ' + (next.scenarios.length + 1);
+                        name = label + ' ' + (next.scenarios.length + 1);
                       next.scenarios.push({
                         id,
                         name,

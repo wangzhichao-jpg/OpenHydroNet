@@ -96,6 +96,7 @@ export default function AccessibilityResult({
                       applyAdjustments(frozenModel, result.changes),
                       result.result,
                       summary,
+                      '可及性方案',
                     )
                   }
                   onApply={() => actions.onApply(result.changes, summary)}
