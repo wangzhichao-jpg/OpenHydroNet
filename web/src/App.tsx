@@ -144,8 +144,22 @@ function Workbench() {
     [rf],
   );
   const stale = !!result && signature(p) !== resultSig;
+  // T-018 (W4-01): when undo/redo returns to the calculated input, the same result is valid again and the
+  // status text must say so. A new calculation also ends staleness but sets its own message.
+  const staleFor = useRef<any>(null);
   useEffect(() => {
-    if (stale) setMessage('输入已变更，请重新计算；旧结果过期，不能导出为当前结果');
+    if (stale) {
+      staleFor.current = resultRef.current;
+      setMessage('输入已变更，请重新计算；旧结果过期，不能导出为当前结果');
+    } else if (staleFor.current) {
+      const same = staleFor.current === resultRef.current;
+      staleFor.current = null;
+      if (same && resultRef.current)
+        setMessage(
+          (statusText[resultRef.current.status] || resultRef.current.status) +
+            '；已回到计算时的输入，结果有效',
+        );
+    }
   }, [stale]);
   const item =
     p.model.nodes.find((x) => selected.includes(x.id)) ||

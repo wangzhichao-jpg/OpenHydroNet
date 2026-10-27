@@ -31,6 +31,19 @@ const root = path.resolve(__dirname, '..'),
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
     await page.waitForTimeout(500);
     await shot(page, { path: path.join(out, '02-results.png') });
+    // T-018 (W4-01): undoing back to the calculated input clears the stale status text as well.
+    await page.getByTestId('select-PU1').click();
+    await page.getByLabel('相对转速 n/n₀').fill('0.9');
+    await page.getByLabel('相对转速 n/n₀').press('Enter');
+    await page.locator('.statusbar').filter({ hasText: '旧结果过期' }).waitFor();
+    await page.getByTitle('撤销 Ctrl+Z').click();
+    await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor();
+    await page.locator('.statusbar').filter({ hasText: '已回到计算时的输入' }).waitFor();
+    assert.doesNotMatch(await page.locator('.statusbar').innerText(), /过期/);
+    assert.equal(
+      await page.getByRole('button', { name: '结果 CSV', exact: true }).isDisabled(),
+      false,
+    );
     await page.getByRole('button', { name: '水压图', exact: true }).click();
     await page.getByRole('img', { name: '循环路径水压图' }).waitFor();
     await shot(page, { path: path.join(out, '03-pressure.png') });
