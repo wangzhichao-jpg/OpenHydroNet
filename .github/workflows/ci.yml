@@ -23,11 +23,17 @@ jobs:
           node-version: '22'
           cache: npm
       - name: 科学计算与测试依赖
-        run: python -m pip install --index-url https://pypi.tuna.tsinghua.edu.cn/simple -e . pytest==9.0.2
+        # Domestic mirror first; hosted runners abroad sometimes time out on it, then fall back to PyPI
+        # (same pinned versions, TLS verified).
+        shell: bash
+        run: |
+          python -m pip install --timeout 60 --index-url https://pypi.tuna.tsinghua.edu.cn/simple -e . pytest==9.0.2 \
+            || python -m pip install --timeout 60 --index-url https://pypi.org/simple -e . pytest==9.0.2
       - name: 前端依赖
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
-        run: npm ci --registry=https://registry.npmmirror.com
+        shell: bash
+        run: npm ci --registry=https://registry.npmmirror.com || npm ci --registry=https://registry.npmjs.org
       - name: 显式安装锁定桌面运行时（避免并发懒下载）
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
@@ -83,7 +89,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm ci --registry=https://registry.npmmirror.com
+      - shell: bash
+        run: npm ci --registry=https://registry.npmmirror.com || npm ci --registry=https://registry.npmjs.org
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
       - run: npm run build
