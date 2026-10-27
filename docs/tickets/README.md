@@ -28,3 +28,16 @@ SPEC-001 及后续重构 T-010 已完成（2026-10-26）。
 | [T-012](T-012.md) | 水力平衡子页 | T-011 | BalanceView.tsx, balance.ts | done |
 | [T-013](T-013.md) | 保存为工况 / 应用 | T-012 | BalanceResult.tsx, App.tsx | done |
 | [T-014](T-014.md) | 文档、矩阵、收尾审查 | T-013 | docs/ | done |
+
+## preview.5：preview.4 Windows 验收问题修复
+
+| 卡 | 标题 | blocked_by | 主要文件 | 状态 |
+|---|---|---|---|---|
+| [T-022](T-022.md) | 记录 preview.4 Windows 验收结果 | — | docs/ | todo |
+| [T-015](T-015.md) | W4-06 首次冷启动超时（阻断） | — | desktop/main.cjs, backend-launcher.cjs, startup.html | todo |
+| [T-016](T-016.md) | W4-07 中文对话框标题与窗口图标 | T-015 | desktop/ | todo |
+| [T-017](T-017.md) | W4-05 运行按钮不可见 | — | workspaces.css | todo |
+| [T-018](T-018.md) | W4-01 撤销后状态栏仍显示过期 | — | App.tsx | todo |
+| [T-019](T-019.md) | W4-02 功率显示精度不一致 | — | App.tsx, BalanceResult.tsx | todo |
+| [T-020](T-020.md) | W4-03 PDF 假设与验证可读性 | — | export.py | todo |
+| [T-021](T-021.md) | W4-04 未签名提示与 SHA-256 说明 | — | build_windows.py, USER_MANUAL | todo |
