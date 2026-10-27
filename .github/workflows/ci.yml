@@ -55,6 +55,7 @@ jobs:
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:features
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:jobs
           xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:analysis
+          xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:startup
       - name: Windows真实界面
         if: runner.os == 'Windows'
         shell: pwsh
@@ -66,6 +67,7 @@ jobs:
           npm run test:features
           npm run test:jobs
           npm run test:analysis
+          npm run test:startup
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -76,6 +78,8 @@ jobs:
             artifacts/lifecycle/
             artifacts/features/
             artifacts/jobs/
+            artifacts/analysis/
+            artifacts/startup/
   windows-candidate:
     # Release tags (v*) and manual runs assemble the portable candidate on a real Windows runner.
     if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')

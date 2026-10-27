@@ -17,6 +17,7 @@
     "test:features": "node tests/ui.features.cjs",
     "test:jobs": "node tests/ui.jobs.cjs",
     "test:analysis": "node tests/ui.analysis.cjs",
+    "test:startup": "node tests/ui.startup.cjs",
     "format:check": "prettier --check web/src desktop tests/*.cjs tools/*.cjs"
   },
   "dependencies": {

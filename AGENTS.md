@@ -12,7 +12,7 @@ OpenHydroNet：离线中文供热/空调水系统稳态水力工作台。Python 
 PYTHONPATH=src OPENBLAS_NUM_THREADS=1 python3 -m pytest -q       # 内核/协议，约 4 s
 npm run test:commands                                            # TS 单元 + Node 存储
 npm run build && npm run format:check
-xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/lifecycle/features/jobs/analysis
+xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/lifecycle/features/jobs/analysis/startup（startup 仅 Linux）
 ```
 每套 E2E 单独启动真实 Electron；不要并行跑两套（共享端口/配置目录）。
 

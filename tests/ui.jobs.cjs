@@ -1,5 +1,5 @@
 const { _electron } = require('playwright');
-const { shot } = require('./e2e-util.cjs');
+const { shot, mainWindow } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -34,7 +34,7 @@ const root = path.resolve(__dirname, '..'),
         filePath: dir + '/owned-project.ohn.json',
       });
     }, out);
-    const page = await app.firstWindow();
+    const page = await mainWindow(app);
     page.on('pageerror', (e) => errors.push(e.message));
     await page.locator('.statusbar').filter({ hasText: '恢复草稿读取失败' }).waitFor();
     const backup = JSON.parse(
@@ -111,7 +111,7 @@ const root = path.resolve(__dirname, '..'),
     console.error(e, errors);
     process.exitCode = 1;
     try {
-      await (await app.firstWindow()).screenshot({ path: path.join(out, 'failure.png') });
+      await (await mainWindow(app)).screenshot({ path: path.join(out, 'failure.png') });
     } catch {}
   } finally {
     release();

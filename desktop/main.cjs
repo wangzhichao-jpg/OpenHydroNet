@@ -1,6 +1,7 @@
 const { app, BrowserWindow, dialog, ipcMain, Menu, session } = require('electron');
 const { createDocumentController } = require('./document-controller.cjs');
 const { atomic, parseUtf8Json } = require('./storage.cjs');
+const { waitForBackend, startupHint } = require('./backend-launcher.cjs');
 const { version: APP_VERSION } = require('../package.json');
 const { spawn } = require('node:child_process');
 const fs = require('node:fs/promises');
@@ -198,62 +199,166 @@ function setupIPC() {
     return true;
   });
 }
-function startBackend() {
-  return new Promise((resolve, reject) => {
-    const packaged = path.join(root, 'runtime', 'python.exe');
-    const python = process.env.OHN_PYTHON || (process.platform === 'win32' ? packaged : 'python3');
-    const token = crypto.randomBytes(32).toString('base64url');
-    backend = spawn(python, ['-m', 'openhydronet.cli', 'serve'], {
-      cwd: root,
-      windowsHide: true,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      env: {
-        ...process.env,
-        PYTHONPATH: path.join(root, 'src'),
-        PYTHONIOENCODING: 'utf-8',
-        OHN_SESSION_TOKEN: token,
-        OPENBLAS_NUM_THREADS: '1',
-        OMP_NUM_THREADS: '1',
+// ---- Backend startup (T-015, W4-06) ----
+// A freshly unpacked package can need well over 15 s on the first start (antivirus scanning new files).
+// The startup window gives visible progress, waits up to BACKEND_TIMEOUT_MS while the process is alive,
+// reports timeout / exit / missing runtime / protocol separately and offers retry instead of exiting.
+const BACKEND_TIMEOUT_MS =
+  Number(process.env.OHN_BACKEND_TIMEOUT_MS) > 0
+    ? Number(process.env.OHN_BACKEND_TIMEOUT_MS)
+    : 120000;
+const SLOW_AFTER_MS = 10000;
+let startupWindow, startupStatus;
+function spawnBackend(token) {
+  const packaged = path.join(root, 'runtime', 'python.exe');
+  const python = process.env.OHN_PYTHON || (process.platform === 'win32' ? packaged : 'python3');
+  backend = spawn(python, ['-m', 'openhydronet.cli', 'serve'], {
+    cwd: root,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: {
+      ...process.env,
+      PYTHONPATH: path.join(root, 'src'),
+      PYTHONIOENCODING: 'utf-8',
+      OHN_SESSION_TOKEN: token,
+      OPENBLAS_NUM_THREADS: '1',
+      OMP_NUM_THREADS: '1',
+    },
+  });
+  return { child: backend, python };
+}
+function sendStartupStatus(status) {
+  startupStatus = { version: APP_VERSION, ...status };
+  if (startupWindow && !startupWindow.isDestroyed()) {
+    startupWindow.webContents.send('ohn:startup-status', startupStatus);
+    if (status.state === 'failed') startupWindow.show();
+  }
+}
+function createStartupWindow() {
+  startupWindow = new BrowserWindow({
+    width: 600,
+    height: 400,
+    resizable: false,
+    minimizable: true,
+    maximizable: false,
+    backgroundColor: '#f3f7fb',
+    title: 'OpenHydroNet',
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'startup-preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+      spellcheck: false,
+    },
+  });
+  startupWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  startupWindow.webContents.on('will-navigate', (event) => event.preventDefault());
+  startupWindow.webContents.on(
+    'did-finish-load',
+    () => startupStatus && sendStartupStatus(startupStatus),
+  );
+  startupWindow.on('closed', () => {
+    startupWindow = null;
+    if (!mainWindow) quitBeforeMainWindow();
+  });
+  startupWindow.loadFile(path.join(__dirname, 'startup.html'));
+  // Fast starts (warm package, ~1 s) finish before this and never flash the window.
+  setTimeout(
+    () => startupWindow && !startupWindow.isDestroyed() && !mainWindow && startupWindow.show(),
+    700,
+  );
+}
+async function quitBeforeMainWindow() {
+  quitApproved = true;
+  quitting = true;
+  await stopBackend();
+  app.quit();
+}
+let launching = false;
+async function launch() {
+  if (launching || quitting) return;
+  launching = true;
+  connection = null;
+  await stopBackend();
+  const token = crypto.randomBytes(32).toString('base64url');
+  const started = Date.now();
+  let slow = false;
+  const progress = () =>
+    sendStartupStatus({
+      state: slow ? 'slow' : 'starting',
+      elapsed: Math.round((Date.now() - started) / 1000),
+      message: '正在启动计算内核…',
+      hint: slow
+        ? '比平时慢：首次启动或杀毒软件扫描刚解压的文件时，可能需要一分钟左右，请稍候。'
+        : '',
+    });
+  progress();
+  const ticker = setInterval(progress, 1000);
+  let info, python;
+  try {
+    const spawned = spawnBackend(token);
+    python = spawned.python;
+    info = await waitForBackend(spawned.child, {
+      token,
+      timeoutMs: BACKEND_TIMEOUT_MS,
+      slowAfterMs: SLOW_AFTER_MS,
+      onSlow: () => {
+        slow = true;
+        progress();
       },
     });
-    let output = '',
-      stderr = '';
-    const timer = setTimeout(() => reject(Error('本地计算进程启动超时')), 15000);
-    backend.once('error', (e) => {
-      clearTimeout(timer);
-      reject(e);
+  } catch (e) {
+    clearInterval(ticker);
+    await stopBackend();
+    launching = false;
+    if (quitting) return;
+    sendStartupStatus({
+      state: 'failed',
+      kind: e.kind || 'spawn',
+      message: '启动失败：' + e.message,
+      hint: startupHint(e.kind),
+      detail: ['运行时：' + python, e.detail].filter(Boolean).join('\n'),
     });
-    backend.stderr.on('data', (d) => {
-      stderr = (stderr + d).slice(-3000);
+    return;
+  }
+  clearInterval(ticker);
+  connection = info;
+  const child = backend;
+  child.once('exit', () => {
+    if (child !== backend || quitting || !connection) return;
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: 'OpenHydroNet',
+      message: '计算进程异常退出',
+      detail: '请保存工程并重启软件；已有输入仍可恢复。',
+      buttons: ['确定'],
+      noLink: true,
     });
-    backend.once('exit', (code) => {
-      clearTimeout(timer);
-      if (!connection) reject(Error('计算进程未就绪，退出码 ' + code + ' ' + stderr));
-      else if (!quitting) {
-        dialog.showErrorBox(
-          '计算进程退出',
-          '计算进程异常退出。请保存工程并重启软件；已有输入仍可恢复。',
-        );
-        mainWindow?.webContents.send('ohn:backend-exit');
-      }
-    });
-    backend.stdout.on('data', (d) => {
-      output += d;
-      if (!connection && output.includes('\n')) {
-        try {
-          const info = JSON.parse(output.split('\n')[0]);
-          if (info.protocol !== 1 || info.token !== token) throw Error('通信协议不匹配');
-          connection = info;
-          clearTimeout(timer);
-          resolve(info);
-        } catch (e) {
-          clearTimeout(timer);
-          reject(e);
-        }
-      }
-    });
+    mainWindow?.webContents.send('ohn:backend-exit');
   });
+  try {
+    await openMainWindow(info);
+  } catch (e) {
+    await stopBackend();
+    sendStartupStatus({
+      state: 'failed',
+      kind: 'window',
+      message: '启动失败：主窗口无法加载界面',
+      hint: startupHint('window'),
+      detail: e.message,
+    });
+  } finally {
+    launching = false;
+  }
 }
+ipcMain.on('ohn:startup-retry', (event) => {
+  if (event.sender === startupWindow?.webContents && !mainWindow) launch();
+});
+ipcMain.on('ohn:startup-quit', (event) => {
+  if (event.sender === startupWindow?.webContents && !mainWindow) startupWindow.close();
+});
 async function stopBackend() {
   if (!backend || backend.exitCode !== null) return;
   if (process.platform === 'win32')
@@ -284,53 +389,60 @@ app.on('second-instance', () => {
     mainWindow.focus();
   }
 });
-app.whenReady().then(async () => {
-  if (!primaryInstance) return;
+async function openMainWindow(info) {
+  const localOrigin = `http://127.0.0.1:${info.port}`;
+  session.defaultSession.webRequest.onBeforeRequest(
+    { urls: ['http://*/*', 'https://*/*'] },
+    (details, callback) => callback({ cancel: new URL(details.url).origin !== localOrigin }),
+  );
+  const win = new BrowserWindow({
+    width: 1600,
+    height: 1000,
+    minWidth: 1120,
+    minHeight: 720,
+    backgroundColor: '#f3f7fb',
+    title: 'OpenHydroNet',
+    show: false,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+      spellcheck: false,
+    },
+  });
+  win.on('close', (event) => {
+    if (!quitApproved) {
+      event.preventDefault();
+      requestExit();
+    }
+  });
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith(`${localOrigin}/`)) event.preventDefault();
+  });
+  win.once('ready-to-show', () => {
+    win.show();
+    if (startupWindow && !startupWindow.isDestroyed()) startupWindow.destroy();
+  });
+  // Assigned before loading: ready-to-show may fire first and closes the startup window, whose
+  // 'closed' handler must then see that the main window exists.
+  mainWindow = win;
   try {
-    setupIPC();
-    Menu.setApplicationMenu(null);
-    const info = await startBackend();
-    const localOrigin = `http://127.0.0.1:${info.port}`;
-    session.defaultSession.webRequest.onBeforeRequest(
-      { urls: ['http://*/*', 'https://*/*'] },
-      (details, callback) => callback({ cancel: new URL(details.url).origin !== localOrigin }),
-    );
-    mainWindow = new BrowserWindow({
-      width: 1600,
-      height: 1000,
-      minWidth: 1120,
-      minHeight: 720,
-      backgroundColor: '#f3f7fb',
-      title: 'OpenHydroNet',
-      show: false,
-      webPreferences: {
-        preload: path.join(__dirname, 'preload.cjs'),
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-        webSecurity: true,
-        spellcheck: false,
-      },
-    });
-    mainWindow.on('close', (event) => {
-      if (!quitApproved) {
-        event.preventDefault();
-        requestExit();
-      }
-    });
-    mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
-    mainWindow.webContents.on('will-navigate', (event, url) => {
-      if (!url.startsWith(`http://127.0.0.1:${info.port}/`)) event.preventDefault();
-    });
-    mainWindow.once('ready-to-show', () => mainWindow.show());
-    await mainWindow.loadURL(`http://127.0.0.1:${info.port}/#token=${info.token}`);
+    await win.loadURL(`${localOrigin}/#token=${info.token}`);
   } catch (e) {
-    dialog.showErrorBox('启动失败', e.message + '\n请检查随附 Python 运行时及构建说明。');
-    quitApproved = true;
-    quitting = true;
-    await stopBackend();
-    app.quit();
+    mainWindow = null;
+    win.destroy();
+    throw e;
   }
+}
+app.whenReady().then(() => {
+  if (!primaryInstance) return;
+  setupIPC();
+  Menu.setApplicationMenu(null);
+  createStartupWindow();
+  launch();
 });
 app.on('window-all-closed', () => {
   if (!quitting) requestExit();

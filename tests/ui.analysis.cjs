@@ -1,6 +1,6 @@
 // SPEC-001 analysis workspace, real Electron. T-001: single-parameter scan.
 const { _electron: electron } = require('playwright');
-const { shot } = require('./e2e-util.cjs');
+const { shot, mainWindow } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -26,7 +26,7 @@ const inPanelView = (locator) =>
     await app.evaluate(({ dialog }) => {
       dialog.showMessageBox = async () => ({ response: 1 });
     });
-    const page = await app.firstWindow();
+    const page = await mainWindow(app);
     page.on('pageerror', (e) => errors.push(e.message));
     await page.getByTestId('start-example').click();
     await page.getByTestId('select-PU1').waitFor();

@@ -16,4 +16,24 @@ async function shot(page, options) {
   }
 }
 
-module.exports = { shot };
+/**
+ * The main workbench window. Since T-015 a startup window may exist first (hidden or showing progress),
+ * so tests must not rely on window order: wait for the window served by the local backend.
+ */
+async function mainWindow(app, timeout = 120000) {
+  const isMain = (page) => page.url().startsWith('http://127.0.0.1:');
+  const end = Date.now() + timeout;
+  while (Date.now() < end) {
+    const found = app.windows().find(isMain);
+    if (found) return found;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error('main window did not appear within ' + timeout + ' ms');
+}
+
+/** The startup window (desktop/startup.html), if it was created. */
+function startupWindow(app) {
+  return app.windows().find((page) => page.url().endsWith('/startup.html'));
+}
+
+module.exports = { shot, mainWindow, startupWindow };

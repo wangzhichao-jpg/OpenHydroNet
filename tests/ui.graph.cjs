@@ -1,5 +1,5 @@
 const { _electron } = require('playwright');
-const { shot } = require('./e2e-util.cjs');
+const { shot, mainWindow } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -16,7 +16,7 @@ const root = path.resolve(__dirname, '..'),
     await app.evaluate(({ dialog }) => {
       dialog.showMessageBox = async () => ({ response: 1 });
     });
-    const page = await app.firstWindow();
+    const page = await mainWindow(app);
     page.on('pageerror', (e) => errors.push(e.message));
     await page.getByRole('button', { name: '空白工程', exact: false }).click();
     const palette = page.locator('.palette').getByRole('button', { name: /节点$/ }),
@@ -109,7 +109,7 @@ const root = path.resolve(__dirname, '..'),
   } catch (e) {
     console.error(e, errors);
     try {
-      await (await app.firstWindow()).screenshot({ path: path.join(out, 'failure.png') });
+      await (await mainWindow(app)).screenshot({ path: path.join(out, 'failure.png') });
     } catch {}
     process.exitCode = 1;
   } finally {

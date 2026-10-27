@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <!-- Local startup window (T-015). No scripts in the page: the sandboxed preload updates the DOM. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; style-src 'unsafe-inline'; img-src data:"
+    />
+    <title>OpenHydroNet</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Microsoft YaHei', 'PingFang SC', 'Noto Sans CJK SC', system-ui, sans-serif;
+        background: #f3f7fb;
+        color: #17324a;
+      }
+      main {
+        padding: 28px 32px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+        color: #0d4f63;
+      }
+      .version {
+        font-size: 12px;
+        color: #6e869a;
+      }
+      #message {
+        margin: 22px 0 6px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      #hint {
+        font-size: 13px;
+        line-height: 1.7;
+        color: #3d5466;
+        min-height: 44px;
+      }
+      #elapsed {
+        font-size: 12px;
+        color: #6e869a;
+      }
+      .bar {
+        height: 4px;
+        background: #dbe6ef;
+        border-radius: 2px;
+        overflow: hidden;
+        margin: 14px 0;
+      }
+      .bar i {
+        display: block;
+        height: 100%;
+        width: 35%;
+        background: #16919d;
+        animation: slide 1.4s ease-in-out infinite;
+      }
+      @keyframes slide {
+        from {
+          margin-left: -35%;
+        }
+        to {
+          margin-left: 100%;
+        }
+      }
+      body.failed .bar,
+      body.failed #elapsed {
+        display: none;
+      }
+      body.failed #message {
+        color: #a3410c;
+      }
+      #detail {
+        display: none;
+        max-height: 110px;
+        overflow: auto;
+        font-size: 11px;
+        background: #fff;
+        border: 1px solid #d9e3ec;
+        padding: 6px 8px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      body.failed #detail:not(:empty) {
+        display: block;
+      }
+      .actions {
+        display: none;
+        gap: 10px;
+        margin-top: 14px;
+      }
+      body.failed .actions {
+        display: flex;
+      }
+      button {
+        font: inherit;
+        font-size: 14px;
+        padding: 6px 22px;
+        border-radius: 4px;
+        border: 1px solid #9fb4c4;
+        background: #fff;
+        cursor: pointer;
+      }
+      button.primary {
+        background: #12808c;
+        border-color: #12808c;
+        color: #fff;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>OpenHydroNet</h1>
+      <div class="version" id="version"></div>
+      <div id="message" role="status" aria-live="polite">正在启动计算内核…</div>
+      <div class="bar"><i></i></div>
+      <div id="hint"></div>
+      <div id="elapsed"></div>
+      <pre id="detail"></pre>
+      <div class="actions">
+        <button id="retry" class="primary">重试</button>
+        <button id="quit">退出</button>
+      </div>
+    </main>
+  </body>
+</html>

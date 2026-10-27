@@ -28,7 +28,7 @@ const root = path.resolve(__dirname, '..'),
   });
   let ffmpeg;
   try {
-    const page = await app.firstWindow();
+    const page = await require('../tests/e2e-util.cjs').mainWindow(app);
     const errors = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.getByTestId('start-example').waitFor();

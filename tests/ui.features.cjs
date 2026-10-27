@@ -1,5 +1,5 @@
 const { _electron } = require('playwright');
-const { shot } = require('./e2e-util.cjs');
+const { shot, mainWindow } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -24,7 +24,7 @@ const root = path.resolve(__dirname, '..'),
       });
       dialog.showMessageBox = async () => ({ response: 1 });
     }, out);
-    const page = await app.firstWindow();
+    const page = await mainWindow(app);
     page.on('pageerror', (e) => {
       errors.push(e.message);
       console.error(e.stack);
@@ -182,7 +182,7 @@ const root = path.resolve(__dirname, '..'),
     console.error(e, errors);
     process.exitCode = 1;
     try {
-      await (await app.firstWindow()).screenshot({ path: path.join(out, 'failure.png') });
+      await (await mainWindow(app)).screenshot({ path: path.join(out, 'failure.png') });
     } catch {}
   } finally {
     await app.close();
