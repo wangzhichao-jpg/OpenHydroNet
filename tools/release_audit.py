@@ -44,6 +44,7 @@ def main():
             build=json.loads(z.read(prefix+'BUILD_MANIFEST.json'))
             archives.append(dict(file=archive.name,bytes=archive.stat().st_size,sha256=hashlib.sha256(archive.read_bytes()).hexdigest(),files=len(names),source_commit=build['commit'],windows_executed=build['windows_executed'],crc='passed',actual_pe_headers='passed'))
     output=dict(source_files=len(list(filter(None,tracked))),issues=issues,windows_archives=archives,remote_published=False,limitations='这是静态隐私/结构检查，不替代漏洞扫描、法律审查或 Windows 实际运行')
+    (ROOT/'artifacts').mkdir(exist_ok=True)
     (ROOT/'artifacts/release-audit.json').write_text(json.dumps(output,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(output,ensure_ascii=False,indent=2))
     if issues:raise SystemExit(1)
