@@ -1,4 +1,5 @@
 const { _electron: electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -23,16 +24,16 @@ const root = path.resolve(__dirname, '..'),
     });
     await page.waitForSelector('[data-testid="start-example"]');
     await page.waitForTimeout(600);
-    await page.screenshot({ path: path.join(out, '01-welcome.png') });
+    await shot(page, { path: path.join(out, '01-welcome.png') });
     await page.getByTestId('start-example').click();
     await page.getByTestId('select-P2').waitFor();
     await page.getByRole('button', { name: '计算', exact: true }).click();
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
     await page.waitForTimeout(500);
-    await page.screenshot({ path: path.join(out, '02-results.png') });
+    await shot(page, { path: path.join(out, '02-results.png') });
     await page.getByRole('button', { name: '水压图', exact: true }).click();
     await page.getByRole('img', { name: '循环路径水压图' }).waitFor();
-    await page.screenshot({ path: path.join(out, '03-pressure.png') });
+    await shot(page, { path: path.join(out, '03-pressure.png') });
     await page.getByRole('button', { name: '对比', exact: true }).click();
     await page.getByRole('button', { name: '保存当前工况快照' }).click();
     await page.getByTestId('select-P2').click();
@@ -50,11 +51,11 @@ const root = path.resolve(__dirname, '..'),
     await page.getByRole('button', { name: '计算', exact: true }).click();
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
     await page.getByRole('button', { name: '问题列表', exact: false }).click();
-    await page.screenshot({ path: path.join(out, '04-diagnosis.png') });
+    await shot(page, { path: path.join(out, '04-diagnosis.png') });
     await page.getByRole('button', { name: '工况对比', exact: true }).click();
     await page.getByLabel('对比工况').selectOption({ label: '工况 1' });
     await page.waitForTimeout(200);
-    await page.screenshot({ path: path.join(out, '05-comparison.png') });
+    await shot(page, { path: path.join(out, '05-comparison.png') });
     assert.ok((await page.locator('table').innerText()).includes('%'));
     await app.evaluate(({ dialog }, output) => {
       dialog.showSaveDialog = async (_window, options) => ({

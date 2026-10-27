@@ -1,4 +1,5 @@
 const { _electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -59,7 +60,7 @@ const root = path.resolve(__dirname, '..'),
     await page.getByLabel('实际转速', { exact: true }).press('Enter');
     await page.getByRole('button', { name: '计算', exact: true }).click();
     await page.locator('.canvas-badge').filter({ hasText: '计算通过' }).waitFor({ timeout: 30000 });
-    await page.screenshot({ path: path.join(out, '01-library-curve.png') });
+    await shot(page, { path: path.join(out, '01-library-curve.png') });
     const saved = path.join(out, '双末端闭式循环 · 公开教学示例.ohn.json');
     const save = async () => {
       await page.getByRole('button', { name: '保存', exact: true }).click();
@@ -102,7 +103,7 @@ const root = path.resolve(__dirname, '..'),
     assert.ok(
       (await page.getByRole('table', { name: '导入变化预览' }).innerText()).includes('0.05'),
     );
-    await page.screenshot({ path: path.join(out, '02-unit-mapping-preview.png') });
+    await shot(page, { path: path.join(out, '02-unit-mapping-preview.png') });
     await page.getByRole('button', { name: '确认应用（可整体撤销）', exact: true }).click();
     p = await save();
     assert.equal(p.model.edges.find((e) => e.id === 'P2').diameter, 0.05);
@@ -134,7 +135,7 @@ const root = path.resolve(__dirname, '..'),
       await page.getByRole('button', { name: '确认应用（可整体撤销）', exact: true }).isDisabled(),
       true,
     );
-    await page.screenshot({ path: path.join(out, '03-xlsx-roundtrip.png') });
+    await shot(page, { path: path.join(out, '03-xlsx-roundtrip.png') });
     await page.getByRole('button', { name: '关闭导入', exact: true }).click();
     await page.getByTestId('select-V1').click();
     await page.getByLabel('阀门开度', { exact: true }).fill('0.6');

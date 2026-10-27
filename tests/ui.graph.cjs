@@ -1,4 +1,5 @@
 const { _electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -57,7 +58,7 @@ const root = path.resolve(__dirname, '..'),
     );
     await page.getByLabel('流量单位').selectOption('kg/h');
     assert.ok((await page.locator('thead').innerText()).includes('kg/h'));
-    await page.screenshot({ path: path.join(out, '01-port-connected-reverse.png') });
+    await shot(page, { path: path.join(out, '01-port-connected-reverse.png') });
     const edge = page.locator('.edge-label').first();
     await edge.click();
     await page.keyboard.press('Control+c');

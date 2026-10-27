@@ -43,6 +43,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - README 双语：`README.md` 英文（GitHub 默认），`README.zh-CN.md` 中文；改动功能说明时两份同步。
 
 ## 复盘记录（持续追加）
+- 2026-10-27 preview.4：标签 CI 因托管 Xvfb 偶发截图失败而整体失败，SER8 的 token 无 Actions 权限无法重跑 → E2E 截图统一用 `tests/e2e-util.cjs` 的 `shot`（有限重试）；建议给 token 增加 Actions 读写。另：曾误称 CI 与本地组装包字节一致，实际 BUILD_MANIFEST 含组装主机，结论须先核对再写。
 - 2026-10-26 T-013：GitHub 推送偶发失败，但命令只打印 `tail -1` 且未检查退出码，几乎漏掉 → 新增 `tools/push-remotes.sh`，推送后核对远程 HEAD。
 - 2026-10-26 T-003：Playwright `getByText` 也会匹配 SVG `<title>` 提示文字，导致多重匹配 → 在具体容器内定位并用 `{ exact: true }`。
 - 2026-10-26 T-002：新组件的 CSS 类名 `.legend` 与已有画布色标重名，图例跑到窗口右上角且测试未发现 → 新样式类名用功能前缀（如 `scan-`、`analysis-`），新增可见元素都加 `inPanelView` 位置断言。

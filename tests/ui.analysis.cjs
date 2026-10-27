@@ -1,5 +1,6 @@
 // SPEC-001 analysis workspace, real Electron. T-001: single-parameter scan.
 const { _electron: electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -99,7 +100,7 @@ const inPanelView = (locator) =>
     assert.equal(csvLines.length, 6);
     const csvT2 = Number(csvLines[3].split(',')[2]);
     assert.ok(Math.abs(csvT2 - 13.679) < 0.001, 'CSV keeps full precision: ' + csvLines[3]);
-    await page.screenshot({ path: path.join(out, '01b-scan-chart.png') });
+    await shot(page, { path: path.join(out, '01b-scan-chart.png') });
     assert.ok(await inPanelView(page.locator('.analysis-modes')), 'mode bar stays in view');
     assert.ok(await inPanelView(table.locator('thead')), 'table header stays in view');
     assert.ok(
@@ -107,7 +108,7 @@ const inPanelView = (locator) =>
       'run button in view',
     );
     assert.match(await rows[2].locator('td').nth(3).innerText(), /末端低于设计流量（用户末端 2）/);
-    await page.screenshot({ path: path.join(out, '01-scan-table.png') });
+    await shot(page, { path: path.join(out, '01-scan-table.png') });
 
     // Results stay when switching tabs; editing the model marks them stale.
     await page.getByRole('button', { name: '计算结果', exact: true }).click();
@@ -118,7 +119,7 @@ const inPanelView = (locator) =>
     await page.getByTestId('scan-stale').waitFor();
     assert.ok(await inPanelView(page.getByTestId('scan-stale')), 'stale banner in view');
     assert.equal(await table.locator('tbody tr').count(), 5);
-    await page.screenshot({ path: path.join(out, '02-scan-stale.png') });
+    await shot(page, { path: path.join(out, '02-scan-stale.png') });
     // Progress is shown and cancel stops the server-side process (HTTP DELETE path).
     const deletes = [];
     page.on('request', (r) => r.method() === 'DELETE' && deletes.push(r.url()));
@@ -173,7 +174,7 @@ const inPanelView = (locator) =>
       ),
       'grid legend in view',
     );
-    await page.screenshot({ path: path.join(out, '01c-scan-two-parameters.png') });
+    await shot(page, { path: path.join(out, '01c-scan-two-parameters.png') });
 
     // ---- T-004: sensitivity matrix ----
     await page.getByRole('button', { name: '敏感性', exact: true }).click();
@@ -202,7 +203,7 @@ const inPanelView = (locator) =>
       '单侧差分（已在上限）',
     );
     assert.ok(await inPanelView(summary), 'summary in view');
-    await page.screenshot({ path: path.join(out, '02b-sensitivity.png') });
+    await shot(page, { path: path.join(out, '02b-sensitivity.png') });
 
     // ---- T-005: accessibility constraints and fixed check ----
     await page.getByRole('button', { name: '计算结果', exact: true }).click();
@@ -249,7 +250,7 @@ const inPanelView = (locator) =>
     assert.match(accRows[1], /用户末端 2.*14\.4.*13\.679.*不满足.*5\.0%/s);
     assert.ok(await inPanelView(conclusion), 'conclusion in view');
     assert.ok(await inPanelView(check), 'check button in view');
-    await page.screenshot({ path: path.join(out, '03-accessibility-fixed.png') });
+    await shot(page, { path: path.join(out, '03-accessibility-fixed.png') });
     // Relaxing T2 makes the point satisfy every constraint.
     await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).fill('13');
     await acc.getByLabel('用户末端 2 最小流量 [m³/h]', { exact: true }).press('Enter');
@@ -310,7 +311,7 @@ const inPanelView = (locator) =>
       after.every((r) => /\t满足\t/.test(r)),
       'all constraints satisfied: ' + after,
     );
-    await page.screenshot({ path: path.join(out, '04-accessibility-found.png') });
+    await shot(page, { path: path.join(out, '04-accessibility-found.png') });
     // ---- T-007: save the found point as a scenario, or apply it (undoable) ----
     const actions = page.getByTestId('found-actions');
     await actions.getByRole('button', { name: '保存为工况快照' }).click();
@@ -360,7 +361,7 @@ const inPanelView = (locator) =>
     assert.equal(t2Cells[1], t2Cells[2], 'scenario and recalculated point agree: ' + t2Cells);
     assert.ok(num(t2Cells[1]) >= 14.4 - 1e-3, 'scenario meets the design flow: ' + t2Cells);
     assert.equal(num(t2Cells[3]), 0);
-    await page.screenshot({ path: path.join(out, '06-scenario-compare.png') });
+    await shot(page, { path: path.join(out, '06-scenario-compare.png') });
     await page.getByTitle('撤销 Ctrl+Z').click();
     await page.getByRole('button', { name: '分析', exact: true }).click();
     // Unreachable target: undetermined + closest point, never an infeasibility claim.
@@ -379,7 +380,7 @@ const inPanelView = (locator) =>
       await inPanelView(page.getByTestId('accessibility-conclusion')),
       'conclusion in view',
     );
-    await page.screenshot({ path: path.join(out, '05-accessibility-undetermined.png') });
+    await shot(page, { path: path.join(out, '05-accessibility-undetermined.png') });
 
     // ---- T-012: hydraulic balancing view (SPEC-002), from a freshly loaded example ----
     await page.getByRole('button', { name: '新建 / 模板', exact: true }).click();
@@ -425,7 +426,7 @@ const inPanelView = (locator) =>
     assert.equal(await page.getByTestId('balance-power-note').count(), 0);
     assert.ok(await inPanelView(balConclusion), 'balance conclusion in view');
     assert.ok(await inPanelView(runBalance), 'balance run button in view');
-    await page.screenshot({ path: path.join(out, '07-balance-variable.png') });
+    await shot(page, { path: path.join(out, '07-balance-variable.png') });
     // Fixed speed, valves only: 0.20 / 0.40, and the power note explains why power rises.
     await bal.getByLabel('平衡方式').selectOption('fixed');
     assert.equal(await bal.getByLabel('泵速下限', { exact: true }).count(), 0);
@@ -434,7 +435,7 @@ const inPanelView = (locator) =>
     assert.equal((await balCells(0))[3], '0.2');
     assert.equal((await balCells(1))[3], '0.4');
     assert.equal(await page.getByTestId('balance-index').count(), 0);
-    await page.screenshot({ path: path.join(out, '08-balance-fixed.png') });
+    await shot(page, { path: path.join(out, '08-balance-fixed.png') });
 
     // ---- T-013: save the balanced point as a scenario / apply it (one undo step) ----
     await bal.getByLabel('平衡方式').selectOption('variable');
@@ -491,7 +492,7 @@ const inPanelView = (locator) =>
       await balActions.getByRole('button', { name: '应用到当前工程' }).isDisabled(),
       false,
     );
-    await page.screenshot({ path: path.join(out, '09-balance-actions.png') });
+    await shot(page, { path: path.join(out, '09-balance-actions.png') });
     assert.deepEqual(errors, []);
     console.log('analysis UI passed');
   } finally {

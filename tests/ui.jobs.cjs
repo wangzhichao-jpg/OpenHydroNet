@@ -1,4 +1,5 @@
 const { _electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -79,7 +80,7 @@ const root = path.resolve(__dirname, '..'),
     assert.equal(states[1].status, 'completed');
     assert.ok(['completed', 'cancelled'].includes(states[0].status));
     assert.deepEqual(errors, []);
-    await page.screenshot({ path: path.join(out, '01-owned-current-result.png') });
+    await shot(page, { path: path.join(out, '01-owned-current-result.png') });
     await fs.writeFile(
       path.join(out, 'test-result.json'),
       JSON.stringify(

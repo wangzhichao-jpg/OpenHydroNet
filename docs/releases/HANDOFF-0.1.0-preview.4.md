@@ -12,13 +12,22 @@
 | 发布说明 | [`v0.1.0-preview.4.md`](v0.1.0-preview.4.md)（中英，直接粘贴为两个平台 Release 正文） |
 | Windows 候选包 | 标签触发 CI 任务 `windows-candidate` 在 Windows 上组装、随包 Python 求解公开示例、结构/隐私审计；产物名 `Windows-portable-candidate` |
 
-## 候选包记录
-（CI 完成后由 SER8 填写，见本文件后续提交）
+## 候选包记录（2026-10-27）
+| 项目 | 值 |
+|---|---|
+| 标签提交 | `fe8877876391b74ea6eeff43da6a87ebbcc0c097`（GitHub、Gitee 的 `v0.1.0-preview.4` 均已核对指向此提交） |
+| SER8 本地组装（Linux） | `OpenHydroNet-0.1.0-preview.4-win-x64.zip`，220,399,409 字节，2,875 个文件，SHA-256 `53cb156364a931392cace7297f305a77e2d51b9f409e37f668cfeedd4d12ebe8`；`release_audit.py` 零问题（CRC、PE 头、必需文件、LICENSE、无私有资料）。未在 Windows 上运行。 |
+| 依赖历史扫描 | 全部 71 个可达提交无凭据/私钥/私人路径迹象（启发式） |
+| 标签 CI 运行 | [40480669800](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40480669800)：**失败，非代码问题**。Ubuntu 真实界面测试截欢迎页时托管显示器偶发报 “Unable to capture screenshot”，Windows 测试随之被取消，`windows-candidate` 未运行。同一提交在 main 上的运行 40480656811 全部通过。截图重试已在 main 修复（不影响标签）。 |
+
+**说明**：两处组装的 ZIP 字节不会完全相同——源文件因 `.gitattributes` 一致，但 `BUILD_MANIFEST.json` 记录组装主机（`linux` / `win32`）。**Release 附件请用 CI 在 Windows 上组装并做过随包求解的那份**，以它自带的 `.sha256` 为准；SER8 本地包仅作对照。
 
 ## PC 待办
 ### 1. 获取候选包
-1. 打开 GitHub → Actions → 标签 `v0.1.0-preview.4` 的运行 → 下载 artifact `Windows-portable-candidate`（需登录，保留 90 天）。
-2. 用压缩包内 `.sha256` 核对 ZIP，并与上方“候选包记录”的 SHA-256 比对，一致才继续。
+1. 打开上表中的标签 CI 运行 → 右上角 **Re-run jobs → Re-run failed jobs**（SER8 的 token 没有 Actions 权限，无法代点）。约 10 分钟后 `windows-candidate` 完成。
+2. 在该运行页面底部下载 artifact `Windows-portable-candidate`（需登录，保留 90 天），内含 ZIP、`.sha256`、构建清单、`windows-smoke-result.json`（随包 Python 在 Windows 上的实际求解结果）与 `release-audit.json`。
+3. 用 `.sha256` 核对 ZIP；`release-audit.json` 的 `issues` 应为空、`source_commit` 应为 `fe88778…`。
+4. 若重跑后仍失败，把运行链接告诉 SER8；不要在本地修改后重新打同名标签。
 
 ### 2. Windows 真机验收（新版，不继承旧结论）
 在中文路径下解压，记录 Windows 版本、显示缩放、是否断网。每项记“通过 / 失败（截图）/ 跳过（原因）”。

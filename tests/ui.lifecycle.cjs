@@ -1,4 +1,5 @@
 const { _electron } = require('playwright');
+const { shot } = require('./e2e-util.cjs');
 const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
@@ -92,7 +93,7 @@ const root = path.resolve(__dirname, '..'),
     assert.ok(Math.abs(parse(values[2]) - expected[1]) / expected[1] < 0.006);
     const pct = ((expected[1] - expected[0]) / expected[0]) * 100;
     assert.ok(Math.abs(parse(values[4]) - pct) < 0.06);
-    await page.screenshot({ path: path.join(out, '01-cross-temperature.png') });
+    await shot(page, { path: path.join(out, '01-cross-temperature.png') });
     await page.getByTestId('select-PU1').click();
     await number('相同并联泵台数', 1.5, false);
     assert.equal(await page.getByLabel('相同并联泵台数').getAttribute('aria-invalid'), 'true');
@@ -136,7 +137,7 @@ const root = path.resolve(__dirname, '..'),
     await app.evaluate(() => {
       globalThis.testCancelSave = false;
     });
-    await page.screenshot({ path: path.join(out, '02-preserved-after-cancel.png') });
+    await shot(page, { path: path.join(out, '02-preserved-after-cancel.png') });
     assert.deepEqual(errors, []);
     await fs.writeFile(
       path.join(out, 'test-result.json'),
