@@ -55,6 +55,7 @@ function createDocumentController({ dialog, getWindow, atomic, flushRenderer }) 
             if (!state.valid) {
               await dialog.showMessageBox(getWindow(), {
                 type: 'warning',
+                title: '无法保存',
                 message: '存在未提交的无效参数，请先修正再保存。',
                 buttons: ['返回修改'],
               });
@@ -66,6 +67,7 @@ function createDocumentController({ dialog, getWindow, atomic, flushRenderer }) 
             if (snapshotKey(state.project) !== key) {
               await dialog.showMessageBox(getWindow(), {
                 type: 'warning',
+                title: '工程已变化',
                 message: '保存期间工程已变化，已保存先前快照；当前窗口保留，请核对最新输入。',
                 buttons: ['返回工作台'],
               });

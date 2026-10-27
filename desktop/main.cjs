@@ -8,6 +8,8 @@ const fs = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
+// Window/taskbar icon (T-016). The EXE's embedded resource icon is still Electron's (see KNOWN_LIMITATIONS).
+const APP_ICON = path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png');
 app.setName('OpenHydroNet');
 if (process.env.OHN_PROFILE) app.setPath('userData', path.resolve(process.env.OHN_PROFILE));
 app.commandLine.appendSwitch('disable-background-networking');
@@ -71,7 +73,16 @@ function requestExit() {
         throw error;
       }
     })
-    .catch((error) => dialog.showErrorBox('退出已取消', error.message));
+    .catch((error) =>
+      dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: '退出已取消',
+        message: '退出已取消',
+        detail: error.message,
+        buttons: ['确定'],
+        noLink: true,
+      }),
+    );
 }
 const safeName = (name) => path.basename(name).replace(/[<>:"/\\|?*\x00-\x1f]/g, '_');
 function setupIPC() {
@@ -243,6 +254,7 @@ function createStartupWindow() {
     maximizable: false,
     backgroundColor: '#f3f7fb',
     title: 'OpenHydroNet',
+    icon: APP_ICON,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'startup-preload.cjs'),
@@ -402,6 +414,7 @@ async function openMainWindow(info) {
     minHeight: 720,
     backgroundColor: '#f3f7fb',
     title: 'OpenHydroNet',
+    icon: APP_ICON,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
