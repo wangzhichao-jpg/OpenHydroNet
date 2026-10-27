@@ -58,3 +58,22 @@ def test_cli_end_to_end(tmp_path):
     r=subprocess.run([sys.executable,'-m','openhydronet.cli','solve',str(ROOT/'examples/closed-loop.ohn.json'),'-o',str(out)],capture_output=True,text=True)
     assert r.returncode==0,r.stderr
     assert json.loads(out.read_text())['status']=='converged'
+
+
+def test_report_assumptions_section_is_a_readable_chinese_table():
+    """T-020 (W4-03): no raw JSON in “假设和验证”; values come from the result itself."""
+    import re
+    from openhydronet import load_project, solve
+    p = load_project('examples/closed-loop.ohn.json')
+    r = solve(p['model'])
+    h = report_html(p, r)
+    section = h[h.index('<h2>假设和验证</h2>'):h.index('<h2>支路结果</h2>')]
+    for raw in ('"residuals"', '"mass_tolerance_m3_s"', '"density_kg_m3"', '"assumptions"', '<pre>'):
+        assert raw not in section, raw
+    for label in ('水温', '密度', '运动黏度', '质量残差', '能量残差', '质量容差', '能量容差', '稳态不可压单相液态水',
+                  '用户末端 2', '末端流量低于设计需求', '警告'):
+        assert label in section, label
+    assert '998.2336' in section and '20 ℃' in section
+    assert '状态：计算通过（converged）' in h
+    assert re.search(r'1\.148e-0?9 m', section), section
+    assert '完整输入（SI）' in h and '<pre>' in h[h.index('完整输入（SI）'):]   # full SI input kept as an appendix
