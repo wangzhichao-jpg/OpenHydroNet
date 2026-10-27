@@ -15,6 +15,38 @@ from zipfile import ZipFile,ZIP_DEFLATED,ZipInfo
 
 ROOT=Path(__file__).resolve().parents[1];D=ROOT/'.local/downloads';VERSION=json.loads((ROOT/'package.json').read_text())['version']
 
+def start_text(version):
+    """开始使用.txt (T-021, W4-04): unpack, unsigned-publisher warning, SHA-256 check, slow first start."""
+    return f"""OpenHydroNet {version}
+
+开源预览版本，适合方案比选与工程辅助计算；结果须经工程人员复核后使用。不需要联网，不需要另装 Python。
+
+1. 解压
+   把 ZIP 完整解压到可写目录（例如 D:\\OpenHydroNet），再双击 OpenHydroNet.exe。不要直接在压缩包里运行。
+
+2. 核对完整性（建议在第一次运行前做）
+   在 ZIP 所在文件夹的地址栏输入 powershell 并回车，执行：
+     Get-FileHash .\\OpenHydroNet-{version}-win-x64.zip -Algorithm SHA256
+   得到的值应与发布页面、或同名 .sha256 文件中的值完全一致（不区分大小写）。不一致时请勿运行，重新下载。
+
+3. “安全警告 / 未知发布者”提示
+   本软件为开源预览版，没有购买代码签名证书，所以 Windows 会显示“打开文件 - 安全警告：无法验证发布者”
+   或“未知发布者”，部分电脑还会出现“Windows 已保护你的电脑”。这是未签名程序的正常提示。
+   按第 2 步核对一致后，再选择“运行”（SmartScreen 页面为“更多信息 → 仍要运行”）。
+   请不要关闭 SmartScreen 或杀毒软件。
+
+4. 首次启动较慢
+   刚解压后第一次启动时，杀毒软件会扫描新文件，计算内核可能需要几十秒到一分钟才就绪，
+   启动窗口会显示已等待的秒数；之后启动通常只需几秒。若提示启动失败，可点“重试”。
+
+5. 检查与上手
+   先双击 验证计算.cmd 检查计算内核（显示 SUCCESS 即正常），再用“打开公开示例”完成一次计算。
+   用户手册：resources/app/docs/USER_MANUAL.md
+   已知限制：resources/app/docs/KNOWN_LIMITATIONS.md
+   开源许可：resources/app/LICENSE；Electron/Chromium 许可在本目录 LICENSE 与 LICENSES.chromium.html。
+"""
+
+
 def main():
     if subprocess.check_output(['git','status','--porcelain'],cwd=ROOT,text=True).strip():raise RuntimeError('请先提交所有源码/文档并确认工作区干净，禁止把未提交代码打入候选包')
     commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
@@ -42,7 +74,7 @@ def main():
     (runtime/'python312._pth').write_text('python312.zip\n.\nLib/site-packages\n../src\nimport site\n',encoding='utf-8')
     # A double-clickable console smoke test uses exactly the bundled interpreter.
     (destination/'验证计算.cmd').write_bytes(('@echo off\r\ncd /d "%~dp0"\r\nresources\\app\\runtime\\python.exe -m openhydronet.cli solve resources\\app\\examples\\closed-loop.ohn.json -o smoke-result.json\r\nif errorlevel 1 (echo FAILED & pause & exit /b 1)\r\necho SUCCESS: see smoke-result.json\r\npause\r\n').encode('utf-8'))
-    (destination/'开始使用.txt').write_text('OpenHydroNet '+VERSION+'\n\n解压到可写目录后启动 OpenHydroNet.exe。不需要联网，不需要额外安装 Python。\n软件为开源预览版本，适合方案比选与工程辅助计算。\n先运行 验证计算.cmd 检查内核，再使用公开示例完成桌面流程验收。\n用户手册：resources/app/docs/USER_MANUAL.md\n已知限制：resources/app/docs/KNOWN_LIMITATIONS.md\n开源许可：resources/app/LICENSE；Electron/Chromium 许可在本目录 LICENSE 与 LICENSES.chromium.html。\n',encoding='utf-8')
+    (destination/'开始使用.txt').write_text(start_text(VERSION),encoding='utf-8')
     build=dict(version=VERSION,commit=commit,platform='win32-x64',assembly_host=sys.platform,windows_executed=False,inputs=manifest,protocol=1,format_version=1)
     (destination/'BUILD_MANIFEST.json').write_text(json.dumps(build,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     # A fresh checkout (CI) has no artifacts/ directory: it is git-ignored and must not be tracked.

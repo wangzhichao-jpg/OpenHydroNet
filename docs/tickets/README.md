@@ -40,4 +40,4 @@ SPEC-001 及后续重构 T-010 已完成（2026-10-26）。
 | [T-018](T-018.md) | W4-01 撤销后状态栏仍显示过期 | — | App.tsx | done |
 | [T-019](T-019.md) | W4-02 功率显示精度不一致 | — | App.tsx, BalanceResult.tsx | done |
 | [T-020](T-020.md) | W4-03 PDF 假设与验证可读性 | — | export.py | done |
-| [T-021](T-021.md) | W4-04 未签名提示与 SHA-256 说明 | — | build_windows.py, USER_MANUAL | todo |
+| [T-021](T-021.md) | W4-04 未签名提示与 SHA-256 说明 | — | build_windows.py, USER_MANUAL | done |
