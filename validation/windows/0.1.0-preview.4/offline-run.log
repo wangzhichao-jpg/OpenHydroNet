@@ -1,0 +1,20 @@
+before: WLAN profile=Internet | DNS github.com resolves | ping 223.5.5.5 True
+set Off -> Allowed
+access=Allowed wifi=Off
+offline check: WLAN profile=none | DNS github.com fails | ping 223.5.5.5 False
+验证计算.cmd rc=0 sec=0.8 out=SUCCESS: see smoke-result.json
+{"item":"P0-1b","at":"2026-10-27T12:57:21.298Z","ok":true,"startupMs":1272,"header":"O | H | OpenHydroNet | 供热与空调水系统工作台 | 0.1.0-preview.4 | 双末端闭式循环 · 公开教学示例 | 未保存修改 · 离线工程 · SI 计算内核 | 新建 / 模板 | 打开工程 | 保存 | ？ 帮助","checkStatus":"●\n模型检查通过，下一步点击“计算”\nCtrl+S 保存 · F5 计算 · Shift 多选","head":["设备 / ID","流量 
+{"item":"P0-2","at":"2026-10-27T12:57:27.764Z","ok":true,"head":["循环泵 · 虚构示例 · 相对转速","用户末端 1 流量 [m³/h]","用户末端 2 流量 [m³/h]","状态"],"rows":["0.6\t10.484\t8.082\t计算通过 · 末端低于设计流量（用户末端 1）, 末端低于设计流量（用户末端 2）","0.8\t13.992\t10.876\t计算通过 · 末端低于设计流量（用户末端 2）","1\t17.5\t13.679\t计算通过 · 末端低于设计流量（用户末端 2）","1.2\t21.
+{"item":"P0-3","at":"2026-10-27T12:57:39.099Z","ok":true,"before":[{"pid":27468,"ppid":31084,"name":"python.exe","cmd":"<pkg>\\resources\\app\\runtime\\python.exe -m openhydronet.cli serve"}],"during":[{"pid":27468,"ppid":31084,"name":"python.exe","cmd":"<pkg>\\resources\\app\\runtime\\python.exe -m
+{"item":"P0-4","at":"2026-10-27T12:57:41.140Z","ok":true,"button":"计算敏感性（7 次计算）","lines":["用户末端 1 流量 [m³/h]：影响最大：循环泵 · 虚构示例 · 相对转速（弹性 1：参数增加 1%，约增加 1%）","用户末端 2 流量 [m³/h]：影响最大：循环泵 · 虚构示例 · 相对转速（弹性 1.03：参数增加 1%，约增加 1.03%）"],"table":["观测量\t当前值\t循环泵 · 虚构示例 · 相对转速","弹性（导数）\t调节阀 1 · 开度","弹性（导数）\t调节阀 2 · 
+{"item":"P0-5","at":"2026-10-27T12:57:44.640Z","ok":true,"defaults":{"lower":"0.6","upper":"1.4"},"conclusion":"在给定调节范围内找到满足全部约束的工作点","plan":["循环泵 · 虚构示例 · 相对转速\t1\t1.06\t+0.06","调节阀 1 · 开度\t1\t1\t不变","调节阀 2 · 开度\t1\t1\t不变"],"notes":["首个可行点：循环泵 · 虚构示例 · 相对转速 1.135","尽量少调整（局部，不保证最小）：循环泵 · 虚构示例 · 相对转速
+{"item":"P0-6","at":"2026-10-27T12:57:47.545Z","ok":true,"modelBefore":{"pu1":"1","v1":"1","v2":"1"},"pairs":["用户末端 1 ← 调节阀 1","用户末端 2 ← 调节阀 2"],"conclusion":"平衡完成：各末端验证流量均在容差内","index":"最不利环路：用户末端 2（调节阀 2 保持全开）","table":["用户末端 1\t调节阀 1\t14.4\t0.22\t14.279\t-0.8%\t—","用户末端 2\t调节阀 2\t14.4\t1\t14.546\
+{"item":"main-pageerrors","at":"2026-10-27T12:57:47.546Z","errors":[]}
+{"item":"main-exit","at":"2026-10-27T12:57:54.970Z","exitMs":1189,"leftover":[]}
+{"item":"P0-7","at":"2026-10-27T12:58:08.451Z","ok":true,"duringNames":["OpenHydroNet.exe <pkg>\\OpenHydroNet.exe\"  \"--inspect=0\" \"--remote-debugging-p","OpenHydroNet.exe <pkg>\\OpenHydroNet.exe\" --type=gpu-process --user-data-dir=\"","python.exe <pkg>\\resources\\app\\runtime\\python.exe -m op
+{"item":"P0-8a","at":"2026-10-27T12:58:22.440Z","ok":true,"rows":["P1 P1\t31.178\t1.72\t3.1261\t—\t→ 正向","P2 P2\t13.679\t1.15\t2.3821\t—\t→ 正向","P3 P3\t13.679\t1.15\t2.3821\t—\t→ 正向","P4 P4\t31.178\t1.72\t3.1261\t—\t→ 正向","循环泵 · 虚构示例 PU1\t31.178\t—\t-18.499\t1,570\t→ 正向","调节阀 1 V1\t17.5\t—\t0.43221\
+{"item":"P0-8b","at":"2026-10-27T12:58:33.285Z","ok":true,"title":"双末端闭式循环 · 公开教学示例\n离线工程 · SI 计算内核","rowsIdentical":true,"rows":["P1 P1\t31.178\t1.72\t3.1261\t—\t→ 正向","P2 P2\t13.679\t1.15\t2.3821\t—\t→ 正向","P3 P3\t13.679\t1.15\t2.3821\t—\t→ 正向","P4 P4\t31.178\t1.72\t3.1261\t—\t→ 正向","循环泵 · 虚构示例 PU
+after tests: WLAN profile=none | DNS github.com fails | ping 223.5.5.5 False
+set On -> Allowed
+access=Allowed wifi=On
+reconnected after 7 s: WLAN profile=Internet | DNS github.com resolves | ping 223.5.5.5 True
