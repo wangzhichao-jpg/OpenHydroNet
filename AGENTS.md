@@ -43,6 +43,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - README 双语：`README.md` 英文（GitHub 默认），`README.zh-CN.md` 中文；改动功能说明时两份同步。
 
 ## 复盘记录（持续追加）
+- 2026-10-27 preview.5：发版前在 main 手动触发候选包流程，抓到 CI 上才出现的 E2E 竞态（点“退出”后程序先于点击确认关闭）——先预检再打标签的做法再次避免了废标签。会关闭应用的点击只容忍“已关闭”错误，退出与否另行断言。
 - 2026-10-27 preview.4：从未运行过的 CI 任务首跑即暴露 bug（`artifacts/` 在全新检出中不存在）；GitHub 境外机器访问清华镜像超时 → 发版前先手动触发一次候选包流程；CI 与 `download_windows.py` 均为“国内源优先、官方源备用”，版本锁定与校验不变。
 - 2026-10-27 preview.4：标签 CI 因托管 Xvfb 偶发截图失败而整体失败，SER8 的 token 无 Actions 权限无法重跑 → E2E 截图统一用 `tests/e2e-util.cjs` 的 `shot`（有限重试）；建议给 token 增加 Actions 读写。另：曾误称 CI 与本地组装包字节一致，实际 BUILD_MANIFEST 含组装主机，结论须先核对再写。
 - 2026-10-26 T-013：GitHub 推送偶发失败，但命令只打印 `tail -1` 且未检查退出码，几乎漏掉 → 新增 `tools/push-remotes.sh`，推送后核对远程 HEAD。

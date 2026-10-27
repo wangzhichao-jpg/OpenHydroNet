@@ -151,7 +151,13 @@ const alive = (pid) => {
     assert.match(await start.locator('#detail').innerText(), /ModuleNotFoundError/);
     assert.match(await start.locator('#hint').innerText(), /重新完整解压/);
     await shot(start, { path: path.join(out, '03-exit.png') });
-    await start.locator('#quit').click();
+    // "退出" closes the application, possibly before Playwright receives the click acknowledgement.
+    await start
+      .locator('#quit')
+      .click()
+      .catch((e) => {
+        if (!/has been closed/.test(e.message)) throw e;
+      });
     await Promise.race([exited, sleep(15000).then(() => assert.fail('application did not exit'))]);
   }
   console.log('PASS: startup progress, slow cold start, timeout retry and early exit');
