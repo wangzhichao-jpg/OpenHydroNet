@@ -92,7 +92,8 @@
 |分析任务与扫描|test_analysis_jobs.py|请求校验、精简记录、笛卡尔积顺序、CLI 进度行、任务取消/超时/并发上限|
 |敏感性矩阵|test_sensitivity_request.py|解析环路导数 √(36/300000) 与弹性 1、单侧差分、零基准无弹性|
 |可及性（桌面）|test_accessibility_request.py、test_accessibility_search.py、test_accessibility_refine.py|逐条约束检查与旧 API 一致、评估预算、尽量少调整与取整验算（示例 1.135→1.051→1.06）|
-|分析界面|tests/ui.analysis.cjs|真实 Electron：三个子页、曲线/CSV、可视区域、取消、过期、存为工况与应用/撤销|
+|水力平衡|test_balancing.py|手算小网（开度 0.5、最低泵速 √0.625）、等百分比反算往返、配对（无阀/多阀/反向）、压头不足/阀过大/小开度、取整超容差、示例两种模式|
+|分析界面|tests/ui.analysis.cjs|真实 Electron：四个子页、曲线/CSV、可视区域、取消、过期、存为工况与应用/撤销；平衡后主计算与验证流量一致|
 |文件/格式/CLI|test_project.py|原子文件往返、未知版本拒绝、非有限输入拒绝、命令行实际子进程|
 |协议/取消/过期导出|test_protocol.py|401 拒绝无令牌、任务归属、取消、未知任务、输入哈希不匹配拒绝|
 |图编辑|web/src/commands.test.ts|稳定 ID/引用、长度和 ζ 守恒、布局不改物理模型、历史分叉|

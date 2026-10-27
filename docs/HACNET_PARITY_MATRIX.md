@@ -2,7 +2,7 @@
 
 来源：用户提供《HACNet软件用户说明.docx》，SHA-256 见 [读取审计](REFERENCE_AUDIT.md)。P 为 document.xml/body 结构块序号，非页码；I 为嵌入 imageN.png。原文和截图不再分发。全部正文及 10 张图片已读取，没有独立 Word 表格。
 
-状态审计：0.1.0-preview.3；H14/X02 另含 main 分支 SPEC-001 进展（2026-10-26，尚未发版）。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
+状态审计：0.1.0-preview.3；H14/X02 另含 main 分支 SPEC-001/002 进展（2026-10-26，尚未发版）。**部分**不等于全部完成；**内核已验证**不等于桌面全部验收。阶段是交付目标，不是完成声明。测试均指实际存在的入口。
 
 |ID|原功能及出处|原交互/限制或歧义|对应功能及改进验收|阶段|实现状态|测试/验收入口|
 |---|---|---|---|---|---|---|
@@ -38,7 +38,7 @@
 |H30|动态过程仿真 I1,P10|状态/方程/步长未明确|分清稳态/扫描/控制热动态/水锤|C|时间状态未实现；没有把扫描冒充动态|docs/MODELS.md|
 |H31|参数赋值颜色 P81,95,98|颜色区分完成参数|文字/图标并行，不只靠颜色|A/B|部分：文字状态/数值/箭头已有，完整赋值状态图层待补|docs/ACCEPTANCE.md|
 |X01|新增：工况比较|原文未描述|快照/绝对值/差值/比例/归属|B|基础流程及跨温度各自密度/差值/比例已验证；批量方案待补|tests/ui.e2e.cjs、tests/ui.lifecycle.cjs|
-|X02|新增：优化/扫描/敏感性|原文未描述|变量上下界、逐项违反、结论性质|C|部分：扫描（1–2 参数、曲线、CSV）、敏感性矩阵、可及性已有桌面界面并经真实界面验收（main，未发版）；能耗/平衡优化未实现|tests/test_analysis.py、tests/test_analysis_jobs.py、tests/test_sensitivity_request.py、tests/ui.analysis.cjs|
+|X02|新增：优化/扫描/敏感性|原文未描述|变量上下界、逐项违反、结论性质|C|部分：扫描（1–2 参数、曲线、CSV）、敏感性矩阵、可及性、水力平衡（流量设定法、最低泵速、取整验证）已有桌面界面并经真实界面验收（main，未发版）；能耗优化未实现|tests/test_analysis.py、tests/test_analysis_jobs.py、tests/test_sensitivity_request.py、tests/test_balancing.py、tests/ui.analysis.cjs|
 |X03|新增：热输送/能耗|原文未给算法|水力功率和输入功率区分，有依据的效率|C|部分：水力功率/效率缺失处理已有；热/年耗能未实现|tests/test_solver.py、docs/MODELS.md|
 |X04|新增：API/批处理|原文未描述|CLI/API/哈希/版本/残差/任务|A/C|基础 API/CLI/协议已验证，后续设备接口待扩充|tests/test_project.py、tests/test_protocol.py|
 |X05|新增：映射导入/图像导出|原文未描述|导入预览校验，SVG/PNG|B|部分：已有设备 CSV/XLSX 字段/单位预览与原子应用/撤销、PNG/SVG 真正导出已验；整网创建导入/施工图待补|tests/ui.features.cjs、tests/ui.graph.cjs|

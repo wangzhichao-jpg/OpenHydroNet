@@ -2,6 +2,10 @@
 
 当前源码版本：`0.1.0-preview.3`。本项目正处于功能持续演进的开源预览阶段，具备完整的核心水力计算与桌面交互流程，持续完善水力分析与工程辅助能力。公开矩阵与技术文档均独立构建，不分发任何第三方未公开资源。
 
+## main 开发进展：SPEC-002 水力平衡（2026-10-26，未发版）
+
+按 [SPEC-002](specs/SPEC-002-hydraulic-balancing.md) 完成（T-011～T-014）：流量设定法、最低泵速与最不利环路、取整验证、平衡前后对比、存为工况/应用。Python 180 项、前端单元 52 项、6 套真实 Electron E2E。
+
 ## main 开发进展：SPEC-001 分析工作区（2026-10-26，未发版）
 
 扫描、敏感性、可及性桌面界面已按 [SPEC-001](specs/SPEC-001-analysis-ui.md) 完成（任务卡 T-001～T-009，见 [docs/tickets](tickets/README.md)）。每张卡单独提交，并经 GitHub CI 在 Linux/Windows 通过；Python 159 项、前端单元 43 项、6 套真实 Electron E2E。分工按 ADR-009：SER8 只做代码开发，媒体/宣传/分发在 PC 端。

@@ -5,7 +5,8 @@
 - 新增底部“分析”页：参数扫描（1–2 参数、曲线、CSV）、敏感性（调节量 × 观测量矩阵、弹性排序）、可及性（约束编辑、固定检查、有界局部搜索、尽量少调整、按设定精度取整并验算、存为工况/应用并可撤销）。
 - 新增 `/api/analysis-jobs` 与 `cli analyze`：独立子进程、进度、取消、300 s 超时；模型无效时返回一行中文错误。
 - 可及性搜索增加 800 次评估上限；旧 `sensitivity()` 对不存在的支路改为中文错误。
-- 开发流程：`AGENTS.md`、`GLOSSARY.md`、ADR-009、`docs/specs/` 与 `docs/tickets/`；CI 增加分析界面 E2E（Linux/Windows）。
+- 新增“水力平衡”子页（SPEC-002）：流量设定法求平衡阀开度、变频时求最低泵速与最不利环路、取整后验证、平衡前后泵扬程/流量/水力功率对比，可存为“平衡方案”或应用（一次撤销）。新增 `POST /api/balance/pairs` 配对预览。
+- 开发流程：`AGENTS.md`、`GLOSSARY.md`、ADR-009、`docs/specs/` 与 `docs/tickets/`；CI 增加分析界面 E2E（Linux/Windows）；`tools/push-remotes.sh` 推送后核对两端 HEAD。
 
 ## 0.1.0-preview.3 — 本地修复预览（未公开发布）
 

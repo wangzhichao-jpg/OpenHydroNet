@@ -149,3 +149,12 @@ def test_balance_runs_as_a_cancellable_analysis_job():
         assert done['status'] == 'completed' and done['result']['conclusion'] == 'balanced'
     finally:
         jobs.shutdown()
+
+
+def test_rounding_outside_a_tight_tolerance_is_reported_not_hidden():
+    # 0.01 steps leave about 1 % deviation in the example; a 0.1 % tolerance must flag it.
+    r = balance(example(), pump='PU1', lower=.5, upper=1.5, tolerance=.001)
+    assert r['conclusion'] == 'outside_tolerance' and r['changes']
+    assert any(abs(p['deviation']) > .001 for p in r['pairs'])
+    exact = balance(example(), pump='PU1', lower=.5, upper=1.5, step=None, tolerance=.001)
+    assert exact['conclusion'] == 'balanced'   # unrounded settings meet it: the gap is the step, not the method

@@ -27,4 +27,4 @@ SPEC-001 及后续重构 T-010 已完成（2026-10-26）。
 | [T-011](T-011.md) | 平衡内核：配对、流量设定法、最低泵速、取整验证 | — | balancing.py, analysis.py | done |
 | [T-012](T-012.md) | 水力平衡子页 | T-011 | BalanceView.tsx, balance.ts | done |
 | [T-013](T-013.md) | 保存为工况 / 应用 | T-012 | BalanceResult.tsx, App.tsx | done |
-| [T-014](T-014.md) | 文档、矩阵、收尾审查 | T-013 | docs/ | todo |
+| [T-014](T-014.md) | 文档、矩阵、收尾审查 | T-013 | docs/ | done |
