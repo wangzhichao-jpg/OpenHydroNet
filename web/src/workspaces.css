@@ -455,3 +455,23 @@
   color: #7a8d9f;
   margin-left: 2px;
 }
+.balance-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.balance-pair .field small {
+  display: none;
+}
+.balance-pair .field small.field-error {
+  display: block;
+}
+.balance-pair-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.78rem;
+  line-height: 1.8;
+}
+.balance-pair-list li.warn {
+  color: #a3410c;
+}

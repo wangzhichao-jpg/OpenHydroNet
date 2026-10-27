@@ -18,6 +18,7 @@ from uuid import uuid4
 from .validation import validate
 from .solver import model_hash
 from .analysis import check_request
+from .balancing import pair_balancing_valves
 from .export import result_csv,report_html
 from .project import check_project
 from .version import VERSION
@@ -180,6 +181,10 @@ def serve(port=0):
                 if path=='/api/analysis-jobs':
                     if not isinstance(payload,dict) or 'request' not in payload or 'owner' not in payload:raise ValueError('分析任务需要 request 和 owner')
                     return self.reply(202,jobs.start_analysis(payload['request'],payload['owner']))
+                if path=='/api/balance/pairs':
+                    if not isinstance(payload,dict) or not isinstance(payload.get('nodes'),list) or not isinstance(payload.get('edges'),list):
+                        raise ValueError('模型格式无效')
+                    return self.reply(200,pair_balancing_valves(payload))
                 if path=='/api/check-project':return self.reply(200,check_project(payload))
                 if path=='/api/fit-pump':return self.reply(200,fit_definition(payload))
                 if path=='/api/library/check':return self.reply(200,validate_entry(payload))

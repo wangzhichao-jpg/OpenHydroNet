@@ -571,12 +571,19 @@ export function gridSeries(rows: ScanRow[], observableIndex: number, secondLabel
   };
 }
 
-/** JSON of the model at a found accessibility point (frozen model + adjustments), or null. */
-export function foundPointSignature(result: any, frozenModel: any): string | null {
-  if (!result?.changes || result.conclusion !== 'feasible_point_found') return null;
+/** JSON of ``frozenModel`` with ``changes`` applied, or null (no changes / not applicable). */
+export function pointSignature(changes: any[] | null | undefined, frozenModel: any): string | null {
+  if (!changes) return null;
   try {
-    return JSON.stringify(applyAdjustments(frozenModel, result.changes));
+    return JSON.stringify(applyAdjustments(frozenModel, changes));
   } catch {
     return null;
   }
+}
+
+/** JSON of the model at a found accessibility point (frozen model + adjustments), or null. */
+export function foundPointSignature(result: any, frozenModel: any): string | null {
+  return result?.conclusion === 'feasible_point_found'
+    ? pointSignature(result.changes, frozenModel)
+    : null;
 }

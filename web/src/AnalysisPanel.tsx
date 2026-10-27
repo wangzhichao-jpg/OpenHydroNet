@@ -3,11 +3,13 @@ import React, { useState } from 'react';
 import ScanView from './ScanView';
 import AccessibilityView from './AccessibilityView';
 import SensitivityView from './SensitivityView';
+import BalanceView from './BalanceView';
 
 const MODES = [
   ['scan', '参数扫描'],
   ['sensitivity', '敏感性'],
   ['accessibility', '可及性'],
+  ['balance', '水力平衡'],
 ] as const;
 
 /** Ways an analysis result may change the project; both go through the document's undo history. */
@@ -48,6 +50,9 @@ export default function AnalysisPanel({
       </div>
       <div className="analysis-mode" hidden={mode !== 'accessibility'}>
         <AccessibilityView model={model} flowUnit={flowUnit} actions={actions} />
+      </div>
+      <div className="analysis-mode" hidden={mode !== 'balance'}>
+        <BalanceView model={model} flowUnit={flowUnit} actions={actions} />
       </div>
     </div>
   );

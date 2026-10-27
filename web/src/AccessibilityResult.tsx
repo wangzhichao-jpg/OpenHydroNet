@@ -10,6 +10,7 @@ import {
   fmt,
 } from './analysis';
 import type { AnalysisActions } from './AnalysisPanel';
+import PointActions from './PointActions';
 
 export default function AccessibilityResult({
   result,
@@ -84,34 +85,21 @@ export default function AccessibilityResult({
                 </tbody>
               </table>
               {satisfied && (
-                <div className="button-row" data-testid="found-actions">
-                  <button
-                    disabled={stale}
-                    onClick={() =>
-                      actions.onSaveScenario(
-                        applyAdjustments(frozenModel, result.changes),
-                        result.result,
-                        summary,
-                      )
-                    }
-                  >
-                    保存为工况快照
-                  </button>
-                  <button
-                    className="primary"
-                    disabled={stale || applied}
-                    onClick={() => actions.onApply(result.changes, summary)}
-                  >
-                    {applied ? '已应用' : '应用到当前工程'}
-                  </button>
-                  <small data-testid="found-actions-note">
-                    {stale
-                      ? '模型已修改，搜索结果过期，不能保存或应用；请重新搜索。'
-                      : applied
-                        ? `已应用到当前工程：${summary}。可撤销（Ctrl+Z）；请重新计算主结果。`
-                        : '保存工况不改变当前工程；应用后可撤销，需重新计算主结果。'}
-                  </small>
-                </div>
+                <PointActions
+                  testId="found-actions"
+                  stale={stale}
+                  applied={applied}
+                  summary={summary}
+                  staleNote="模型已修改，搜索结果过期，不能保存或应用；请重新搜索。"
+                  onSave={() =>
+                    actions.onSaveScenario(
+                      applyAdjustments(frozenModel, result.changes),
+                      result.result,
+                      summary,
+                    )
+                  }
+                  onApply={() => actions.onApply(result.changes, summary)}
+                />
               )}
               <h4>该点各约束</h4>
             </>

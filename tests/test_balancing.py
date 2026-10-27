@@ -131,6 +131,7 @@ def test_invalid_balance_requests(change, message):
 def test_balance_through_the_desktop_request_api():
     r = run_request(dict(kind='balance', model=example(), mode='variable', pump='PU1', lower=.5, upper=1.5))
     assert r['kind'] == 'balance' and r['index_terminal'] == 'T2' and r['tolerance'] == .05
+    assert r['fluid']['density_kg_m3'] > 990
     m = example()
     before = copy.deepcopy(m)
     run_request(dict(kind='balance', model=m, mode='fixed'))

@@ -55,3 +55,18 @@ def test_stale_export_rejected(backend):
     p=json.loads((Path(__file__).resolve().parents[1]/'examples/closed-loop.ohn.json').read_text())
     with pytest.raises(urllib.error.HTTPError) as exc:call(backend,'export',dict(project=p,result={'input_hash':'wrong'},kind='csv'))
     assert exc.value.code==400
+
+
+def test_balance_pairing_preview_and_job_over_http(backend):
+    p=json.loads((Path(__file__).resolve().parents[1]/'examples/closed-loop.ohn.json').read_text())
+    pairs=call(backend,'balance/pairs',p['model'])
+    assert [(x['terminal'],x['valve']) for x in pairs['paired']]==[('T1','V1'),('T2','V2')]
+    assert pairs['unpaired']==[] and pairs['ambiguous']==[]
+    job=call(backend,'analysis-jobs',dict(owner='o',request=dict(kind='balance',model=p['model'],mode='variable',pump='PU1')))
+    for _ in range(200):
+        done=call(backend,'analysis-jobs/'+job['id'])
+        if done['status']!='running':break
+        time.sleep(.05)
+    assert done['status']=='completed' and done['result']['index_terminal']=='T2'
+    with pytest.raises(urllib.error.HTTPError) as exc:call(backend,'balance/pairs',{'nodes':'x'})
+    assert exc.value.code==400

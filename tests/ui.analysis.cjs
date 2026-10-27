@@ -380,6 +380,61 @@ const inPanelView = (locator) =>
       'conclusion in view',
     );
     await page.screenshot({ path: path.join(out, '05-accessibility-undetermined.png') });
+
+    // ---- T-012: hydraulic balancing view (SPEC-002), from a freshly loaded example ----
+    await page.getByRole('button', { name: '新建 / 模板', exact: true }).click();
+    await page.getByTestId('start-example').click();
+    await page.getByTestId('select-PU1').waitFor();
+    await page.getByRole('button', { name: '分析', exact: true }).click();
+    await page.getByRole('button', { name: '水力平衡', exact: true }).click();
+    const bal = page.getByTestId('balance-view');
+    const pairList = bal.getByTestId('balance-pairs').locator('li');
+    await pairList.first().waitFor();
+    assert.deepEqual(await pairList.allInnerTexts(), [
+      '用户末端 1 ← 调节阀 1',
+      '用户末端 2 ← 调节阀 2',
+    ]);
+    const runBalance = bal.getByRole('button', { name: '计算水力平衡' });
+    // Invalid speed range is caught before running.
+    await bal.getByLabel('泵速下限', { exact: true }).fill('1.6');
+    await bal.getByLabel('泵速下限', { exact: true }).press('Enter');
+    await bal.getByText('泵速下限须小于上限，且在 0–2 之间').waitFor();
+    assert.equal(await runBalance.isDisabled(), true);
+    await bal.getByLabel('泵速下限', { exact: true }).fill('0.5');
+    await bal.getByLabel('泵速下限', { exact: true }).press('Enter');
+    // Variable speed: index circuit T2, speed 0.98, V1 0.22, V2 fully open, lower hydraulic power.
+    await runBalance.click();
+    const balConclusion = page.getByTestId('balance-conclusion');
+    await balConclusion.waitFor({ timeout: 60000 });
+    assert.equal(await balConclusion.innerText(), '平衡完成：各末端验证流量均在容差内');
+    assert.equal(
+      await page.getByTestId('balance-index').innerText(),
+      '最不利环路：用户末端 2（调节阀 2 保持全开）',
+    );
+    const balRows = page.getByTestId('balance-table').locator('tbody tr');
+    const balCells = async (i) => balRows.nth(i).locator('td').allInnerTexts();
+    const v1 = await balCells(0),
+      v2 = await balCells(1);
+    assert.deepEqual([v1[0], v1[1], v1[2], v1[3]], ['用户末端 1', '调节阀 1', '14.4', '0.22']);
+    assert.deepEqual([v2[3], v2[6]], ['1', '最不利环路，保持全开']);
+    for (const cells of [v1, v2])
+      assert.ok(Math.abs(parseFloat(cells[5])) <= 5, 'within ±5 %: ' + cells);
+    const cmp = await page.getByTestId('balance-compare').locator('tbody tr').allInnerTexts();
+    assert.match(cmp[0], /^泵相对转速\t1\t0\.98\t-2\.0%$/);
+    assert.match(cmp[3], /^泵水力功率 \[W\]\t.*\t-4\.\d%$/);
+    assert.equal(await page.getByTestId('balance-power-note').count(), 0);
+    assert.ok(await inPanelView(balConclusion), 'balance conclusion in view');
+    assert.ok(await inPanelView(runBalance), 'balance run button in view');
+    await page.screenshot({ path: path.join(out, '07-balance-variable.png') });
+    // Fixed speed, valves only: 0.20 / 0.40, and the power note explains why power rises.
+    await bal.getByLabel('平衡方式').selectOption('fixed');
+    assert.equal(await bal.getByLabel('泵速下限', { exact: true }).count(), 0);
+    await runBalance.click();
+    await page.getByTestId('balance-power-note').waitFor({ timeout: 60000 });
+    assert.equal((await balCells(0))[3], '0.2');
+    assert.equal((await balCells(1))[3], '0.4');
+    assert.equal(await page.getByTestId('balance-index').count(), 0);
+    await page.screenshot({ path: path.join(out, '08-balance-fixed.png') });
     assert.deepEqual(errors, []);
     console.log('analysis UI passed');
   } finally {

@@ -150,10 +150,12 @@ def balance(model, *, mode="variable", pump=None, lower=0.5, upper=1.5, speed=No
     terminals = [p["terminal"] for p in pairs] + pairing["unpaired"]
     current = float(edges[pump].get("speed", 1)) if pump else None
     counter = _Counter(3 + (2 + BISECTION_STEPS if mode == "variable" else 0), progress)
-    before = _snapshot(counter.solve(model), pump, terminals)
+    base = counter.solve(model)
+    before = _snapshot(base, pump, terminals)
     if before and before["pump"]: before["pump"]["speed"] = current
     out = dict(analysis="designated_flow_balancing", mode=mode, pump=pump, tolerance=tolerance, step=step,
-               ambiguous=pairing["ambiguous"], before=before, after=None, index_terminal=None)
+               ambiguous=pairing["ambiguous"], before=before, after=None, index_terminal=None,
+               fluid=base.get("fluid"))  # mass-unit display uses the kernel's own density
 
     def needs_more(state):
         return state is None or any(x["status"] == "needs_more_head" for x in state.values())
