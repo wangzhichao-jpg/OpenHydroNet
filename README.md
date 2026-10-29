@@ -118,6 +118,8 @@ Under standard water conditions (20 °C) with pump speed ratio 1.0:
 ## Build & Distribution
 
 - Source Repositories: [GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet) | [Gitee Mirror](https://gitee.com/bigtaurus/OpenHydroNet)
+- **Published pre-release (2026-10-29)**: [preview.5 on GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet/releases/tag/v0.1.0-preview.5) | [Gitee release](https://gitee.com/bigtaurus/OpenHydroNet/releases/tag/v0.1.0-preview.5). The original Windows CI ZIP is hosted on GitHub; Gitee's 100 MB attachment limit requires linking to that same package. See the [release notes and SHA-256](docs/releases/v0.1.0-preview.5.md) and [publication receipt](validation/windows/0.1.0-preview.5/发布记录.md).
+- Windows 11 regression passed through automated interaction and assistant screenshot review, not user-performed item-by-item acceptance. Windows 10 and offline operation were not re-tested for preview.5. Startup feedback appeared after about 2.6 s on the test PC; the taskbar OH icon is correct, but the group name remains Electron.
 - For standalone Windows x64 portable package assembly instructions, see [Build Documentation](docs/BUILD.md).
 - Video tutorials and feature demonstrations are cataloged in [Media & Video Records](media/README.md).
 

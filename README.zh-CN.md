@@ -87,6 +87,8 @@ print("质量与能量残差:", result['residuals'])
 ## 构建与发布
 
 - 官方仓库：[GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet) ｜ [Gitee 镜像](https://gitee.com/bigtaurus/OpenHydroNet)。
+- **已公开预发布（2026-10-29）**：[GitHub preview.5](https://github.com/wangzhichao-jpg/OpenHydroNet/releases/tag/v0.1.0-preview.5) ｜ [Gitee 发行版](https://gitee.com/bigtaurus/OpenHydroNet/releases/tag/v0.1.0-preview.5)。原 Windows CI ZIP 在 GitHub 下载；Gitee 因单附件 100 MB 上限链接到同一原包。见 [发布说明与 SHA-256](docs/releases/v0.1.0-preview.5.md) 和 [发布收据](validation/windows/0.1.0-preview.5/发布记录.md)。
+- Windows 11 已通过自动驱动＋助手截图复核，不是用户逐项人工验收；本版 Windows 10/断网未重测。测试 PC 上启动反馈约 2.6 s，任务栏 OH 图标正确但分组名仍为 Electron。
 - Windows x64 便携独立包构建流程参见 [构建说明](docs/BUILD.md)。
 - 演示与操作说明视频参见 [媒体与视频记录](media/README.md)。
 

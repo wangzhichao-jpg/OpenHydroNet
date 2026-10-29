@@ -2,9 +2,19 @@
 
 当前源码版本：`0.1.0-preview.5`。本项目正处于功能持续演进的开源预览阶段，具备完整的核心水力计算与桌面交互流程，持续完善水力分析与工程辅助能力。公开矩阵与技术文档均独立构建，不分发任何第三方未公开资源。
 
-## preview.4 Windows 验收与 preview.5 修复（2026-10-27）
+## preview.5 已公开预发布（2026-10-29）
 
-PC 端在 Windows 11 实机自动驱动验收 preview.4 草稿包：P0-1～P0-8、缩放与断网 P1 通过；抽查发现首次冷启动超时（W4-06，阻断）及 W4-01/02/03/05/07。用户决定修好再发：preview.4 草稿保留不发布，标签不动；修复已在 preview.5 完成（T-015～T-022，每卡先写失败测试、CI 两平台通过），Windows 实机效果待 PC 回归。详见 [验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。
+用户已明确批准发布，PC 发布 GitHub 原草稿 **425619943**，并在 Gitee 使用既有标签创建发行版 **1253849**，均保留 **Pre-release**，不是稳定版。发布收据提交 `1a9a5d4`，回归提交 `2847f27`；标签 `v0.1.0-preview.5` 仍指向 `743db0e`，两端附注标签对象及提交未变，无历史改写。
+
+- 公开入口：[GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet/releases/tag/v0.1.0-preview.5) · [Gitee](https://gitee.com/bigtaurus/OpenHydroNet/releases/tag/v0.1.0-preview.5)。Windows 原 ZIP 来自标签 CI，在 Windows 上组装、随包求解并审计通过；SHA-256 `6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7`。
+- GitHub 原 5 附件未变；Gitee 因单附件 100 MB 上限拒绝 220,465,515 字节 ZIP，正文链接 GitHub 原包，并上传其余 4 个小附件。发布后匿名重下载 GitHub 5/5、Gitee 4/4 均与原文件摘要/字节一致，无拆分、重打包或替换。
+- Windows 11：**PC 端自动驱动＋助手截图复核 R1～R4 均通过，不是用户逐项人工验收**。两次带下载标记、全新解压无预热的首次启动 14.03 / 14.09 s，再次启动 1.77 / 1.53 s；T2 均为 13.679 m³/h，每次退出进程 0；W4-06 在本 PC 两次有效样本中未再复现。P0-1～P0-8、真实 100/125/150% 缩放、原生对话框标题、PDF 中文表格及窗口/任务栏 OH 图标通过。
+- 验证边界：本版 Windows 10、断网未重做；无用户逐项人工验收或所有 Windows 设备保证。非阻断观察为启动反馈约 2.6 s、任务栏分组名仍为 Electron（OH 图标正确；EXE 文件图标仍为默认）。
+- 证据：[验收记录](../validation/windows/0.1.0-preview.5/验收记录.md) · [发布记录](../validation/windows/0.1.0-preview.5/发布记录.md) · [发布校验](../validation/windows/0.1.0-preview.5/发布校验.json) · [发布说明](releases/v0.1.0-preview.5.md)。
+
+## preview.4 Windows 验收与 preview.5 修复（历史，2026-10-27）
+
+preview.4 的 P0、缩放与断网通过，但首次冷启动超时（W4-06）阻断发布；preview.4 草稿 425335032 继续保留，未发、未删、未编辑，标签不动。修复 T-015～T-022 已在 preview.5 完成，并经上述 Windows 回归和公开预发布；不把新版通过反写为旧版无问题。见 [preview.4 验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。
 
 ## preview.4：SPEC-002 水力平衡（2026-10-26）
 
@@ -14,10 +24,10 @@ PC 端在 Windows 11 实机自动驱动验收 preview.4 草稿包：P0-1～P0-8�
 
 扫描、敏感性、可及性桌面界面已按 [SPEC-001](specs/SPEC-001-analysis-ui.md) 完成（任务卡 T-001～T-009，见 [docs/tickets](tickets/README.md)）。每张卡单独提交，并经 GitHub CI 在 Linux/Windows 通过；Python 159 项、前端单元 43 项、6 套真实 Electron E2E。分工按 ADR-009：SER8 只做代码开发，媒体/宣传/分发在 PC 端。
 
-## 本轮实做：Windows 回执与高阻比修复
+## 历史 preview.3：Windows 回执与高阻比修复
 
 1. 已取回、SHA-256/CRC 核验并审阅 preview.2 Windows 反馈：Windows 11 x64、中文路径、150% 实际系统缩放，P0 为 10 通过/2 跳过，P1 为 5 通过/1 跳过。执行方式是另端 AI 桌面自动化和截图审阅，不是真人签字。详见 [回执与问题处理](WINDOWS_FEEDBACK_PREVIEW2.md)。
-2. 修复 PDF 缺失功率显示 `None`，同时保留缺失值与真实 0 的区别；修复结果过期后底部残留“计算通过”，包括晚到旧输入结果。开发侧回归已通过，新版 Windows 原生复核未执行。
+2. 修复 PDF 缺失功率显示 `None`，同时保留缺失值与真实 0 的区别；修复结果过期后底部残留“计算通过”，包括晚到旧输入结果。开发侧回归已通过，该阶段的 Windows 原生复核未执行；后续 preview.5 的已测范围见上方，不把新版回归改写为 preview.3 的验收。
 3. 求解算法升级为 `sparse-head-flow-newton-trf-v2`：稀疏完整牛顿方向、行列均衡及原残差回溯，必要时回退 TRF。没有改变物理输入、有符号 `q|q|`、止回互补或验收门槛，没有只增大默认预算。
 4. 新增独立自建高阻比解析网络：反向、小流量、大于稠密回退阈值的耦合网络、仅正耗水网络、预算失败与超时。期望值来自先指定水头/阻力的基本算术，不复制论文表格。
 5. 两个私有文献衍生固定阻力网络均收敛；原失败例用 17 次残差评估，质量残差约 `8.62e-18 m³/s`、能量约 `9.91e-12 m`，并与不调用生产内核的守恒环流解相符。仅证明网络代数回归，不等于验证真实摩阻、高温物性或现场精度。
@@ -44,7 +54,8 @@ PC 端在 Windows 11 实机自动驱动验收 preview.4 草稿包：P0-1～P0-8�
 
 ## 验证与证据
 
-- 本轮最终核心 **91 passed，4.14 s**，TypeScript **18**、Node 文档/存储 **11**；构建和 Prettier 通过。
+- preview.5 开发基线（2026-10-27）：Python **182**、TS 单元 **52**、Node 单元 **22**、Linux/Xvfb **7 套**真实 Electron；标签 CI 两平台通过，`ui.startup` 在 Windows 明确 SKIP。Windows PC 回归与发布后下载核验见上方及 [VALIDATION](VALIDATION.md)，本次纯文档更新未重新运行产品测试。
+- 历史 preview.3 最终核心 **91 passed，4.14 s**，TypeScript **18**、Node 文档/存储 **11**；构建和 Prettier 通过。
 - preview.3 五套真实 Electron 入口均通过：ui/graph/lifecycle/features/jobs；额外录制动作 smoke 通过。Linux/Xvfb，不冒充 Windows 原生。
 - 已生成数值摘要 `artifacts/numerical/0.1.0-preview.3/ROBUSTNESS.json` 和完整开发侧收据 `artifacts/VALIDATION-0.1.0-preview.3.json`；软件/录制提交与核心证据均为 bc2ff1b。
 - 历史 preview.2：软件基线 72，验收辅助后 77；18/11 命令/存储测试和五 UI 均通过。实际候选、源码/文档/示例与证据见同版本交付索引。
@@ -61,7 +72,7 @@ PC 端在 Windows 11 实机自动驱动验收 preview.4 草稿包：P0-1～P0-8�
 - 修复候选目录的软件/摘要 2 项及补充源码/文档/示例/高阻工程/隔离启动器/说明/索引/校验 13 项均已上传、回读核验。新版启动器仅生成/文本核对，不冒充已原生执行。
 - 核心验证收据收集早于媒体完成，保留当时 new_version_media_recorded=false；后续媒体事实由独立 MEDIA_QA/最终音轨报告记录，不反写旧快照。
 - 旧 `prepare_windows_validation.py` 是 preview.2 冻结工具，拒绝拿新版内核冒充旧参考；不自动覆盖已交付验收包。
-- 没有公开 GitHub/Gitee 仓库、标签、公开下载/观看链接或二维码；还需用户确认发布目标。
+- GitHub/Gitee 仓库、preview.5 标签及下载入口已公开，见上方发布记录；preview.1～preview.4 交付物保留历史归属，不换贴 preview.5 标签。旧视频的私有网盘交付不等于 preview.5 公开视频发行，未据此新增播放链接或二维码。
 
 ## CNKI 资料范围
 
@@ -88,7 +99,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:jobs
 
 ## 下一步仍未完成
 
-1. B：桌面可及性约束与分析结果、单线映射/供回筛选、子网/注释、完整参数/打印、整网创建式表格导入、多泵多源独立例。
-2. C：有界平衡/能耗优化、稳态热输送/混合、带真实时间状态的控制/热动态（扫描/敏感性/可及性/水力平衡界面已在 preview.4 提供）。
-3. A 质量：更多交叉参数/组合、密集标签避让、可调面板、异常退出/断电/长稳、Windows 补测和新版复测。
-4. 新版视频真人试听和新手确认；成片/技术 QA/私有网盘交付已经完成，不等于公开视频发行。公开发布目标确认后才能安全发布同版本同标签。
+1. B：单线映射/供回筛选、子网/注释、完整参数/打印、整网创建式表格导入、多泵多源独立例；可及性约束与分析结果桌面流程已实现并在 preview.5 回归。
+2. C：有界平衡/能耗优化、稳态热输送/混合、带真实时间状态的控制/热动态（扫描/敏感性/可及性/水力平衡界面首次随 preview.5 公开发布，不是能耗优化器）。
+3. A 质量：更多交叉参数/组合、密集标签避让、可调面板、异常退出/断电/长稳，以及本版尚未重测的 Windows 10/断网等环境；不把已完成的 Windows 11 R1～R4 继续列为待回归。
+4. 新版演示视频、真人试听和新手确认；历史 preview.3 成片/技术 QA/私有网盘交付不等于 preview.5 公开视频发行。软件预发布已获批准并完成，不据此推定视频公开上传也已获授权。

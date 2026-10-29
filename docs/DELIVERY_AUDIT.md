@@ -1,6 +1,15 @@
 # 预览交付审计
 
-## preview.3 当前实际交付
+## 当前：preview.5 已公开预发布（2026-10-29）
+
+- 用户已明确批准，PC 发布 GitHub 原草稿 425619943，并在 Gitee 以既有标签创建发行版 1253849，均保留 Pre-release。公开入口：[GitHub](https://github.com/wangzhichao-jpg/OpenHydroNet/releases/tag/v0.1.0-preview.5) · [Gitee](https://gitee.com/bigtaurus/OpenHydroNet/releases/tag/v0.1.0-preview.5)。
+- 原 Windows 标签 CI ZIP 为 220,465,515 字节，SHA-256 `6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7`；在 Windows 上组装、随包求解并审计通过，未经拆分、重打包或替换。
+- Windows 11 真机自动驱动＋助手截图复核 R1～R4 已通过（回归提交 `2847f27`），不是用户逐项人工验收；本版 Windows 10/断网未重测。两次有效冷启动 14.03 / 14.09 s，退出进程 0；启动反馈约 2.6 s、任务栏分组名仍为 Electron（OH 图标正确）为非阻断观察。
+- GitHub 原 5 附件未变；Gitee ZIP 被服务器以 100 MB 上限拒绝（HTTP 400），正文链接 GitHub 原包并上传 4 个原始小附件。发布后匿名重下载 GitHub 5/5、Gitee 4/4 均与原文件字节/摘要一致。
+- preview.4 草稿 425335032 保持原样，未发未删；两端 preview.4/preview.5 附注标签对象与提交均未变。软件公开预发布不等于稳定版、A/B/C 总验收或新版视频已公开。
+- 发布收据提交 `1a9a5d4`：[发布记录](../validation/windows/0.1.0-preview.5/发布记录.md) · [发布校验](../validation/windows/0.1.0-preview.5/发布校验.json)。本次只更新文档，不重写历史交付快照或附件。
+
+## preview.3 实际交付（历史）
 
 - 软件/录制提交：`bc2ff1b7515cd6b3db3a2eac4e90ef1c48e07264`；源码/文档/示例交付快照：`c395fbd1b40d9bb465ad4e19cddf5be6c0f05cff`。本节是其后的纯文档审计补充，不反写已交付 ZIP、核心收据或软件构建提交。
 - Windows x64：220,330,491 字节，SHA-256 `a1d875121023505e0d5f710dd2005d54d887f44b5188098825a0932d97166935`。实际 ZIP CRC、x64 PE、依赖/许可、20 个运行时文件与已验证字节一致；新版本尚未 Windows 原生复测。
@@ -13,7 +22,7 @@
 - preview.2 Windows 11 回执为有条件通过：10 项 P0/5 项 P1 通过，其余真实断网/缩放/异常恢复仍待补；AI 原生自动化不是真人签字。两个显示问题已在 preview.3 开发修复，不把旧版本证据转授新版。
 - 历史 preview.1 视频与 preview.2 软件/验收 ZIP 摘要均保持不变。B/C 余项、真人新手、Windows 补测及 GitHub/Gitee/公开视频发布仍未完成，不能宣称总验收或全面超越。
 
-下文保留各历史版本**当时**的判断，当前进度以上节、PROJECT_STATUS 和同版本索引为准。
+本节及下文保留各历史版本**当时**的判断（包括当时的“未发布”“待复测”），不是 preview.5 当前状态。当前进度以本文顶部、[PROJECT_STATUS](PROJECT_STATUS.md) 和 preview.5 发布收据为准；不反写旧版测试结论。
 
 ## preview.2 增量状态（历史）
 

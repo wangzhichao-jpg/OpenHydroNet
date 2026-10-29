@@ -2,11 +2,15 @@
 
 当前源码版本：0.1.0-preview.5。历史版本解析/性能基线保持原归属。记录真实执行，不把编译、Linux UI 或另端自动化等同于全项 Windows/工程验收；没有真人新手测试。
 
-## preview.5 Windows 验收问题修复
+## preview.5 Windows 修复、回归与公开预发布
 
 - 求解内核算法与工程格式未改。修复 preview.4 Windows 验收发现的问题：首次冷启动超时（W4-06，启动窗口、120 s 时限、分类失败与重试）、撤销后状态文字（W4-01）、功率显示精度（W4-02）、PDF 可读性（W4-03）、未签名与 SHA-256 说明（W4-04）、运行按钮可见性（W4-05）、中文对话框标题与窗口图标（W4-07）。
 - SER8 实际执行（2026-10-27）：Python 182 项、TS 单元 52 项、Node 单元 22 项（含启动等待 8 项，Linux/Windows CI 均运行）、7 套真实 Electron（Linux/Xvfb；新增 `ui.startup` 覆盖 20 s 慢启动、超时重试、提前退出，仅 Linux）。各修复均先写出失败测试。
-- 未执行：Windows 实机冷启动（带下载标记、解压后立即双击）及各修复的 Windows 目视复核——交 PC 回归（`docs/releases/HANDOFF-0.1.0-preview.5.md`）。
+- Windows PC 回归（2026-10-29，提交 `2847f27`）：**R1～R4 全部完成，通过**。方式为真机自动驱动＋助手截图复核，不是用户逐项人工验收。R1 使用同一原 ZIP，在两个新目录资源管理器解压，ZIP/EXE 均 ZoneId=3，无预热，原生 ShellExecute 与鼠标确认运行；首次进入工作台 14.03 / 14.09 s，再次启动 1.77 / 1.53 s，T2 均为 13.679 m³/h，每次退出进程 0。等待秒数递增，Round5 已等待 11 s 时截到慢启动提示，启动窗口随后自动关闭，W4-06 在本 PC 两次有效样本中未再复现。
+- R2：强制 1 ms 超时、中文提示、重试、退出、清除诊断变量后正常启动与无残留通过。R3：P0-1～P0-8 全部通过；R4：W4-01/02/03/04/05/07 通过，含真实 100/125/150% 系统缩放、原生对话框标题、PDF 中文表格。窗口与任务栏 OH 图标均已复核。非阻断观察：运行操作到等待窗口可见约 2.6 s（含操作/轮询开销）；任务栏分组名及 EXE 文件图标仍为 Electron。
+- 初轮锁屏下的三次观察未形成有效产品启动样本；150 s 为观察器超时，不是产品超时，历史诊断保留但不计通过或失败。完整原始结果及截图见 [preview.5 验收记录](../validation/windows/0.1.0-preview.5/验收记录.md)。**本版未重测 Windows 10、断网，也未做用户逐项人工验收**；不继承 preview.4 的断网结论，不外推到所有设备。
+- 公开预发布（2026-10-29，收据提交 `1a9a5d4`）：用户明确批准后，PC 发布 GitHub 原草稿 ID 425619943，并在 Gitee 以既有标签创建发行版 ID 1253849，均为 Pre-release。标签 `v0.1.0-preview.5` 仍指向 `743db0e`；包来自 [标签 CI 40521227487](https://github.com/wangzhichao-jpg/OpenHydroNet/actions/runs/40521227487)，在 Windows 上组装、随包求解并审计通过。Windows 启动等待的 8 项 Node 单元运行；`ui.startup` 因 POSIX 替身仅在 Linux 执行，Windows 上明确 SKIP，其真实冷启动由上述 PC 回归补齐。
+- 发布后匿名下载核验：GitHub 5/5、Gitee 4/4 附件均与原文件大小/摘要一致。原 ZIP 220,465,515 字节，SHA-256 `6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7`；Gitee 原 ZIP 上传因 100 MB 上限被拒绝，改为正文链接 GitHub 原包，无拆分、重打包或替换。preview.4 草稿及两端既有标签保持不变。见 [发布记录](../validation/windows/0.1.0-preview.5/发布记录.md) 与 [发布校验](../validation/windows/0.1.0-preview.5/发布校验.json)。
 
 ## preview.4 分析工作区与水力平衡
 

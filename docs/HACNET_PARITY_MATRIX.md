@@ -24,7 +24,7 @@
 |H16|图形结果 P13,22,I2|显示定制|流量/流速/水头差着色、数字、反向箭头|A|部分：基础结果截图已检查，所有着色/反向组合待扩测|tests/ui.e2e.cjs|
 |H17|数据文档 P31,I2|汇总文本|CSV/XLSX、完整计算报告|A/B|部分：CSV/PDF 和真实参数/结果 XLSX 通过；更完整报告定制待补|tests/test_library_table.py、tests/ui.features.cjs|
 |H18|查错帮助 P24|自动查错/连机帮助|离线中文帮助、定位、解释、示例|A/B|部分：基础流程通过，完整帮助覆盖待补|docs/USER_MANUAL.md、tests/ui.e2e.cjs|
-|H19|新建/开/存 P53–57,I2–3|单文档、退出询问保存|原子工程/版本/草稿恢复|A|部分：桌面往返/退出保存取消、UTF-8/损坏草稿保护、存储半写/同步/重命名故障已验；Windows/真实崩溃断电待补|tests/storage.test.cjs、tests/ui.lifecycle.cjs、tests/ui.jobs.cjs|
+|H19|新建/开/存 P53–57,I2–3|单文档、退出询问保存|原子工程/版本/草稿恢复|A|部分：桌面往返/退出保存取消、UTF-8/损坏草稿保护、存储半写/同步/重命名故障已验；Windows 11 preview.5 保存/重开及退出清理已回归，真实崩溃断电/其他环境待补|tests/storage.test.cjs、tests/ui.lifecycle.cjs、tests/ui.jobs.cjs|
 |H20|打印预览/打印/设置 I2–3,P49|工具栏命令|打印样式与 PDF 输出|B|部分：实际 PDF 已生成，打印预览/设置 UI 未完成|tests/ui.e2e.cjs|
 |H21|子网 I2,I8|具体语义未明确|分组/嵌套与 ID 追溯|B|待实现，不宣称还原未知语义|docs/ROADMAP.md|
 |H22|热源 I2–3,P42|直连/间连/混水/多源应用，算法未明确|多边界/多泵、独立热源/混合定义|B/C|部分：水力多边界已有，热力耦合未实现|docs/MODELS.md|
@@ -32,7 +32,7 @@
 |H24|注释 I2–3|AB 工具|独立注释图层|B|待实现|docs/ROADMAP.md|
 |H25|移动/删/截断 I2–3|工具切换|稳定 ID、撤销、按比例守恒拆分|A/B|部分：命令/拆分撤销 E2E 通过，全部鼠标组合待扩测|web/src/commands.test.ts、tests/ui.e2e.cjs|
 |H26|改变流向 I2–3|支路翻转|引用不变，泵/流控物理方向提示|A/B|部分：界面已有，专用反转图命令验收待补|docs/ACCEPTANCE.md|
-|H27|正交/缩放 I2–3|工具栏切换|网格吸附/正交/适配/平移|A|部分：真实画布已检查，高 DPI/多显示器待补|tests/ui.e2e.cjs|
+|H27|正交/缩放 I2–3|工具栏切换|网格吸附/正交/适配/平移|A|部分：真实画布已检查，Windows 11 preview.5 分析页 100/125/150% 缩放已回归，多显示器/全部画布高 DPI 组合待补|tests/ui.e2e.cjs|
 |H28|供/回/子网显示 I2|单线视图切换|展开映射、图层筛选|B|部分：展开 API 通过，视图筛选未实现|tests/test_analysis.py|
 |H29|同程/异程/环网 P10,42|任意拓扑宣传，不作精度参照|独立解析环网与公开网格基准|A/B|部分：多环/基准通过，复杂工程交叉工具验证待补|tests/test_solver.py、tools/benchmark.py|
 |H30|动态过程仿真 I1,P10|状态/方程/步长未明确|分清稳态/扫描/控制热动态/水锤|C|时间状态未实现；没有把扫描冒充动态|docs/MODELS.md|
@@ -43,6 +43,8 @@
 |X04|新增：API/批处理|原文未描述|CLI/API/哈希/版本/残差/任务|A/C|基础 API/CLI/协议已验证，后续设备接口待扩充|tests/test_project.py、tests/test_protocol.py|
 |X05|新增：映射导入/图像导出|原文未描述|导入预览校验，SVG/PNG|B|部分：已有设备 CSV/XLSX 字段/单位预览与原子应用/撤销、PNG/SVG 真正导出已验；整网创建导入/施工图待补|tests/ui.features.cjs、tests/ui.graph.cjs|
 
-Windows 补充：preview.4 由 PC 端在 Windows 11 实机自动驱动验收，P0-1～P0-8 与缩放/断网 P1 通过，但首次冷启动超时（W4-06）阻断发布，修复进入 preview.5；不据此把任何 H/X 项升级为完成。详见 [验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。preview.2 已收到 Windows 11 中文路径、150% 系统缩放的条件验收回执，10 项 P0/5 项 P1 通过；其余子项和新版复测仍待补，不能把矩阵全部升级为完成。详见 [回执与边界](WINDOWS_FEEDBACK_PREVIEW2.md)。
+Windows 补充（2026-10-29）：preview.5 的 Windows 11 **真机自动驱动＋助手截图复核** R1～R4 已通过，含两次带下载标记的全新解压冷启动、P0-1～P0-8、100/125/150% 实际缩放、原生对话框标题、PDF 中文表格及退出清理；用户已明确批准，GitHub/Gitee 均已公开预发布。见 [preview.5 验收记录](../validation/windows/0.1.0-preview.5/验收记录.md) 与 [发布记录](../validation/windows/0.1.0-preview.5/发布记录.md)。不是用户逐项人工验收，本版 Windows 10/断网未重测，不据此把任何 H/X 项整体升级为完成。启动反馈约 2.6 s、任务栏分组名仍为 Electron（OH 图标正确）是已披露的非阻断观察。
+
+历史：preview.4 的 P0/缩放/断网通过，但首次冷启动超时（W4-06）阻断其发布，草稿继续保留；见 [preview.4 验收记录](../validation/windows/0.1.0-preview.4/验收记录.md)。preview.2 的条件验收仅适用于该版本，见 [回执与边界](WINDOWS_FEEDBACK_PREVIEW2.md)，不自动转授新版。
 
 **全面超过的判据**：H01–H31 全部有可重复验收记录，且 X01–X05 公开承诺完成，A/B/C 总验收还包含 Windows 实际运行、双平台同提交同标签及两条实际视频。当前不满足，禁止称为完整替代品或正式成品。
