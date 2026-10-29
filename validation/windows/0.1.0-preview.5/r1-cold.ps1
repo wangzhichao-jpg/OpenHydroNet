@@ -63,7 +63,7 @@ try {
     }
     $clock=[Diagnostics.Stopwatch]::StartNew(); $clickedAt=$null
     $obs=[ordered]@{ run=$run; launcherPid=$launcher.Id; warningSeen=$false; startupSeen=$false; startupSamples=@(); success=$false }
-    $first=$false; $slow=$false; $main=$null
+    $first=$false; $slow=$false; $main=$null; $lastSample=-100; $slowHintCaptured=$false
     while ($clock.Elapsed.TotalSeconds -lt 150) {
       $launchers=@([uint32]$launcher.Id)
       $apps=@(Get-Process OpenHydroNet -EA SilentlyContinue | Where-Object { $_.Path -like "$app*" } | ForEach-Object { [uint32]$_.Id })
@@ -74,7 +74,7 @@ try {
         $obs.warningSeen=$true
         $obs.warningTitle=$warn.title
         if ($run -eq 1) { Capture-Window $warn.hwnd (Join-Path $shots '01-下载安全警告.png') | Out-Null }
-        # Set foreground, then standard BM_CLICK (the checkbox is NOT unchecked).
+        # Native mouse click on the foreground Run button; the checkbox is NOT unchecked.
         $clickedAt=$clock.Elapsed.TotalSeconds
         $clicked=[WL]::ClickButtonPhysical([IntPtr]$warn.hwnd,'运行(R)')
         if (-not $clicked) { $clicked=[WL]::ClickButtonPhysical([IntPtr]$warn.hwnd,'Run') }
@@ -96,11 +96,21 @@ try {
           Capture-Window $start.hwnd (Join-Path $shots "run$run-03-超过10秒.png") | Out-Null
           $obs.startupSamples+=,@{ seconds=[math]::Round($since,1); text=@(Window-Names $start.hwnd | Where-Object { $_ -match '正在|已等待|比平时|启动失败' }) }
         }
+        if ($since-$lastSample -ge 2) {
+          $lastSample=$since
+          $sample=@(Window-Names $start.hwnd | Where-Object { $_ -match '正在|已等待|比平时|启动失败' })
+          $obs.startupSamples+=,@{ seconds=[math]::Round($since,1); text=$sample }
+          if (-not $slowHintCaptured -and ($sample -match '比平时慢')) {
+            Capture-Window $start.hwnd (Join-Path $shots "run$run-03b-比平时慢提示.png") | Out-Null
+            $slowHintCaptured=$true
+          }
+        }
       }
       $main=$own | Where-Object { $_.cls -eq 'Chrome_WidgetWin_1' -and $_.w -ge 1500 } | Select-Object -First 1
       if ($main) {
         $obs.success=$true; $obs.mainSeconds=[math]::Round($since,2); $obs.mainTitle=$main.title
         $obs.startupStillVisible=($null -ne $start)
+        $obs.slowHintObserved=$slowHintCaptured
         Capture-Window $main.hwnd (Join-Path $shots "run$run-04-工作台.png") | Out-Null
         break
       }
@@ -130,6 +140,7 @@ try {
       Capture-Window $main.hwnd (Join-Path $shots 'run1-05-公开示例计算-T2.png') | Out-Null
       $obs.exampleCalculation='native mouse click on visible welcome card, F5, scroll result table; screenshot for visual verification'
       $obs.exampleText=@(Window-Names $main.hwnd | Where-Object { $_ -match '13.679|计算通过' })
+      $obs.iconInspection=@(& "$PSScriptRoot\native-frame.ps1" -Name "R1-$Round-解锁补测图标")
     }
     # WM_CLOSE on the native window = titlebar x; welcome is unedited, so no save dialog is expected.
     $qt=[Diagnostics.Stopwatch]::StartNew()

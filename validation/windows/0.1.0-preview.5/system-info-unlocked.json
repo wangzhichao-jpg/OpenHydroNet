@@ -1,0 +1,17 @@
+{
+    "capturedAt":  "2026-10-29T20:41:01.9035133+08:00",
+    "caption":  "Microsoft Windows 11 Home China",
+    "version":  "10.0.26300",
+    "build":  "26300.9711",
+    "scalingDpi":  144,
+    "foregroundProcess":  "chrome",
+    "desktopUnlocked":  true,
+    "userAction":  "User confirmed desktop unlock; regression inputs subsequently automated",
+    "packageProcessesRemaining":  0,
+    "validColdRounds":  [
+                            4,
+                            5
+                        ],
+    "zipBytes":  220465515,
+    "zipSha256":  "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7"
+}

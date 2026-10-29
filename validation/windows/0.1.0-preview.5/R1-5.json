@@ -1,0 +1,129 @@
+﻿{
+    "round":  5,
+    "date":  "2026-10-29T20:27:03.9240768+08:00",
+    "zipSha256":  "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+    "zipZoneId":  3,
+    "markerSource":  "explicit browser-equivalent ADS on API-downloaded original ZIP",
+    "prewarmed":  false,
+    "expectedFiles":  2890,
+    "expectedBytes":  562829578,
+    "method":  "Explorer Shell.Application CopyHere then ShellExecute with no app arguments",
+    "launches":  [
+                     {
+                         "run":  1,
+                         "launcherPid":  40532,
+                         "warningSeen":  true,
+                         "startupSeen":  true,
+                         "startupSamples":  [
+                                                {
+                                                    "text":  [
+
+                                                             ],
+                                                    "seconds":  2.7
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 1 秒"
+                                                             ],
+                                                    "seconds":  2.7
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 2 秒"
+                                                             ],
+                                                    "seconds":  4.8
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 4 秒"
+                                                             ],
+                                                    "seconds":  6.8
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 7 秒"
+                                                             ],
+                                                    "seconds":  8.9
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 9 秒"
+                                                             ],
+                                                    "seconds":  11
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 已等待 9 秒"
+                                                             ],
+                                                    "seconds":  11
+                                                },
+                                                {
+                                                    "text":  [
+                                                                 "  Text: 正在启动计算内核…",
+                                                                 "  Text: 比平时慢：首次启动或杀毒软件扫描刚解压的文件时，可能需要一分钟左右，请稍候。",
+                                                                 "  Text: 已等待 11 秒"
+                                                             ],
+                                                    "seconds":  13
+                                                }
+                                            ],
+                         "success":  true,
+                         "warningTitle":  "Open File - Security Warning",
+                         "securityClick":  "native foreground mouse click; button found=True",
+                         "startupVisibleSeconds":  2.65,
+                         "mainSeconds":  14.09,
+                         "mainTitle":  "OpenHydroNet · 水系统工作台",
+                         "startupStillVisible":  true,
+                         "slowHintObserved":  true,
+                         "visibleExampleCandidates":  [
+                                                          "ControlType.Button: ◉ 打开公开示例 双末端闭式循环 已附验证结果与操作说明 推荐新用户 →"
+                                                      ],
+                         "exampleCalculation":  "native mouse click on visible welcome card, F5, scroll result table; screenshot for visual verification",
+                         "exampleText":  [
+                                             "  Text: ✓ 计算通过",
+                                             "  DataItem: 13.679",
+                                             "  DataItem: 13.679",
+                                             "  DataItem: 13.679",
+                                             "  DataItem: 13.679",
+                                             "  Text: 计算通过；点击管段或表格查看详情"
+                                         ],
+                         "iconInspection":  [
+                                                "captured R1-5-解锁补测图标.png",
+                                                "app title: OpenHydroNet · 水系统工作台",
+                                                "taskbar button not found: NOT VERIFIED"
+                                            ],
+                         "exitSeconds":  2.74,
+                         "remainingProcesses":  [
+
+                                                ]
+                     },
+                     {
+                         "run":  2,
+                         "launcherPid":  7860,
+                         "warningSeen":  true,
+                         "startupSeen":  false,
+                         "startupSamples":  [
+
+                                            ],
+                         "success":  true,
+                         "warningTitle":  "Open File - Security Warning",
+                         "securityClick":  "native foreground mouse click; button found=True",
+                         "mainSeconds":  1.53,
+                         "mainTitle":  "OpenHydroNet · 水系统工作台",
+                         "startupStillVisible":  false,
+                         "slowHintObserved":  false,
+                         "exitSeconds":  1.38,
+                         "remainingProcesses":  [
+
+                                                ]
+                     }
+                 ],
+    "extractSeconds":  114.25,
+    "extractToSignalMs":  40,
+    "exeZoneId":  3
+}
