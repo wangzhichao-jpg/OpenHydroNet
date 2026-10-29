@@ -1,0 +1,18 @@
+{
+  "pages": 5,
+  "checks": {
+    "状态：计算通过（converged）": true,
+    "水温": true,
+    "密度": true,
+    "运动黏度": true,
+    "质量": true,
+    "能量": true,
+    "容差": true,
+    "迭代": true,
+    "模型假设": true,
+    "问题列表": true,
+    "no_json_keys": true
+  },
+  "page1Text": "双末端闭式循环 · 公开教学示例 · 计算报告\nOpenHydroNet 0.1.0-preview.5 | 2026-10-29T11:56:30.774878+00:00\n状态：计算通过（converged）；算法：sparse-head-flow-newton-trf-v2\n物理输入 SHA-256：f6e62dbcd139f0ad090e2fa44056deb4eb3a0fa9bb4957c7f9183f04237de623\n假设和验证\n水温\n20 ℃\n密度\n998.2336 kg/m³\n运动黏度\n1.004e-06 m²/s\n质量残差\n0 m³/s\n质量容差\n1e-08 m³/s\n能量残差\n1.148e-09 m\n能量容差\n1e-05 m\n迭代次数\n5\n模型假设\n稳态不可压单相液态水\n节点压力采用表压，H=z+p/(rho*g)\n不含水锤、CFD 或时间状态\n问题列表\n级别\n对象\n说明\n警告\n用户末端 2\n末端流量低于设计需求，固定工况不满足\n支路结果\n",
+  "sha256": "bcedd55874ffbbda49dfa62d75acd33b68ad4455c555d35aab98c7b555a3bd88"
+}

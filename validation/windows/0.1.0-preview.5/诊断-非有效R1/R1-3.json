@@ -1,0 +1,29 @@
+﻿{
+    "round":  3,
+    "date":  "2026-10-29T19:44:17.8339752+08:00",
+    "zipSha256":  "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+    "zipZoneId":  3,
+    "markerSource":  "explicit browser-equivalent ADS on API-downloaded original ZIP",
+    "prewarmed":  false,
+    "expectedFiles":  2890,
+    "expectedBytes":  562829578,
+    "method":  "Explorer Shell.Application CopyHere then ShellExecute with no app arguments",
+    "launches":  [
+                     {
+                         "run":  1,
+                         "launcherPid":  17092,
+                         "warningSeen":  true,
+                         "startupSeen":  false,
+                         "startupSamples":  [
+
+                                            ],
+                         "success":  false,
+                         "warningTitle":  "Open File - Security Warning",
+                         "securityClick":  "BM_CLICK Run",
+                         "launcherReceipt":  null
+                     }
+                 ],
+    "extractSeconds":  127.8,
+    "extractToSignalMs":  34,
+    "exeZoneId":  3
+}

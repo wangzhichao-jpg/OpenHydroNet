@@ -1,0 +1,8 @@
+R1-1 extraction done in 132.22s; launch signal after 32ms
+R1-1 run1: workbench not visible within 150 s
+所在位置 <repo>\validation\windows\0.1.0-preview.5\r1-cold.ps1:102 字符: 30
++ ... .success) { throw "R1-$Round run${run}: workbench not visible within  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (R1-1 run1: work...le within 150 s:String) [], RuntimeException
+    + FullyQualifiedErrorId : R1-1 run1: workbench not visible within 150 s
+ 

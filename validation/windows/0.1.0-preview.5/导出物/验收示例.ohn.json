@@ -1,0 +1,237 @@
+{
+  "format": "openhydronet",
+  "schema_version": 1,
+  "name": "双末端闭式循环 · 公开教学示例",
+  "model": {
+    "nodes": [
+      {
+        "id": "s0",
+        "name": "泵出口",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "s1",
+        "name": "供水分配",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "s2",
+        "name": "远端供水",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "t1",
+        "name": "末端一入口",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "t2",
+        "name": "末端二入口",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "r0",
+        "name": "定压点 / 泵入口",
+        "elevation": 0,
+        "demand": 0,
+        "head": 30
+      },
+      {
+        "id": "r1",
+        "name": "回水汇合",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      },
+      {
+        "id": "r2",
+        "name": "远端回水",
+        "elevation": 0,
+        "demand": 0,
+        "head": null
+      }
+    ],
+    "edges": [
+      {
+        "id": "P1",
+        "name": "P1",
+        "kind": "pipe",
+        "source": "s0",
+        "target": "s1",
+        "length": 75,
+        "diameter": 0.08,
+        "roughness": 0.00005,
+        "zeta": 2,
+        "local_mode": "zeta"
+      },
+      {
+        "id": "P2",
+        "name": "P2",
+        "kind": "pipe",
+        "source": "s1",
+        "target": "s2",
+        "length": 100,
+        "diameter": 0.065,
+        "roughness": 0.00005,
+        "zeta": 2,
+        "local_mode": "zeta"
+      },
+      {
+        "id": "P3",
+        "name": "P3",
+        "kind": "pipe",
+        "source": "r2",
+        "target": "r1",
+        "length": 100,
+        "diameter": 0.065,
+        "roughness": 0.00005,
+        "zeta": 2,
+        "local_mode": "zeta"
+      },
+      {
+        "id": "P4",
+        "name": "P4",
+        "kind": "pipe",
+        "source": "r1",
+        "target": "r0",
+        "length": 75,
+        "diameter": 0.08,
+        "roughness": 0.00005,
+        "zeta": 2,
+        "local_mode": "zeta"
+      },
+      {
+        "id": "PU1",
+        "name": "循环泵 · 虚构示例",
+        "kind": "pump",
+        "source": "r0",
+        "target": "s0",
+        "curve": [
+          32,
+          0,
+          -180000
+        ],
+        "speed": 1,
+        "parallel": 1,
+        "check_valve": true,
+        "valid_flow": [
+          0,
+          0.013
+        ],
+        "data_source": "人工构造，非厂家数据"
+      },
+      {
+        "id": "V1",
+        "name": "调节阀 1",
+        "kind": "valve",
+        "source": "s1",
+        "target": "t1",
+        "opening": 1,
+        "kv": 85,
+        "characteristic": "linear"
+      },
+      {
+        "id": "T1",
+        "name": "用户末端 1",
+        "kind": "terminal",
+        "source": "t1",
+        "target": "r1",
+        "design_head": 8,
+        "design_flow": 0.004
+      },
+      {
+        "id": "V2",
+        "name": "调节阀 2",
+        "kind": "valve",
+        "source": "s2",
+        "target": "t2",
+        "opening": 1,
+        "kv": 85,
+        "characteristic": "linear"
+      },
+      {
+        "id": "T2",
+        "name": "用户末端 2",
+        "kind": "terminal",
+        "source": "t2",
+        "target": "r2",
+        "design_head": 8,
+        "design_flow": 0.004
+      }
+    ],
+    "fluid": {
+      "temperature": 20,
+      "atmospheric_pressure": 101325
+    }
+  },
+  "layout": {
+    "s0": {
+      "x": 140,
+      "y": 120
+    },
+    "s1": {
+      "x": 440,
+      "y": 120
+    },
+    "s2": {
+      "x": 760,
+      "y": 120
+    },
+    "t1": {
+      "x": 440,
+      "y": 290
+    },
+    "t2": {
+      "x": 760,
+      "y": 290
+    },
+    "r0": {
+      "x": 140,
+      "y": 480
+    },
+    "r1": {
+      "x": 440,
+      "y": 480
+    },
+    "r2": {
+      "x": 760,
+      "y": 480
+    }
+  },
+  "scenarios": [],
+  "preferences": {
+    "flow_unit": "m3/h",
+    "scenario": "heating"
+  },
+  "library": [],
+  "notes": "人工构造教学网络，无真实工程或厂家数据。定压点测压水头 30 m；所有节点标高 0 m。调低泵速会降低末端流量。",
+  "result_metadata": {
+    "input_hash": "f6e62dbcd139f0ad090e2fa44056deb4eb3a0fa9bb4957c7f9183f04237de623",
+    "job_id": "dd1c5cdd-ed71-46c6-ace0-2a3899560f09",
+    "status": "converged",
+    "algorithm": "sparse-head-flow-newton-trf-v2",
+    "version": "0.1.0-preview.5",
+    "calculated_at": "2026-10-29T11:56:30.774878+00:00",
+    "residuals": {
+      "mass_m3_s": 0,
+      "energy_m": 1.1479812656034483e-9,
+      "mass_tolerance_m3_s": 1e-8,
+      "energy_tolerance_m": 0.00001
+    },
+    "fluid": {
+      "density_kg_m3": 998.2336361398824,
+      "kinematic_viscosity_m2_s": 0.0000010035213432425121,
+      "temperature_c": 20
+    }
+  }
+}

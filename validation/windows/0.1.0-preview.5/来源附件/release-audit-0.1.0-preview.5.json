@@ -1,0 +1,18 @@
+{
+  "source_files": 275,
+  "issues": [],
+  "windows_archives": [
+    {
+      "file": "OpenHydroNet-0.1.0-preview.5-win-x64.zip",
+      "bytes": 220465515,
+      "sha256": "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+      "files": 2890,
+      "source_commit": "743db0edbd700c8ddc4077b372c2b3c292bcab64",
+      "windows_executed": false,
+      "crc": "passed",
+      "actual_pe_headers": "passed"
+    }
+  ],
+  "remote_published": false,
+  "limitations": "这是静态隐私/结构检查，不替代漏洞扫描、法律审查或 Windows 实际运行"
+}

@@ -1,0 +1,17 @@
+﻿{
+    "round":  1,
+    "date":  "2026-10-29T19:28:18.4664188+08:00",
+    "zipSha256":  "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+    "zipZoneId":  3,
+    "markerSource":  "explicit browser-equivalent ADS on API-downloaded original ZIP",
+    "prewarmed":  false,
+    "expectedFiles":  2890,
+    "expectedBytes":  562829578,
+    "method":  "Explorer Shell.Application CopyHere then ShellExecute with no app arguments",
+    "launches":  [
+
+                 ],
+    "extractSeconds":  132.22,
+    "extractToSignalMs":  32,
+    "exeZoneId":  3
+}

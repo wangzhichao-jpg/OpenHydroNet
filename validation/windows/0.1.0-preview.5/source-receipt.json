@@ -1,0 +1,49 @@
+{
+  "releaseId": 425619943,
+  "tag": "v0.1.0-preview.5",
+  "draftAtDownload": true,
+  "prereleaseAtDownload": true,
+  "zipCrcPassed": true,
+  "assets": [
+    {
+      "id": 681957255,
+      "name": "OpenHydroNet-0.1.0-preview.5-win-x64.zip",
+      "bytes": 220465515,
+      "githubDigest": "sha256:6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+      "localSha256": "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+      "match": true
+    },
+    {
+      "id": 681958437,
+      "name": "OpenHydroNet-0.1.0-preview.5-win-x64.zip.sha256",
+      "bytes": 108,
+      "githubDigest": "sha256:05c1c93ec693301d279788918b8649a158f68ef9b8b2c5f0753c2f14b532cb9a",
+      "localSha256": "05c1c93ec693301d279788918b8649a158f68ef9b8b2c5f0753c2f14b532cb9a",
+      "match": true
+    },
+    {
+      "id": 681958709,
+      "name": "release-audit-0.1.0-preview.5.json",
+      "bytes": 593,
+      "githubDigest": "sha256:09daa4ae92ae30f66820c60f2c8c40f117bb726bfea3d1b86e3a919a34544c06",
+      "localSha256": "09daa4ae92ae30f66820c60f2c8c40f117bb726bfea3d1b86e3a919a34544c06",
+      "match": true
+    },
+    {
+      "id": 681958647,
+      "name": "windows-smoke-result-0.1.0-preview.5.json",
+      "bytes": 6289,
+      "githubDigest": "sha256:38731dd0e018e040d0a2d6f9b03af047c5026bd85ff063def3ee58cc8241cc0d",
+      "localSha256": "38731dd0e018e040d0a2d6f9b03af047c5026bd85ff063def3ee58cc8241cc0d",
+      "match": true
+    },
+    {
+      "id": 681958528,
+      "name": "WINDOWS_BUILD_MANIFEST-0.1.0-preview.5.json",
+      "bytes": 2915,
+      "githubDigest": "sha256:6c3cfcc73a8c3ec1c2df765ba577335259ee6572a0a84f6143502bb4b8cdf746",
+      "localSha256": "6c3cfcc73a8c3ec1c2df765ba577335259ee6572a0a84f6143502bb4b8cdf746",
+      "match": true
+    }
+  ]
+}

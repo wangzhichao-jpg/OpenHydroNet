@@ -1,0 +1,69 @@
+{
+  "version": "0.1.0-preview.5",
+  "commit": "743db0edbd700c8ddc4077b372c2b3c292bcab64",
+  "platform": "win32-x64",
+  "assembly_host": "win32",
+  "windows_executed": false,
+  "inputs": [
+    {
+      "file": "python-3.12.10-embed-amd64.zip.sigstore",
+      "url": "https://www.python.org/ftp/python/3.12.10/python-3.12.10-embed-amd64.zip.sigstore",
+      "sha256": "8aa5b4e555fd8b73b3dfef2f04328739f52d30706655930dcdf6111603d015be",
+      "bytes": 4915,
+      "verification": "HTTPS transport + recorded SHA-256"
+    },
+    {
+      "file": "python-3.12.10-embed-amd64.zip",
+      "url": "https://repo.huaweicloud.com/python/3.12.10/python-3.12.10-embed-amd64.zip",
+      "sha256": "4acbed6dd1c744b0376e3b1cf57ce906f9dc9e95e68824584c8099a63025a3c3",
+      "bytes": 11133606,
+      "verification": "SHA-256 matched expected digest"
+    },
+    {
+      "file": "electron-44.9.1-SHASUMS256.txt",
+      "url": "https://npmmirror.com/mirrors/electron/44.9.1/SHASUMS256.txt",
+      "sha256": "3abbb83b04f0765942d9a512b652fda89505087c60f38cf4d4b5ee2e6ec69b31",
+      "bytes": 6740,
+      "verification": "HTTPS transport + recorded SHA-256"
+    },
+    {
+      "file": "electron-v44.9.1-win32-x64.zip",
+      "url": "https://npmmirror.com/mirrors/electron/44.9.1/electron-v44.9.1-win32-x64.zip",
+      "sha256": "41bd7900bd42d0f49110a81617876137041fbbf473466920248ddb076349ef91",
+      "bytes": 158389896,
+      "verification": "SHA-256 matched expected digest"
+    },
+    {
+      "file": "defusedxml-0.7.1-py2.py3-none-any.whl",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)",
+      "sha256": "a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61",
+      "bytes": 25604
+    },
+    {
+      "file": "et_xmlfile-2.0.0-py3-none-any.whl",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)",
+      "sha256": "7a91720bc756843502c3b7504c77b8fe44217c85c537d85037f0f536151b2caa",
+      "bytes": 18059
+    },
+    {
+      "file": "numpy-2.4.3-cp312-cp312-win_amd64.whl",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)",
+      "sha256": "65f3c2455188f09678355f5cae1f959a06b778bc66d535da07bf2ef20cd319d5",
+      "bytes": 12316144
+    },
+    {
+      "file": "openpyxl-3.1.5-py2.py3-none-any.whl",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)",
+      "sha256": "5282c12b107bffeef825f4617dc029afaf41d0ea60823bbb665ef3079dc79de2",
+      "bytes": 250910
+    },
+    {
+      "file": "scipy-1.17.1-cp312-cp312-win_amd64.whl",
+      "url": "https://pypi.tuna.tsinghua.edu.cn/simple (pip verifies index SHA-256 fragment)",
+      "sha256": "41b71f4a3a4cab9d366cd9065b288efc4d4f3c0b37a91a8e0947fb5bd7f31d87",
+      "bytes": 36549682
+    }
+  ],
+  "protocol": 1,
+  "format_version": 1
+}
