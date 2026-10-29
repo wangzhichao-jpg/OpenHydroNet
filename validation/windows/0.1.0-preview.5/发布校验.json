@@ -1,0 +1,127 @@
+{
+  "checkedAt": "2026-10-29T13:10:17.064648+00:00",
+  "userExplicitApproval": "2026-10-29 用户在 Windows 回归通过后明确批准发布",
+  "validationCommit": "2847f278157f29c96044e2141fe6d159cd13c4c0",
+  "tag": "v0.1.0-preview.5",
+  "tagCommit": "743db0edbd700c8ddc4077b372c2b3c292bcab64",
+  "github": {
+    "id": 425619943,
+    "tag_name": "v0.1.0-preview.5",
+    "draft": false,
+    "prerelease": true,
+    "published_at": "2026-10-29T12:56:10Z",
+    "html_url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/tag/v0.1.0-preview.5"
+  },
+  "gitee": {
+    "id": 1253849,
+    "tag_name": "v0.1.0-preview.5",
+    "prerelease": true,
+    "created_at": "2026-10-29T21:01:59+08:00",
+    "html_url": "https://gitee.com/bigtaurus/OpenHydroNet/releases/tag/v0.1.0-preview.5",
+    "zipUploadHttpStatus": 400,
+    "zipUploadError": "验证失败：文件大小已超出限制：100 MB",
+    "zipDownloadPolicy": "link to unchanged GitHub original ZIP and its SHA-256; no split/repack"
+  },
+  "preview4": {
+    "id": 425335032,
+    "tag_name": "v0.1.0-preview.4",
+    "draft": true,
+    "prerelease": true,
+    "leftUnchanged": true
+  },
+  "notesIdenticalOnBothSites": true,
+  "notesSha256Utf8Lf": "bfce5be1fd3cac53244ae73d87d24b80ed2ca4347fe961f0ddfad2aa89d0fbb3",
+  "githubPostpublishDownloadVerification": {
+    "checkedAt": "2026-10-29T12:59:28.126223+00:00",
+    "anonymousPublicDownload": true,
+    "assets": [
+      {
+        "name": "OpenHydroNet-0.1.0-preview.5-win-x64.zip",
+        "bytes": 220465515,
+        "sha256": "6c8fc1c480fa90611ccb02cb6d943c64d0ce50d790c9d22e6d434beff0afecb7",
+        "matchesOriginalDigest": true,
+        "url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/download/v0.1.0-preview.5/OpenHydroNet-0.1.0-preview.5-win-x64.zip"
+      },
+      {
+        "name": "OpenHydroNet-0.1.0-preview.5-win-x64.zip.sha256",
+        "bytes": 108,
+        "sha256": "05c1c93ec693301d279788918b8649a158f68ef9b8b2c5f0753c2f14b532cb9a",
+        "matchesOriginalDigest": true,
+        "url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/download/v0.1.0-preview.5/OpenHydroNet-0.1.0-preview.5-win-x64.zip.sha256"
+      },
+      {
+        "name": "release-audit-0.1.0-preview.5.json",
+        "bytes": 593,
+        "sha256": "09daa4ae92ae30f66820c60f2c8c40f117bb726bfea3d1b86e3a919a34544c06",
+        "matchesOriginalDigest": true,
+        "url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/download/v0.1.0-preview.5/release-audit-0.1.0-preview.5.json"
+      },
+      {
+        "name": "windows-smoke-result-0.1.0-preview.5.json",
+        "bytes": 6289,
+        "sha256": "38731dd0e018e040d0a2d6f9b03af047c5026bd85ff063def3ee58cc8241cc0d",
+        "matchesOriginalDigest": true,
+        "url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/download/v0.1.0-preview.5/windows-smoke-result-0.1.0-preview.5.json"
+      },
+      {
+        "name": "WINDOWS_BUILD_MANIFEST-0.1.0-preview.5.json",
+        "bytes": 2915,
+        "sha256": "6c3cfcc73a8c3ec1c2df765ba577335259ee6572a0a84f6143502bb4b8cdf746",
+        "matchesOriginalDigest": true,
+        "url": "https://github.com/wangzhichao-jpg/OpenHydroNet/releases/download/v0.1.0-preview.5/WINDOWS_BUILD_MANIFEST-0.1.0-preview.5.json"
+      }
+    ],
+    "zipMatchesSidecar": true
+  },
+  "giteePostpublishDownloadVerification": {
+    "checkedAt": "2026-10-29T13:06:57.479955+00:00",
+    "assets": [
+      {
+        "id": 3532898,
+        "name": "OpenHydroNet-0.1.0-preview.5-win-x64.zip.sha256",
+        "bytes": 108,
+        "sha256": "05c1c93ec693301d279788918b8649a158f68ef9b8b2c5f0753c2f14b532cb9a",
+        "matchesOriginal": true,
+        "publicDownloadUrl": "https://gitee.com/bigtaurus/OpenHydroNet/releases/download/v0.1.0-preview.5/OpenHydroNet-0.1.0-preview.5-win-x64.zip.sha256"
+      },
+      {
+        "id": 3532900,
+        "name": "release-audit-0.1.0-preview.5.json",
+        "bytes": 593,
+        "sha256": "09daa4ae92ae30f66820c60f2c8c40f117bb726bfea3d1b86e3a919a34544c06",
+        "matchesOriginal": true,
+        "publicDownloadUrl": "https://gitee.com/bigtaurus/OpenHydroNet/releases/download/v0.1.0-preview.5/release-audit-0.1.0-preview.5.json"
+      },
+      {
+        "id": 3532901,
+        "name": "windows-smoke-result-0.1.0-preview.5.json",
+        "bytes": 6289,
+        "sha256": "38731dd0e018e040d0a2d6f9b03af047c5026bd85ff063def3ee58cc8241cc0d",
+        "matchesOriginal": true,
+        "publicDownloadUrl": "https://gitee.com/bigtaurus/OpenHydroNet/releases/download/v0.1.0-preview.5/windows-smoke-result-0.1.0-preview.5.json"
+      },
+      {
+        "id": 3532902,
+        "name": "WINDOWS_BUILD_MANIFEST-0.1.0-preview.5.json",
+        "bytes": 2915,
+        "sha256": "6c3cfcc73a8c3ec1c2df765ba577335259ee6572a0a84f6143502bb4b8cdf746",
+        "matchesOriginal": true,
+        "publicDownloadUrl": "https://gitee.com/bigtaurus/OpenHydroNet/releases/download/v0.1.0-preview.5/WINDOWS_BUILD_MANIFEST-0.1.0-preview.5.json"
+      }
+    ]
+  },
+  "remoteTagsUnchanged": {
+    "origin": {
+      "refs/tags/v0.1.0-preview.4": "39b7092a4748f9329d984f2aae8c81a9877521ec",
+      "refs/tags/v0.1.0-preview.4^{}": "fe8877876391b74ea6eeff43da6a87ebbcc0c097",
+      "refs/tags/v0.1.0-preview.5": "a45292584386d59005d654fa8d5f8fa0efbb56aa",
+      "refs/tags/v0.1.0-preview.5^{}": "743db0edbd700c8ddc4077b372c2b3c292bcab64"
+    },
+    "gitee": {
+      "refs/tags/v0.1.0-preview.4": "39b7092a4748f9329d984f2aae8c81a9877521ec",
+      "refs/tags/v0.1.0-preview.4^{}": "fe8877876391b74ea6eeff43da6a87ebbcc0c097",
+      "refs/tags/v0.1.0-preview.5": "a45292584386d59005d654fa8d5f8fa0efbb56aa",
+      "refs/tags/v0.1.0-preview.5^{}": "743db0edbd700c8ddc4077b372c2b3c292bcab64"
+    }
+  }
+}
