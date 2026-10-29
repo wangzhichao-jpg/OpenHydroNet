@@ -38,7 +38,7 @@ xvfb-run -a -s '-screen 0 1920x1080x24' npm run test:ui          # 另有 graph/
 - 不提交 `.local/`、`artifacts/`、参考说明书原文、CNKI 全文、凭据。
 - 下载优先国内镜像（pip 清华、npm npmmirror），保持 TLS 校验；长任务用 systemd 用户任务 + `.local/*.lock`。
 - 远程：`origin`=GitHub（HTTPS），`gitee`=Gitee（SSH 别名 `gitee-ohn`）。两端保持同一提交。
-- 发版：先在 main 手动触发 CI 预检 `windows-candidate` → 通过后对同一提交打附注标签并 `tools/push-remotes.sh <标签>` → 用标签 CI 产物经 `tools/draft_release.py` 建草稿（不发布，发布由 PC 在 Windows 回归后完成）。
+- 发版：先在 main 手动触发 CI 预检 `windows-candidate` → 通过后对同一提交打附注标签并 `tools/push-remotes.sh <标签>` → 用标签 CI 产物经 `tools/draft_release.py` 建草稿（不发布，发布由 PC 在 Windows 回归通过且用户明确批准后完成）。
 - 推送一律用 `tools/push-remotes.sh`（仅快进、自动重试、推送后用 ls-remote 核对两端 HEAD）。
 - **不改写已推送的历史**（禁止对 main 变基、改作者后强推）。PC 与 SER8 开工前先 `git pull --ff-only`，只做快进推送；作者统一为 `wangzhichao-jpg <wangzhichao@chinaibee.com>`。
 - README 双语：`README.md` 英文（GitHub 默认），`README.zh-CN.md` 中文；改动功能说明时两份同步。
